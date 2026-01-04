@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Voetbalcarrière Lou & Noé</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f4f4f4; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background: #2c3e50; color: white; }
+        h1 { color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <h1>Statistieken Lou & Noé</h1>
+    <div id="stats-tabel">Laden van statistieken...</div>
+
+    <script>
+        // PLAK HIER JE GOOGLE SHEETS CSV LINK
+        const csvUrl = 'JOUW_GOOGLE_SHEETS_CSV_LINK_HIER';
+
+        async function laadStats() {
+            const response = await fetch(csvUrl);
+            const data = await response.text();
+            const rijen = data.split('\n').slice(1);
+            let html = '<table><tr><th>Datum</th><th>Speler</th><th>Type</th><th>Tegenstander</th><th>Score</th><th>Goals</th><th>Assists</th></tr>';
+            
+            rijen.forEach(rij => {
+                const kolommen = rij.split(',');
+                if(kolommen.length > 1) {
+                    html += `<tr>${kolommen.map(k => `<td>${k}</td>`).join('')}</tr>`;
+                }
+            });
+            html += '</table>';
+            document.getElementById('stats-tabel').innerHTML = html;
+        }
+        laadStats();
+    </script>
+</body>
+</html>
