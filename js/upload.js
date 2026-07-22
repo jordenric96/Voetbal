@@ -5,7 +5,7 @@ window.checkPin = function() {
     const pin = document.getElementById('pincode-input').value;
     
     // Jouw geheime code (pas dit getal aan naar wens)
-    if (pin === "2026") {
+    if (pin === "0204") {
         document.getElementById('pin-screen').style.display = "none";
         document.getElementById('form-screen').style.display = "block";
         // Zet datum automatisch op vandaag nadat ontgrendeld is
