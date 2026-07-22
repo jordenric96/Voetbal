@@ -1,6 +1,6 @@
+const STANDAARD_EIGEN_PLOEG = "KV Kester Gooik";
 let bekendeTegenstanders = [];
 let geselecteerdBestaandLogo = null;
-let bestaandEigenLogo = null;
 let bestaandeFotos = []; 
 
 window.checkPin = async function() {
@@ -18,7 +18,7 @@ window.checkPin = async function() {
         if (editId) {
             await laadWedstrijdVoorBewerken(editId);
         } else {
-            addScoreRow(); // Standaard 1 leeg kaartje
+            addScoreRow();
         }
     } else {
         document.getElementById('pin-error').style.display = "block";
@@ -26,7 +26,6 @@ window.checkPin = async function() {
     }
 };
 
-// NIEUWE LOGICA: Uitgebreid mini-score kaartje met goals/assists/doelman
 window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, assists = 0) {
     const wrapper = document.getElementById('mini-scores-wrapper');
     const row = document.createElement('div');
@@ -70,26 +69,21 @@ async function laadWedstrijdVoorBewerken(id) {
             document.getElementById('status').value = data.status;
             window.toggleAfwezig();
             if (data.reden_afwezig) document.getElementById('reden_afwezig').value = data.reden_afwezig;
-            document.getElementById('eigen_ploeg').value = data.eigen_ploeg || '';
             document.getElementById('categorie').value = data.categorie || 'U6';
             document.getElementById('match_format').value = data.match_format || '2v2';
             
             const wrapper = document.getElementById('mini-scores-wrapper');
             wrapper.innerHTML = ''; 
             if (data.mini_scores && data.mini_scores.length > 0) {
-                // Laad de opgeslagen individuele stats per uitslag
                 data.mini_scores.forEach(score => addScoreRow(score.thuis, score.uit, score.is_doelman, score.goals, score.assists));
             } else if (data.score_thuis !== null && data.score_uit !== null) {
-                // Fallback: Als we een oude wedstrijd bewerken, vul hem dan als 1 match in met de oude totaal-stats
                 addScoreRow(data.score_thuis, data.score_uit, data.is_doelman, data.doelpunten_speler, data.assists);
             } else {
                 addScoreRow();
             }
 
             geselecteerdBestaandLogo = data.logo_tegenstander; 
-            bestaandEigenLogo = data.logo_eigen_ploeg;
             bestaandeFotos = data.fotos || [];
-            
             document.getElementById('matchForm').dataset.editId = data.id;
             document.querySelector('.submit-btn').innerText = "Wijzigingen Opslaan";
         }
@@ -186,13 +180,11 @@ window.saveMatch = async function() {
 
     try {
         const logoBestandTegenstander = document.getElementById('logo_tegenstander').files[0];
-        const logoBestandEigen = document.getElementById('logo_eigen_ploeg').files[0];
         const fotoBestanden = document.getElementById('fotos').files;
         
         let logoTegenUrl = geselecteerdBestaandLogo; 
         if (logoBestandTegenstander) { submitBtn.innerText = "Logo tegenstander uploaden..."; logoTegenUrl = await uploadBestandNaarSupabase(logoBestandTegenstander, 'logos'); }
-        let logoEigenUrl = bestaandEigenLogo;
-        if (logoBestandEigen) { submitBtn.innerText = "Logo eigen ploeg uploaden..."; logoEigenUrl = await uploadBestandNaarSupabase(logoBestandEigen, 'logos'); }
+        
         let fotoUrls = bestaandeFotos; 
         if (fotoBestanden.length > 0) {
             const compressieOpties = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true };
@@ -210,7 +202,6 @@ window.saveMatch = async function() {
         let totaalThuis = 0, totaalUit = 0, totaalGoals = 0, totaalAssists = 0;
         let wasDoelmanOoit = false;
         
-        // Loop door elk toegevoegd uitslagen-kaartje en tel alles op!
         scoreRows.forEach(row => {
             const t = parseInt(row.querySelector('.mini-score-thuis').value) || 0;
             const u = parseInt(row.querySelector('.mini-score-uit').value) || 0;
@@ -238,15 +229,11 @@ window.saveMatch = async function() {
             status: document.getElementById('status').value,
             reden_afwezig: document.getElementById('status').value === 'Afwezig' ? document.getElementById('reden_afwezig').value : null,
             
-            eigen_ploeg: document.getElementById('eigen_ploeg').value,
-            logo_eigen_ploeg: logoEigenUrl,
+            eigen_ploeg: STANDAARD_EIGEN_PLOEG, // <--- Automatisch ingesteld!
             categorie: document.getElementById('categorie').value,
             match_format: document.getElementById('match_format').value,
             
-            // Sla de array met individuele matchjes op
             mini_scores: miniScoresArray,
-            
-            // Sla de totalen op voor backwards compatibility
             is_doelman: wasDoelmanOoit,
             score_thuis: totaalThuis,
             score_uit: totaalUit,

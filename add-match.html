@@ -56,12 +56,8 @@
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Eigen Ploeg</label>
-                        <input type="text" id="eigen_ploeg" placeholder="Typ ploegnaam...">
-                    </div>
-                    <div class="form-group autocomplete-container">
-                        <label>Tegenstander</label>
+                    <div class="form-group autocomplete-container" style="flex: 1;">
+                        <label>Tegenstander (Ploegnaam)</label>
                         <input type="text" id="tegenstander" placeholder="Typ om te zoeken..." required autocomplete="off">
                         <div id="autocomplete-lijst" class="autocomplete-items"></div>
                     </div>
@@ -69,17 +65,10 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Logo Eigen Ploeg</label>
-                        <input type="file" id="logo_eigen_ploeg" accept="image/png, image/jpeg">
-                    </div>
-                    <div class="form-group">
                         <label>Logo Tegenstander</label>
                         <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
                         <div id="logo-gevonden-status" class="logo-status">✅ Bekend logo gevonden!</div>
                     </div>
-                </div>
-
-                <div class="form-row">
                     <div class="form-group">
                         <label>Locatie</label>
                         <select id="locatie" required>
@@ -87,13 +76,14 @@
                             <option value="Uit">Uit</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select id="status" onchange="toggleAfwezig()" required>
-                            <option value="Meegedaan">Meegedaan</option>
-                            <option value="Afwezig">Afwezig</option>
-                        </select>
-                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="status" onchange="toggleAfwezig()" required>
+                        <option value="Meegedaan">Meegedaan</option>
+                        <option value="Afwezig">Afwezig</option>
+                    </select>
                 </div>
 
                 <div class="form-group" id="reden_afwezig_blok" style="display: none;">
@@ -101,7 +91,7 @@
                     <input type="text" id="reden_afwezig" placeholder="Bijv. Ziek, vakantie...">
                 </div>
 
-                <!-- DYNAMISCHE UITSLAGEN (Met individuele stats) -->
+                <!-- DYNAMISCHE UITSLAGEN -->
                 <div class="form-group" style="margin-top: 25px; border-top: 2px dashed var(--almond-silk); padding-top: 20px;">
                     <label style="font-size: 16px; color: var(--space-indigo);">⚽ De Wedstrijdjes (Uitslagen & Stats)</label>
                     <div id="mini-scores-wrapper" style="margin-top: 10px;"></div>

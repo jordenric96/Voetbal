@@ -22,15 +22,12 @@
     </div>
 
     <main style="padding: 20px; padding-bottom: 100px;">
-        <p id="loading-msg" class="empty-state">Statistieken berekenen... ⏳</p>
+        <p id="loading-msg" class="empty-state">Pro-Statistieken berekenen... ⏳</p>
         
-        <!-- De grid container waar de JS de blokjes in zal plaatsen -->
-        <div id="stats-container" class="stats-grid" style="display: none;">
-            
-        </div>
+        <!-- Hier worden de verschillende secties (Veldspeler, Keeper, Algemeen) ingeladen -->
+        <div id="stats-container" style="display: none;"></div>
     </main>
 
-    <!-- Supabase SDK inladen -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
     <script src="js/stats.js"></script>

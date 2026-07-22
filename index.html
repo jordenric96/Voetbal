@@ -35,13 +35,13 @@
             try {
                 const { data: matchen, error } = await supabaseClient.from('wedstrijden').select('*').eq('speler', speler).order('datum', { ascending: false });
                 if (error) throw error;
+                
                 if (matchen.length === 0) {
                     container.innerHTML = `<div class="empty-state-noe"><h2>Geen matchen</h2><p style="color: var(--rebecca-purple); font-weight:700;">Voeg de eerste wedstrijd toe voor ${speler}!</p></div>`; return;
                 }
 
-                // 1. STATS BEREKENEN OP BASIS VAN DE MINI-MATCHES
+                // 1. QUICK STATS BEREKENEN
                 let gespeeldSpeler = 0; let gespeeldDoelman = 0; let goals = 0; let assists = 0;
-
                 matchen.forEach(m => {
                     if (m.status === 'Meegedaan') {
                         if (m.mini_scores && m.mini_scores.length > 0) {
@@ -67,43 +67,70 @@
                     </div>
                 `;
 
+                // 2. WEDSTRIJDKAARTJES GENEREREN
                 matchen.forEach(match => {
-                    const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' });
-                    const logoEigen = match.logo_eigen_ploeg ? `<img src="${match.logo_eigen_ploeg}" class="match-logo">` : `<div class="match-logo" style="font-size:10px; text-align:center; line-height:1.2;">Eigen<br>Ploeg</div>`;
-                    const logoTegen = match.logo_tegenstander ? `<img src="${match.logo_tegenstander}" class="match-logo">` : `<div class="match-logo">🛡️</div>`;
-
-                    // LOGICA OM VISUEEL WEER TE GEVEN OF HIJ KIEPTE / SCOORDE
-                    let scoresHtml = '';
+                    // Mooie datum genereren voor de balk
+                    const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long' });
+                    
+                    // Berekenen van de totale uitslag van de dag
+                    let totaalThuis = 0; let totaalUit = 0;
                     if (match.mini_scores && match.mini_scores.length > 0) {
-                        match.mini_scores.forEach(score => {
+                        match.mini_scores.forEach(s => { totaalThuis += s.thuis; totaalUit += s.uit; });
+                    } else {
+                        totaalThuis = match.score_thuis || 0; totaalUit = match.score_uit || 0;
+                    }
+
+                    // Logica: Wie staat links en wie staat rechts? (Afhankelijk van Thuis/Uit)
+                    let eigenPloegNaam = match.eigen_ploeg || "KV Kester Gooik";
+                    let tegenstanderNaam = match.tegenstander;
+                    let linksTeam, rechtsTeam, linksScore, rechtsScore;
+
+                    if (match.locatie === 'Uit') {
+                        linksTeam = tegenstanderNaam;
+                        rechtsTeam = eigenPloegNaam;
+                        linksScore = totaalThuis;  // Bij Uit spelen is de tegenstander de thuisploeg
+                        rechtsScore = totaalUit;
+                    } else {
+                        linksTeam = eigenPloegNaam;
+                        rechtsTeam = tegenstanderNaam;
+                        linksScore = totaalThuis;
+                        rechtsScore = totaalUit;
+                    }
+
+                    // Lijntjes per sub-match genereren
+                    let subMatchesHtml = '';
+                    if (match.mini_scores && match.mini_scores.length > 0) {
+                        match.mini_scores.forEach((score, index) => {
                             let statusClass = 'draw';
                             if (score.thuis > score.uit) statusClass = match.locatie === 'Thuis' ? 'win' : 'loss';
                             if (score.thuis < score.uit) statusClass = match.locatie === 'Thuis' ? 'loss' : 'win';
                             
-                            let iconen = '';
-                            if(score.is_doelman) iconen += '🧤 ';
-                            if(score.goals > 0) iconen += '⚽'.repeat(score.goals) + ' ';
-
-                            scoresHtml += `<span class="mini-score ${statusClass}">${score.thuis} - ${score.uit} <span class="mini-score-icons">${iconen}</span></span>`;
+                            let iconen = score.is_doelman ? '🧤' : '👟';
+                            if(score.goals > 0) iconen += ' ⚽'.repeat(score.goals);
+                            
+                            subMatchesHtml += `
+                                <div class="sub-match-line">
+                                    <span>Match ${index + 1}</span>
+                                    <div style="display:flex; align-items:center; gap: 10px;">
+                                        <span class="sub-match-icons">${iconen}</span>
+                                        <span class="sub-match-score ${statusClass}">${score.thuis} - ${score.uit}</span>
+                                    </div>
+                                </div>
+                            `;
                         });
-                    } else if (match.score_thuis !== null) {
-                        scoresHtml += `<span class="mini-score draw">${match.score_thuis} - ${match.score_uit}</span>`;
                     }
 
-                    const catBadge = match.categorie ? `<span class="badge u-cat">${match.categorie}</span>` : '';
-                    const formatBadge = match.match_format ? `<span class="badge format">${match.match_format}</span>` : '';
-
                     html += `
-                        <a href="match-detail.html?id=${match.id}" class="match-card" style="border-left: none; flex-direction: column; align-items: flex-start; gap: 10px;">
-                            <div style="display: flex; width: 100%; justify-content: space-between; align-items: flex-start;">
-                                <div class="match-logos">${logoEigen} <span class="vs-badge">VS</span> ${logoTegen}</div>
-                                <div style="text-align: right;">
-                                    <div class="badges-row" style="justify-content: flex-end;">${catBadge} ${formatBadge}</div>
-                                    <h3 style="font-size: 16px; font-weight: 900; color: var(--space-indigo); margin-bottom:2px;">${match.tegenstander}</h3>
-                                    <p style="font-size: 11px; color: var(--rebecca-purple); font-weight: 700;">${datumMooi} • ${match.locatie}</p>
-                                </div>
+                        <a href="match-detail.html?id=${match.id}" class="match-card-v2">
+                            <div class="match-date-header">📅 ${datumMooi}</div>
+                            <div class="total-score-bar">
+                                <span class="team-name left">${linksTeam}</span>
+                                <span class="score-badge">${linksScore} - ${rechtsScore}</span>
+                                <span class="team-name right">${rechtsTeam}</span>
                             </div>
-                            <div class="mini-scores-container">${scoresHtml}</div>
+                            <div class="sub-matches-list">
+                                ${subMatchesHtml || '<div class="sub-match-line" style="justify-content:center;">Geen data ingegeven</div>'}
+                            </div>
                         </a>
                     `;
                 });

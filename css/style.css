@@ -357,3 +357,49 @@ header a.active { color: var(--soft-cyan); opacity: 1; font-weight: 900;}
     animation: fadeUp 0.3s ease; 
 }
 .mini-score-icons { font-size: 10px; margin-left: 4px; letter-spacing: 1px; }
+
+/* =========================================
+   12. VERNIEUWDE MATCH CARD (Toernooi Weergave)
+   ========================================= */
+.match-card-v2 {
+    display: flex; flex-direction: column;
+    background: transparent;
+    box-shadow: 0 8px 24px rgba(23, 23, 56, 0.08);
+    border-radius: 12px; margin-bottom: 25px;
+    text-decoration: none; transition: transform 0.2s;
+}
+.match-card-v2:active { transform: scale(0.98); }
+
+.match-date-header {
+    width: 100%; background: var(--rebecca-purple); color: #fff;
+    padding: 10px 15px; border-radius: 12px 12px 0 0;
+    font-size: 13px; font-weight: 900; text-align: center;
+    letter-spacing: 1.5px; text-transform: uppercase;
+}
+
+.total-score-bar {
+    background: var(--space-indigo); color: var(--soft-cyan);
+    padding: 14px 12px; font-size: 15px; font-weight: 900;
+    display: flex; justify-content: center; align-items: center;
+    gap: 10px; border-bottom: 2px solid var(--bg-color);
+}
+.total-score-bar .team-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.total-score-bar .team-name.left { text-align: right; }
+.total-score-bar .team-name.right { text-align: left; }
+.total-score-bar .score-badge {
+    background: var(--almond-silk); color: var(--space-indigo);
+    padding: 6px 14px; border-radius: 8px; font-size: 20px;
+}
+
+.sub-matches-list { width: 100%; padding: 5px 15px 10px; background: #fff; border-radius: 0 0 12px 12px; }
+.sub-match-line {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px dashed var(--bg-color);
+    font-size: 13px; font-weight: 800; color: var(--space-indigo);
+}
+.sub-match-line:last-child { border-bottom: none; }
+.sub-match-score { background: var(--bg-color); padding: 4px 10px; border-radius: 6px; }
+.sub-match-score.win { color: #25D366; }
+.sub-match-score.loss { color: var(--lobster-pink); }
+.sub-match-score.draw { color: var(--rebecca-purple); }
+.sub-match-icons { display: flex; gap: 4px; font-size: 14px; }
