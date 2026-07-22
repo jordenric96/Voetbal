@@ -347,3 +347,13 @@ header a.active { color: var(--soft-cyan); opacity: 1; font-weight: 900;}
 .score-row-item { display: flex; gap: 10px; align-items: center; background: var(--bg-color); padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--almond-silk); animation: fadeUp 0.3s ease; }
 .remove-score-btn { background: var(--lobster-pink); color: white; border: none; border-radius: 8px; width: 32px; height: 32px; font-weight: bold; cursor: pointer; }
 .add-score-btn { background: var(--almond-silk); color: var(--space-indigo); width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; margin-bottom: 20px;}
+
+/* Update voor de uitgebreide mini-score kaartjes */
+.score-row-item { 
+    display: flex; flex-direction: column; 
+    background: var(--bg-color); padding: 12px; 
+    border-radius: 12px; margin-bottom: 15px; 
+    border: 1px solid var(--almond-silk); 
+    animation: fadeUp 0.3s ease; 
+}
+.mini-score-icons { font-size: 10px; margin-left: 4px; letter-spacing: 1px; }

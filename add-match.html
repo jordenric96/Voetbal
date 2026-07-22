@@ -55,13 +55,6 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 800; background: #fff; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--almond-silk);">
-                        <input type="checkbox" id="is_doelman" style="width: 24px; height: 24px; margin-right: 14px;">
-                        Speelde vandaag als Doelman 🧤
-                    </label>
-                </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label>Eigen Ploeg</label>
@@ -108,26 +101,15 @@
                     <input type="text" id="reden_afwezig" placeholder="Bijv. Ziek, vakantie...">
                 </div>
 
-                <!-- DYNAMISCHE UITSLAGEN (Toernooivorm) -->
-                <div class="form-group" style="margin-top: 15px;">
-                    <label>Uitslagen (Voeg er zoveel toe als nodig)</label>
-                    <div id="mini-scores-wrapper"></div>
+                <!-- DYNAMISCHE UITSLAGEN (Met individuele stats) -->
+                <div class="form-group" style="margin-top: 25px; border-top: 2px dashed var(--almond-silk); padding-top: 20px;">
+                    <label style="font-size: 16px; color: var(--space-indigo);">⚽ De Wedstrijdjes (Uitslagen & Stats)</label>
+                    <div id="mini-scores-wrapper" style="margin-top: 10px;"></div>
                     <button type="button" class="add-score-btn" onclick="addScoreRow()">+ Extra uitslag toevoegen</button>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Totaal Doelpunten</label>
-                        <input type="number" id="doelpunten" min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Totaal Assists</label>
-                        <input type="number" id="assists" min="0" value="0">
-                    </div>
-                </div>
-
                 <div class="form-group">
-                    <label>Wedstrijdfoto's</label>
+                    <label>Wedstrijdfoto's (Heel het toernooi)</label>
                     <input type="file" id="fotos" accept="image/png, image/jpeg" multiple>
                 </div>
 
