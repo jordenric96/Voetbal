@@ -11,7 +11,6 @@ window.checkPin = async function() {
         document.getElementById('form-screen').style.display = "block";
         document.getElementById('datum').valueAsDate = new Date();
         
-        // Zodra ingelogd: start met ophalen van eerdere tegenstanders!
         document.getElementById('tegenstander').placeholder = "Ploegen laden... ⏳";
         await haalPloegenOp();
     } else {
@@ -53,8 +52,6 @@ async function haalPloegenOp() {
         }
         
         bekendeTegenstanders = Array.from(uniekePloegenMap.values());
-        
-        // VISUELE CHECK: Laat in het vakje zien hoeveel ploegen hij kent!
         document.getElementById('tegenstander').placeholder = `Typ om te zoeken in ${bekendeTegenstanders.length} bekende ploeg(en)...`;
         
     } catch (err) {
@@ -94,9 +91,9 @@ function setupAutocomplete() {
                 
                 div.innerHTML = `${logoHtml} ${ploeg.naam}`;
                 
-                // Muisklik op een ploeg
+                // Muisklik of touch op een ploeg
                 div.addEventListener('mousedown', function(e) {
-                    e.preventDefault(); // Voorkomt dat het toetsenbord sluit voor de klik registreert
+                    e.preventDefault(); // Voorkom dat toetsenbord sluit vóór de klik telt
                     input.value = ploeg.naam; 
                     if (ploeg.logo) {
                         geselecteerdBestaandLogo = ploeg.logo; 
@@ -111,10 +108,11 @@ function setupAutocomplete() {
         }
     });
 
-    // Verberg lijst als we ergens anders klikken
-    input.addEventListener('blur', function () {
-        // Kleine vertraging zodat de klik op het lijstje eerst kan registreren
-        setTimeout(() => { lijst.style.display = 'none'; }, 150);
+    // Fix: Verberg lijst alleen als we ECHT ergens anders op het scherm klikken
+    document.addEventListener('click', function (e) {
+        if (e.target !== input && e.target !== lijst) {
+            lijst.style.display = 'none';
+        }
     });
     
     fileInput.addEventListener('change', function() {
@@ -123,7 +121,6 @@ function setupAutocomplete() {
     });
 }
 
-// Start de setup zodra de pagina inlaadt
 document.addEventListener('DOMContentLoaded', () => {
     const pinInput = document.getElementById('pincode-input');
     if (pinInput) {
@@ -215,7 +212,6 @@ window.saveMatch = async function() {
         const spelerVal = document.getElementById('speler').value;
         
         const matchData = {
-            // Uniek ID met toevoeging van Date.now() zodat deze nooit dubbel is
             id: datumVal.replace(/-/g, '') + '-' + spelerVal.toLowerCase() + '-' + Date.now(),
             speler: spelerVal,
             datum: datumVal,

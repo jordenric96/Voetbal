@@ -276,7 +276,7 @@ header a.active { color: var(--soft-cyan); opacity: 1; font-weight: 900;}
 /* =========================================
    9. AUTOCOMPLETE (Zoeklijst tegenstanders)
    ========================================= */
-.autocomplete-container { position: relative; }
+.autocomplete-container { position: relative; z-index: 999; }
 .autocomplete-items {
     position: absolute; top: 100%; left: 0; right: 0;
     background: #fff; border-radius: 16px;
