@@ -3,54 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Voetbal Stats</title>
-    <link rel="manifest" href="manifest.json">
+    <title>Voetbal App</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- De kleur van de adresbalk op mobiel (Bordeaux) -->
-    <meta name="theme-color" content="#8A1538">
+    <meta name="theme-color" content="#171738">
 </head>
 <body>
-    <!-- Bovenste navigatiebalk -->
     <header>
-        <h1>Voetbal Stats</h1>
+        <h1>Overzicht</h1>
         <nav>
-            <a href="index.html" class="active">Home</a>
             <a href="stats.html">Statistieken</a>
         </nav>
     </header>
 
-    <!-- Tabbladen voor de spelers -->
     <div class="tabs">
-        <button class="tab-btn active" onclick="openTab(event, 'lou')">Lou</button>
-        <button class="tab-btn" onclick="openTab(event, 'noe')">Noé</button>
+        <button class="tab-btn active" onclick="wisselSpeler(event, 'Lou')">Lou</button>
+        <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
     </div>
 
-    <!-- Inhoud Lou -->
-    <main id="lou" class="tab-content active">
-        <h2>Seizoen 26-27</h2>
-        
-        <div class="wedstrijden-lijst" id="wedstrijden-container-lou">
-            <!-- JavaScript (app.js) laadt hier de kaartjes in via Supabase -->
-            <p class="empty-state">Wedstrijden ophalen... ⏳</p>
-        </div>
-
-        <!-- Zwevende knop om een match toe te voegen -->
-        <a href="add-match.html" class="fab-btn">+ Match</a>
+    <!-- Hier komen de quick stats en de wedstrijden -->
+    <main id="wedstrijden-lijst" class="tab-content active" style="padding-bottom: 120px;">
+        <p class="empty-state">Gegevens laden... ⏳</p>
     </main>
 
-    <!-- Inhoud Noé -->
-    <main id="noe" class="tab-content">
-        <div class="empty-state-noe">
-            <h2>Nog even geduld! ⏳</h2>
-            <p>Noé start pas binnen 2 jaar. Het veld wacht op hem!</p>
-        </div>
-    </main>
+    <a href="add-match.html" class="fab-btn">+ Match</a>
 
-    <!-- Supabase SDK inladen via CDN -->
+    <!-- Supabase SDK inladen -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Jouw eigen scripts -->
     <script src="js/database.js"></script>
-    <script src="js/app.js"></script>
+
+    <script>
+        async function laadWedstrijden(speler) {
+            const container = document.getElementById('wedstrijden-lijst');
+            container.innerHTML = '<p class="empty-state">Wedstrijden laden... ⏳</p>';
+
+            try {
+                const { data: matchen, error } = await supabaseClient
+                    .from('wedstrijden')
+                    .select('*')
+                    .eq('speler', speler)
+                    .order('datum', { ascending: false });
+
+                if (error) throw error;
+
+                if (matchen.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state-noe">
+                            <h2>Geen matchen</h2>
+                            <p style="color: var(--rebecca-purple); font-weight:700;">Voeg de eerste wedstrijd toe voor ${speler}!</p>
+                        </div>`;
+                    return;
+                }
+
+                // 1. Bereken de Quick Stats
+                let gespeeld = 0;
+                let goals = 0;
+                let assists = 0;
+
+                matchen.forEach(m => {
+                    if (m.status === 'Meegedaan') {
+                        gespeeld++;
+                        goals += (m.doelpunten_speler || 0);
+                        assists += (m.assists || 0);
+                    }
+                });
+
+                // Bouw de HTML voor de Quick Stats
+                let html = `
+                    <div class="quick-stats">
+                        <div class="quick-stat-box">
+                            <span class="qs-value">🏟️ ${gespeeld}</span>
+                            <span class="qs-label">Matchen</span>
+                        </div>
+                        <div class="quick-stat-box cyan">
+                            <span class="qs-value">⚽ ${goals}</span>
+                            <span class="qs-label">Goals</span>
+                        </div>
+                        <div class="quick-stat-box pink">
+                            <span class="qs-value">👟 ${assists}</span>
+                            <span class="qs-label">Assists</span>
+                        </div>
+                    </div>
+                `;
+
+                // 2. Bouw de HTML voor de wedstrijdkaartjes
+                matchen.forEach(match => {
+                    // Win / Verlies / Gelijkspel bepalen voor het kleurtje van de rand
+                    const isWin = (match.locatie === 'Thuis' && match.score_thuis > match.score_uit) || 
+                                  (match.locatie === 'Uit' && match.score_uit > match.score_thuis);
+                    const isLoss = (match.locatie === 'Thuis' && match.score_thuis < match.score_uit) || 
+                                   (match.locatie === 'Uit' && match.score_uit < match.score_thuis);
+                    
+                    let borderClass = 'draw';
+                    if (isWin) borderClass = 'win';
+                    if (isLoss) borderClass = 'loss';
+                    
+                    // Datum mooi formatteren
+                    const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' });
+                    
+                    // Logo of fallback schildje
+                    const logoHtml = match.logo_tegenstander 
+                        ? `<img src="${match.logo_tegenstander}" class="match-logo">`
+                        : `<div class="match-logo">🛡️</div>`;
+
+                    html += `
+                        <a href="match-detail.html?id=${match.id}" class="match-card ${borderClass}">
+                            ${logoHtml}
+                            <div class="match-info">
+                                <h3>${match.tegenstander}</h3>
+                                <p>${datumMooi} • ${match.locatie}</p>
+                            </div>
+                            <div class="match-score">${match.score_thuis} - ${match.score_uit}</div>
+                        </a>
+                    `;
+                });
+
+                // Toon alles op het scherm
+                container.innerHTML = html;
+
+            } catch (err) {
+                console.error("Fout bij laden van wedstrijden:", err);
+                container.innerHTML = '<p class="empty-state">Kon wedstrijden niet laden.</p>';
+            }
+        }
+
+        // Functie om te wisselen tussen Lou en Noé
+        window.wisselSpeler = function(evt, speler) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            laadWedstrijden(speler);
+        };
+
+        // Start met het laden van Lou zijn wedstrijden
+        document.addEventListener('DOMContentLoaded', () => {
+            laadWedstrijden('Lou');
+        });
+    </script>
 </body>
 </html>
