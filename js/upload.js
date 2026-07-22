@@ -215,7 +215,8 @@ window.saveMatch = async function() {
         const spelerVal = document.getElementById('speler').value;
         
         const matchData = {
-            id: datumVal.replace(/-/g, '') + '-' + spelerVal.toLowerCase(),
+            // Uniek ID met toevoeging van Date.now() zodat deze nooit dubbel is
+            id: datumVal.replace(/-/g, '') + '-' + spelerVal.toLowerCase() + '-' + Date.now(),
             speler: spelerVal,
             datum: datumVal,
             seizoen: berekenSeizoen(datumVal),
