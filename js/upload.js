@@ -11,58 +11,55 @@ window.checkPin = async function() {
         document.getElementById('form-screen').style.display = "block";
         document.getElementById('datum').valueAsDate = new Date();
         
-        // Zodra ingelogd: start met ophalen van eerdere tegenstanders op de achtergrond!
+        // Zodra ingelogd: start met ophalen van eerdere tegenstanders!
+        document.getElementById('tegenstander').placeholder = "Ploegen laden... ⏳";
         await haalPloegenOp();
-        setupAutocomplete();
     } else {
         document.getElementById('pin-error').style.display = "block";
         document.getElementById('pincode-input').value = ""; 
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    const pinInput = document.getElementById('pincode-input');
-    if (pinInput) {
-        pinInput.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                window.checkPin();
-            }
-        });
-    }
-});
-
 // ==========================================
 // 2. AUTOCOMPLETE LOGICA
 // ==========================================
-
-// Haal unieke tegenstanders + hun laatst bekende logo op
 async function haalPloegenOp() {
     try {
-        const { data, error } = await supabaseClient.from('wedstrijden').select('tegenstander, logo_tegenstander');
-        if (error) throw error;
-
-        // Slim ontdubbelen: We willen elke ploeg maar 1 keer tonen
-        const uniekePloegenMap = new Map();
-        data.forEach(match => {
-            if (!match.tegenstander) return;
-            const naamClean = match.tegenstander.trim();
-            const naamLower = naamClean.toLowerCase();
+        const { data, error } = await supabaseClient
+            .from('wedstrijden')
+            .select('tegenstander, logo_tegenstander');
             
-            if (!uniekePloegenMap.has(naamLower)) {
-                uniekePloegenMap.set(naamLower, { naam: naamClean, logo: match.logo_tegenstander });
-            } else {
-                // Als we hem al kenden maar toen geen logo hadden, en nu wel: update het logo
-                if (!uniekePloegenMap.get(naamLower).logo && match.logo_tegenstander) {
-                    uniekePloegenMap.get(naamLower).logo = match.logo_tegenstander;
-                }
-            }
-        });
+        if (error) {
+            alert("Fout bij ophalen ploegen: " + error.message);
+            throw error;
+        }
+
+        const uniekePloegenMap = new Map();
         
-        // Zet om naar een simpele lijst
+        if (data && data.length > 0) {
+            data.forEach(match => {
+                if (!match.tegenstander) return;
+                const naamClean = match.tegenstander.trim();
+                const naamLower = naamClean.toLowerCase();
+                
+                if (!uniekePloegenMap.has(naamLower)) {
+                    uniekePloegenMap.set(naamLower, { naam: naamClean, logo: match.logo_tegenstander });
+                } else {
+                    if (!uniekePloegenMap.get(naamLower).logo && match.logo_tegenstander) {
+                        uniekePloegenMap.get(naamLower).logo = match.logo_tegenstander;
+                    }
+                }
+            });
+        }
+        
         bekendeTegenstanders = Array.from(uniekePloegenMap.values());
+        
+        // VISUELE CHECK: Laat in het vakje zien hoeveel ploegen hij kent!
+        document.getElementById('tegenstander').placeholder = `Typ om te zoeken in ${bekendeTegenstanders.length} bekende ploeg(en)...`;
+        
     } catch (err) {
         console.error("Fout bij ophalen tegenstanders:", err);
+        document.getElementById('tegenstander').placeholder = "Kon ploegen niet laden.";
     }
 }
 
@@ -73,10 +70,8 @@ function setupAutocomplete() {
     const logoStatus = document.getElementById('logo-gevonden-status');
     
     input.addEventListener('input', function() {
-        const val = this.value.toLowerCase();
+        const val = this.value.toLowerCase().trim();
         lijst.innerHTML = '';
-        
-        // Reset logo bij elke toetsaanslag
         geselecteerdBestaandLogo = null; 
         logoStatus.style.display = 'none';
 
@@ -85,7 +80,6 @@ function setupAutocomplete() {
             return;
         }
 
-        // Zoek naar matchende ploegen (bv. "Len" vindt "KFC Lennik")
         const matches = bekendeTegenstanders.filter(ploeg => ploeg.naam.toLowerCase().includes(val));
         
         if (matches.length > 0) {
@@ -94,19 +88,21 @@ function setupAutocomplete() {
                 const div = document.createElement('div');
                 div.className = 'autocomplete-item';
                 
-                // Laat een schildje zien als we geen logo hebben in de database
-                const logoHtml = ploeg.logo ? `<img src="${ploeg.logo}" class="autocomplete-logo">` : `<div class="autocomplete-logo">🛡️</div>`;
+                const logoHtml = ploeg.logo 
+                    ? `<img src="${ploeg.logo}" class="autocomplete-logo">` 
+                    : `<div class="autocomplete-logo">🛡️</div>`;
                 
                 div.innerHTML = `${logoHtml} ${ploeg.naam}`;
                 
-                // Wat gebeurt er als we op een optie klikken?
-                div.addEventListener('click', function() {
-                    input.value = ploeg.naam; // Vul exact de juiste naam in
+                // Muisklik op een ploeg
+                div.addEventListener('mousedown', function(e) {
+                    e.preventDefault(); // Voorkomt dat het toetsenbord sluit voor de klik registreert
+                    input.value = ploeg.naam; 
                     if (ploeg.logo) {
-                        geselecteerdBestaandLogo = ploeg.logo; // Bewaar logo in het geheugen
-                        logoStatus.style.display = 'block'; // Toon de groene "✅ Bekend logo" tekst
+                        geselecteerdBestaandLogo = ploeg.logo; 
+                        logoStatus.style.display = 'block'; 
                     }
-                    lijst.style.display = 'none'; // Verberg de lijst weer
+                    lijst.style.display = 'none'; 
                 });
                 lijst.appendChild(div);
             });
@@ -116,22 +112,44 @@ function setupAutocomplete() {
     });
 
     // Verberg lijst als we ergens anders klikken
-    document.addEventListener('click', function (e) {
-        if (e.target !== input) {
-            lijst.style.display = 'none';
-        }
+    input.addEventListener('blur', function () {
+        // Kleine vertraging zodat de klik op het lijstje eerst kan registreren
+        setTimeout(() => { lijst.style.display = 'none'; }, 150);
     });
     
-    // Als de gebruiker toch zélf een nieuw bestand kiest, overschrijven we de logica
     fileInput.addEventListener('change', function() {
         geselecteerdBestaandLogo = null;
         logoStatus.style.display = 'none';
     });
 }
 
+// Start de setup zodra de pagina inlaadt
+document.addEventListener('DOMContentLoaded', () => {
+    const pinInput = document.getElementById('pincode-input');
+    if (pinInput) {
+        pinInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                window.checkPin();
+            }
+        });
+    }
+    setupAutocomplete();
+});
+
 // ==========================================
-// 3. OVERIGE FUNCTIES (Afwezigheid, Seizoen, Uploads)
+// 3. OVERIGE FUNCTIES
 // ==========================================
+window.toggleAfwezig = function() {
+    const status = document.getElementById('status').value;
+    const redenBlok = document.getElementById('reden_afwezig_blok');
+    if (status === 'Afwezig') {
+        redenBlok.style.display = 'block';
+    } else {
+        redenBlok.style.display = 'none';
+        document.getElementById('reden_afwezig').value = '';
+    }
+};
 
 window.toggleKaarten = function() {
     const blok = document.getElementById('kaarten_blok');
@@ -140,7 +158,6 @@ window.toggleKaarten = function() {
         blok.style.display = 'flex';
     } else {
         blok.style.display = 'none';
-        // Zet terug op 0 als je het vinkje weer uitzet
         document.getElementById('geel').value = 0;
         document.getElementById('rood').value = 0;
     }
@@ -175,10 +192,8 @@ window.saveMatch = async function() {
         const logoBestand = document.getElementById('logo_tegenstander').files[0];
         const fotoBestanden = document.getElementById('fotos').files;
         
-        // --- DE MAGIE: Gebruik geselecteerdBestaandLogo als basis! ---
         let logoUrl = geselecteerdBestaandLogo; 
 
-        // Upload een nieuw logo als de gebruiker dat toch specifiek vraagt
         if (logoBestand) {
             submitBtn.innerText = "Nieuw logo uploaden...";
             logoUrl = await uploadBestandNaarSupabase(logoBestand, 'logos');
