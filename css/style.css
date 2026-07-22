@@ -1,124 +1,140 @@
 /* =========================================
-   1. BASIS & LETTERTYPE
+   1. KLEURENPALET & BASIS (PREMIUM UI)
    ========================================= */
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', sans-serif; }
-body { 
-    background-color: #f0f2f5; /* Iets zachter, moderner grijs */
-    color: #1a1a1a; 
-    -webkit-font-smoothing: antialiased; 
-    padding-bottom: 90px;
+:root {
+    /* Jouw custom palet uit de bijlage */
+    --lobster-pink: #DB5461;
+    --almond-silk: #FFD9CE;
+    --rebecca-purple: #593C8F;
+    --soft-cyan: #8EF9F3;
+    --space-indigo: #171738;
+    
+    /* Afgeleide kleuren voor de UI */
+    --bg-color: #FAF6F5; /* Een hele lichte variant van Almond Silk voor rust */
+    --card-shadow: 0 12px 32px rgba(23, 23, 56, 0.08); /* Space Indigo tinted shadow */
 }
 
-/* Animaties definiëren voor later gebruik */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', sans-serif; }
+
+body { 
+    background-color: var(--bg-color); 
+    color: var(--space-indigo); 
+    -webkit-font-smoothing: antialiased; 
+    padding-bottom: 100px;
+}
+
 @keyframes fadeUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 /* =========================================
-   2. HEADER (Gradients & Premium Look)
+   2. HEADER (Glassmorphism & Gradients)
    ========================================= */
 header { 
-    /* Subtiel verloop van bordeaux naar donker bordeaux */
-    background: linear-gradient(135deg, #8A1538 0%, #5a0d24 100%);
-    color: #D4AF37; 
+    background: linear-gradient(135deg, var(--space-indigo) 0%, var(--rebecca-purple) 100%);
+    color: var(--soft-cyan); 
     padding: 18px 20px; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    box-shadow: 0 4px 15px rgba(138, 21, 56, 0.3);
-    position: sticky; /* Blijft bovenaan plakken */
+    box-shadow: 0 8px 24px rgba(23, 23, 56, 0.2);
+    position: sticky; 
     top: 0;
     z-index: 100;
+    /* Moderne blur voor de header */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
-header h1 { font-size: 22px; font-weight: 900; letter-spacing: 0.5px; }
-header a { color: #fff; text-decoration: none; font-weight: 600; margin-left: 15px; font-size: 15px; opacity: 0.7; transition: 0.3s;}
-header a.active { color: #D4AF37; opacity: 1; font-weight: 800;}
+header h1 { font-size: 24px; font-weight: 900; letter-spacing: 0.5px; }
+header a { color: var(--almond-silk); text-decoration: none; font-weight: 600; margin-left: 15px; font-size: 15px; opacity: 0.8; transition: 0.3s;}
+header a.active { color: var(--soft-cyan); opacity: 1; font-weight: 900;}
 
 /* =========================================
-   3. TABS (Moderne iOS-stijl 'Pill')
+   3. TABS (Zachte Almond Silk stijl)
    ========================================= */
 .tabs { 
     display: flex; 
-    background: #e4e6eb; 
+    background: var(--almond-silk); 
     border-radius: 30px; 
     margin: 20px; 
-    padding: 5px;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    padding: 6px;
+    box-shadow: inset 0 2px 6px rgba(23, 23, 56, 0.05);
 }
 .tab-btn { 
     flex: 1; padding: 12px; border: none; background: transparent; 
-    font-size: 16px; font-weight: 800; cursor: pointer; color: #666; 
-    border-radius: 25px;
+    font-size: 16px; font-weight: 800; cursor: pointer; color: var(--space-indigo); 
+    opacity: 0.6; border-radius: 25px;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .tab-btn.active { 
     background: #fff; 
-    color: #8A1538; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+    color: var(--rebecca-purple); 
+    opacity: 1;
+    box-shadow: 0 4px 12px rgba(23, 23, 56, 0.1); 
 }
 
 /* =========================================
-   4. WEDSTRIJD KAARTJES (Zwevend & Animatie)
+   4. WEDSTRIJD KAARTJES
    ========================================= */
 .tab-content { display: none; padding: 0 20px; }
 .tab-content.active { display: block; animation: fadeUp 0.4s ease forwards; }
-.tab-content h2 { font-size: 18px; color: #1a1a1a; margin-bottom: 15px; font-weight: 900; }
+.tab-content h2 { font-size: 18px; color: var(--space-indigo); margin-bottom: 15px; font-weight: 900; }
 
 .match-card {
     background: #fff;
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 16px;
-    margin-bottom: 15px;
-    /* Brede, zachte schaduw in plaats van harde randen */
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+    box-shadow: var(--card-shadow);
     display: flex;
     align-items: center;
     text-decoration: none;
-    color: #1a1a1a;
-    border-left: 6px solid #ccc; 
+    color: var(--space-indigo);
+    border-left: 6px solid var(--almond-silk); 
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     animation: fadeUp 0.5s ease backwards;
 }
-/* Actieve klik op mobiel */
-.match-card:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
-.match-card.win { border-left-color: #2ecc71; }
-.match-card.loss { border-left-color: #e74c3c; }
-.match-card.draw { border-left-color: #f1c40f; }
+.match-card:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(23, 23, 56, 0.04); }
+
+/* Dynamische kleuren voor resultaten */
+.match-card.win { border-left-color: var(--soft-cyan); }
+.match-card.loss { border-left-color: var(--lobster-pink); }
+.match-card.draw { border-left-color: var(--rebecca-purple); }
 
 .match-logo {
-    width: 50px; height: 50px; border-radius: 12px;
-    object-fit: cover; margin-right: 15px;
-    background: #f8f9fa; display: flex;
+    width: 54px; height: 54px; border-radius: 14px;
+    object-fit: cover; margin-right: 16px;
+    background: var(--almond-silk); display: flex;
     align-items: center; justify-content: center;
-    font-size: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    font-size: 24px; color: var(--space-indigo);
 }
 
 .match-info { flex: 1; }
-.match-info h3 { font-size: 17px; margin-bottom: 4px; font-weight: 800; }
-.match-info p { font-size: 13px; color: #888; font-weight: 600; }
+.match-info h3 { font-size: 18px; margin-bottom: 4px; font-weight: 900; }
+.match-info p { font-size: 13px; color: var(--rebecca-purple); font-weight: 700; opacity: 0.8; }
 
 .match-score {
     font-size: 22px; font-weight: 900;
-    color: #8A1538; background: #f0f2f5;
-    padding: 10px 14px; border-radius: 12px;
-    min-width: 70px; text-align: center;
+    color: var(--space-indigo); 
+    background: var(--soft-cyan);
+    padding: 12px 16px; border-radius: 14px;
+    min-width: 75px; text-align: center;
+    box-shadow: 0 4px 12px rgba(142, 249, 243, 0.4);
 }
 
 /* =========================================
-   5. ZWEVENDE KNOP (FAB met glow effect)
+   5. ZWEVENDE KNOP (+ Match)
    ========================================= */
 .fab-btn { 
-    position: fixed; bottom: 25px; right: 25px; 
-    background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); 
-    color: #D4AF37; 
+    position: fixed; bottom: 30px; right: 25px; 
+    background: var(--lobster-pink); 
+    color: #fff; 
     padding: 16px 28px; border-radius: 50px; 
     text-decoration: none; font-weight: 900; font-size: 16px;
-    /* Goudkleurige glow */
-    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3); 
-    border: 1px solid #D4AF37;
+    box-shadow: 0 10px 24px rgba(219, 84, 97, 0.4); 
     transition: transform 0.2s ease;
     z-index: 999;
 }
@@ -128,84 +144,106 @@ header a.active { color: #D4AF37; opacity: 1; font-weight: 800;}
    6. DETAILS & DASHBOARD (Scoreborden)
    ========================================= */
 .detail-header { text-align: center; margin-bottom: 25px; animation: fadeUp 0.4s ease backwards; }
-.detail-header h2 { font-size: 28px; color: #1a1a1a; margin-bottom: 5px; font-weight: 900; }
-.detail-header p { color: #666; font-size: 14px; font-weight: 600;}
+.detail-header h2 { font-size: 28px; color: var(--space-indigo); margin-bottom: 5px; font-weight: 900; }
+.detail-header p { color: var(--rebecca-purple); font-size: 14px; font-weight: 700;}
 
 .scoreboard {
     display: flex; justify-content: center; align-items: center;
-    background: linear-gradient(135deg, #8A1538 0%, #5a0d24 100%); 
-    color: #D4AF37;
-    padding: 25px; border-radius: 20px; margin-bottom: 25px;
-    box-shadow: 0 10px 30px rgba(138, 21, 56, 0.25);
+    background: var(--space-indigo); 
+    color: var(--soft-cyan);
+    padding: 30px; border-radius: 24px; margin-bottom: 25px;
+    box-shadow: 0 14px 30px rgba(23, 23, 56, 0.25);
     animation: fadeUp 0.5s ease backwards; animation-delay: 0.1s;
+    position: relative;
+    overflow: hidden;
 }
-.score-block { text-align: center; flex: 1; }
-.score-block span { display: block; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #fff; opacity: 0.7; font-weight: 800; margin-bottom: 5px;}
-.score-block strong { font-size: 42px; font-weight: 900; line-height: 1; }
-.score-divider { font-size: 28px; font-weight: 900; padding: 0 20px; opacity: 0.5; }
+/* Subtiele glow in het scorebord */
+.scoreboard::after {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(142,249,243,0.1) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.score-block { text-align: center; flex: 1; z-index: 2; }
+.score-block span { display: block; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: var(--almond-silk); opacity: 0.9; font-weight: 800; margin-bottom: 8px;}
+.score-block strong { font-size: 46px; font-weight: 900; line-height: 1; }
+.score-divider { font-size: 30px; font-weight: 900; padding: 0 20px; color: var(--rebecca-purple); z-index: 2;}
 
 .stats-card {
-    background: #fff; padding: 20px; border-radius: 16px;
-    margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    background: #fff; padding: 20px; border-radius: 20px;
+    margin-bottom: 20px; box-shadow: var(--card-shadow);
     animation: fadeUp 0.5s ease backwards; animation-delay: 0.2s;
 }
-.stats-card p { margin-bottom: 10px; font-size: 16px; }
-.stats-card p strong { color: #8A1538; font-weight: 800; }
+.stats-card p { margin-bottom: 12px; font-size: 16px; color: var(--space-indigo); }
+.stats-card p strong { color: var(--rebecca-purple); font-weight: 900; }
 
-.photo-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 30px;}
+.photo-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 30px;}
 .photo-gallery img {
     width: 100%; height: 160px; object-fit: cover;
-    border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-radius: 16px; box-shadow: 0 6px 16px rgba(23, 23, 56, 0.1);
     transition: transform 0.2s;
 }
-.photo-gallery img:active { transform: scale(0.97); }
+.photo-gallery img:active { transform: scale(0.96); }
 
 /* =========================================
    7. STATS GRID (Dashboard kaarten)
    ========================================= */
 .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
 .stat-box {
-    background: #fff; padding: 25px 15px; border-radius: 16px;
-    text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-    border-top: 5px solid #8A1538;
+    background: #fff; padding: 25px 15px; border-radius: 20px;
+    text-align: center; box-shadow: var(--card-shadow);
+    border-top: 6px solid var(--rebecca-purple);
     animation: fadeUp 0.5s ease backwards;
 }
-.stat-box.gold { border-top-color: #D4AF37; }
-.stat-box.dark { border-top-color: #1a1a1a; background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); }
-.stat-box.dark .stat-value, .stat-box.dark .stat-label { color: #fff; }
+.stat-box.gold { border-top-color: var(--soft-cyan); background: var(--space-indigo); }
+.stat-box.gold .stat-value { color: var(--soft-cyan); }
+.stat-box.gold .stat-label { color: var(--almond-silk); }
 
-.stat-value { display: block; font-size: 32px; font-weight: 900; color: #1a1a1a; margin-bottom: 5px; line-height: 1;}
-.stat-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+.stat-box.dark { border-top-color: var(--lobster-pink); background: var(--rebecca-purple); }
+.stat-box.dark .stat-value { color: #fff; }
+.stat-box.dark .stat-label { color: var(--almond-silk); }
+
+.stat-value { display: block; font-size: 34px; font-weight: 900; color: var(--space-indigo); margin-bottom: 6px; line-height: 1;}
+.stat-label { font-size: 12px; color: var(--rebecca-purple); text-transform: uppercase; letter-spacing: 1px; font-weight: 900; }
 .stat-full-width { grid-column: span 2; }
 
 /* =========================================
    8. FORMUILIEREN & PINCODE
    ========================================= */
-.form-group { margin-bottom: 20px; }
-.form-group label { display: block; font-weight: 800; margin-bottom: 8px; color: #1a1a1a; font-size: 15px;}
+.form-group { margin-bottom: 22px; }
+.form-group label { display: block; font-weight: 900; margin-bottom: 10px; color: var(--space-indigo); font-size: 15px;}
 .form-group input, .form-group select { 
-    width: 100%; padding: 14px; border: 2px solid #e4e6eb; 
-    border-radius: 14px; font-size: 16px; background-color: #f8f9fa;
-    outline: none; transition: border-color 0.3s, background-color 0.3s;
-    font-weight: 600; color: #333;
+    width: 100%; padding: 16px; border: 2px solid var(--almond-silk); 
+    border-radius: 16px; font-size: 16px; background-color: #fff;
+    outline: none; transition: all 0.3s ease;
+    font-weight: 700; color: var(--space-indigo);
 }
-.form-group input:focus, .form-group select:focus { border-color: #D4AF37; background-color: #fff;}
+.form-group input:focus, .form-group select:focus { 
+    border-color: var(--rebecca-purple); 
+    box-shadow: 0 0 0 4px rgba(89, 60, 143, 0.1); 
+}
 .form-row { display: flex; gap: 15px; }
 .form-row .form-group { flex: 1; }
 
 .submit-btn {
-    width: 100%; background: linear-gradient(135deg, #8A1538 0%, #5a0d24 100%); color: #D4AF37;
-    padding: 16px; border: none; border-radius: 14px;
-    font-size: 18px; font-weight: 900; margin-top: 15px; margin-bottom: 30px;
-    box-shadow: 0 8px 20px rgba(138, 21, 56, 0.3); cursor: pointer; transition: 0.2s;
+    width: 100%; background: var(--lobster-pink); color: #fff;
+    padding: 18px; border: none; border-radius: 16px;
+    font-size: 18px; font-weight: 900; margin-top: 20px; margin-bottom: 30px;
+    box-shadow: 0 10px 24px rgba(219, 84, 97, 0.3); cursor: pointer; transition: 0.2s;
 }
 .submit-btn:active { transform: scale(0.98); }
 
 /* Pincode & Lege statussen */
-.pin-container { border-radius: 20px; border-top: none; }
-.pin-input { font-size: 32px; letter-spacing: 15px; border-radius: 16px; background: #f8f9fa;}
-.empty-state, .empty-state-noe { text-align: center; margin-top: 60px; color: #999; font-weight: 600; }
-.empty-state-noe h2 { font-size: 26px; color: #1a1a1a; margin-bottom: 12px; font-weight: 900;}
+.pin-container { border-radius: 24px; border-top: none; background: #fff; box-shadow: var(--card-shadow); }
+.pin-input { font-size: 36px; letter-spacing: 18px; border-radius: 20px; background: var(--almond-silk); color: var(--space-indigo); border: none; padding: 20px;}
+.pin-input:focus { border: none; box-shadow: 0 0 0 4px rgba(89, 60, 143, 0.2); }
+.empty-state, .empty-state-noe { text-align: center; margin-top: 60px; color: var(--rebecca-purple); font-weight: 800; }
+.empty-state-noe h2 { font-size: 28px; color: var(--space-indigo); margin-bottom: 12px; font-weight: 900;}
 
 /* WhatsApp knop */
-.wa-share-btn { border-radius: 14px; font-size: 17px; }
+.wa-share-btn { 
+    background-color: #25D366; /* Behoud WhatsApp groen voor herkenning */
+    border-radius: 16px; 
+    font-size: 17px; 
+    box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
+}
