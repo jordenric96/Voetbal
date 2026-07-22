@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Match Details</title>
     <link rel="stylesheet" href="css/style.css">
-    <meta name="theme-color" content="#8A1538">
+    <meta name="theme-color" content="#171738">
 </head>
 <body>
     <header>
@@ -24,10 +24,8 @@
     <script src="js/database.js"></script>
 
     <script>
-        // Wereldwijde variabele om matchdata even in te bewaren voor de deelfunctie
         let huidigeMatch = null;
 
-        // De functie die wordt aangeroepen als je op de WhatsApp knop klikt
         window.deelViaWhatsApp = function() {
             if (!huidigeMatch) return;
 
@@ -51,13 +49,8 @@
                 }
             }
             
-            // Plak de link van de huidige pagina erbij
             tekst += `Bekijk alle foto's en details in de app:\n${window.location.href}`;
-
-            // Codeer de tekst zodat speciale tekens en spaties goed in WhatsApp komen
             const encodedTekst = encodeURIComponent(tekst);
-            
-            // Open WhatsApp (werkt op gsm direct in de app, op pc in WhatsApp Web)
             window.open(`https://wa.me/?text=${encodedTekst}`, '_blank');
         };
 
@@ -79,8 +72,6 @@
                     .single();
 
                 if (error) throw error;
-                
-                // Bewaar de match globaal voor de WhatsApp functie
                 huidigeMatch = match;
 
                 const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -96,6 +87,12 @@
                     });
                     galerijHtml += '</div>';
                 }
+
+                // Check of er kaarten zijn, zo niet, toon niets
+                const heeftKaarten = match.kaarten && (match.kaarten.geel > 0 || match.kaarten.rood > 0);
+                const kaartenHtml = heeftKaarten 
+                    ? `<p><strong>Kaarten:</strong> ${match.kaarten.geel} Geel, ${match.kaarten.rood} Rood</p>` 
+                    : ``;
 
                 contentDiv.innerHTML = `
                     <div class="detail-header">
@@ -117,20 +114,20 @@
                     </div>
 
                     <div class="stats-card">
-                        <h3 style="margin-bottom: 10px; color:#1a1a1a;">Statistieken ${match.speler}</h3>
+                        <h3 style="margin-bottom: 10px; color: var(--space-indigo);">Statistieken ${match.speler}</h3>
                         ${match.status === 'Afwezig' 
-                            ? `<p style="color:#e74c3c; font-weight:bold;">Afwezig: ${match.reden_afwezig}</p>` 
+                            ? `<p style="color: var(--lobster-pink); font-weight:bold;">Afwezig: ${match.reden_afwezig}</p>` 
                             : `<p><strong>Doelpunten:</strong> ${match.doelpunten_speler} &nbsp;|&nbsp; <strong>Assists:</strong> ${assists}</p>`
                         }
                         <p><strong>Locatie:</strong> ${match.locatie}</p>
-                        <p><strong>Kaarten:</strong> ${match.kaarten.geel} Geel, ${match.kaarten.rood} Rood</p>
+                        ${kaartenHtml}
                     </div>
 
                     <button class="wa-share-btn" onclick="deelViaWhatsApp()">
                         <span>📱</span> Deel via WhatsApp
                     </button>
 
-                    <h3 style="margin-bottom: 15px; color:#1a1a1a; margin-top:25px;">Wedstrijdfoto's</h3>
+                    <h3 style="margin-bottom: 15px; color: var(--space-indigo); margin-top:25px;">Wedstrijdfoto's</h3>
                     ${galerijHtml}
                 `;
 
