@@ -20,14 +20,12 @@
         <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
     </div>
 
-    <!-- Hier komen de quick stats en de wedstrijden -->
     <main id="wedstrijden-lijst" class="tab-content active" style="padding-bottom: 120px;">
         <p class="empty-state">Gegevens laden... ⏳</p>
     </main>
 
     <a href="add-match.html" class="fab-btn">+ Match</a>
 
-    <!-- Supabase SDK inladen -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
 
@@ -54,7 +52,6 @@
                     return;
                 }
 
-                // 1. Bereken de Quick Stats
                 let gespeeld = 0;
                 let goals = 0;
                 let assists = 0;
@@ -67,27 +64,28 @@
                     }
                 });
 
-                // Bouw de HTML voor de Quick Stats
+                // De nieuwe Premium Kaartjes HTML
                 let html = `
-                    <div class="quick-stats">
-                        <div class="quick-stat-box">
-                            <span class="qs-value">🏟️ ${gespeeld}</span>
-                            <span class="qs-label">Matchen</span>
+                    <div class="quick-stats-container">
+                        <div class="qs-card indigo">
+                            <span class="qs-icon">🏟️</span>
+                            <span class="qs-num">${gespeeld}</span>
+                            <span class="qs-text">Matchen</span>
                         </div>
-                        <div class="quick-stat-box cyan">
-                            <span class="qs-value">⚽ ${goals}</span>
-                            <span class="qs-label">Goals</span>
+                        <div class="qs-card purple">
+                            <span class="qs-icon">⚽</span>
+                            <span class="qs-num">${goals}</span>
+                            <span class="qs-text">Goals</span>
                         </div>
-                        <div class="quick-stat-box pink">
-                            <span class="qs-value">👟 ${assists}</span>
-                            <span class="qs-label">Assists</span>
+                        <div class="qs-card pink">
+                            <span class="qs-icon">👟</span>
+                            <span class="qs-num">${assists}</span>
+                            <span class="qs-text">Assists</span>
                         </div>
                     </div>
                 `;
 
-                // 2. Bouw de HTML voor de wedstrijdkaartjes
                 matchen.forEach(match => {
-                    // Win / Verlies / Gelijkspel bepalen voor het kleurtje van de rand
                     const isWin = (match.locatie === 'Thuis' && match.score_thuis > match.score_uit) || 
                                   (match.locatie === 'Uit' && match.score_uit > match.score_thuis);
                     const isLoss = (match.locatie === 'Thuis' && match.score_thuis < match.score_uit) || 
@@ -97,10 +95,8 @@
                     if (isWin) borderClass = 'win';
                     if (isLoss) borderClass = 'loss';
                     
-                    // Datum mooi formatteren
                     const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' });
                     
-                    // Logo of fallback schildje
                     const logoHtml = match.logo_tegenstander 
                         ? `<img src="${match.logo_tegenstander}" class="match-logo">`
                         : `<div class="match-logo">🛡️</div>`;
@@ -117,7 +113,6 @@
                     `;
                 });
 
-                // Toon alles op het scherm
                 container.innerHTML = html;
 
             } catch (err) {
@@ -126,14 +121,12 @@
             }
         }
 
-        // Functie om te wisselen tussen Lou en Noé
         window.wisselSpeler = function(evt, speler) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             evt.currentTarget.classList.add('active');
             laadWedstrijden(speler);
         };
 
-        // Start met het laden van Lou zijn wedstrijden
         document.addEventListener('DOMContentLoaded', () => {
             laadWedstrijden('Lou');
         });

@@ -1,4 +1,3 @@
-// Variabelen voor de autocomplete
 let bekendeTegenstanders = [];
 let geselecteerdBestaandLogo = null;
 
@@ -19,19 +18,14 @@ window.checkPin = async function() {
     }
 };
 
-// ==========================================
 // 2. AUTOCOMPLETE LOGICA
-// ==========================================
 async function haalPloegenOp() {
     try {
         const { data, error } = await supabaseClient
             .from('wedstrijden')
             .select('tegenstander, logo_tegenstander');
             
-        if (error) {
-            alert("Fout bij ophalen ploegen: " + error.message);
-            throw error;
-        }
+        if (error) throw error;
 
         const uniekePloegenMap = new Map();
         
@@ -62,7 +56,18 @@ async function haalPloegenOp() {
 
 function setupAutocomplete() {
     const input = document.getElementById('tegenstander');
-    const lijst = document.getElementById('autocomplete-lijst');
+    if (!input) return;
+
+    // MAGIE: Als het onzichtbare lijstje niet bestaat in de HTML, bouwen we het nu zelf!
+    let lijst = document.getElementById('autocomplete-lijst');
+    if (!lijst) {
+        lijst = document.createElement('div');
+        lijst.id = 'autocomplete-lijst';
+        lijst.className = 'autocomplete-items';
+        input.parentNode.style.position = 'relative'; 
+        input.parentNode.insertBefore(lijst, input.nextSibling);
+    }
+
     const fileInput = document.getElementById('logo_tegenstander');
     const logoStatus = document.getElementById('logo-gevonden-status');
     
@@ -70,7 +75,7 @@ function setupAutocomplete() {
         const val = this.value.toLowerCase().trim();
         lijst.innerHTML = '';
         geselecteerdBestaandLogo = null; 
-        logoStatus.style.display = 'none';
+        if (logoStatus) logoStatus.style.display = 'none';
 
         if (!val) {
             lijst.style.display = 'none';
@@ -91,13 +96,12 @@ function setupAutocomplete() {
                 
                 div.innerHTML = `${logoHtml} ${ploeg.naam}`;
                 
-                // Muisklik of touch op een ploeg
                 div.addEventListener('mousedown', function(e) {
-                    e.preventDefault(); // Voorkom dat toetsenbord sluit vóór de klik telt
+                    e.preventDefault(); 
                     input.value = ploeg.naam; 
                     if (ploeg.logo) {
                         geselecteerdBestaandLogo = ploeg.logo; 
-                        logoStatus.style.display = 'block'; 
+                        if (logoStatus) logoStatus.style.display = 'block'; 
                     }
                     lijst.style.display = 'none'; 
                 });
@@ -108,17 +112,18 @@ function setupAutocomplete() {
         }
     });
 
-    // Fix: Verberg lijst alleen als we ECHT ergens anders op het scherm klikken
     document.addEventListener('click', function (e) {
         if (e.target !== input && e.target !== lijst) {
             lijst.style.display = 'none';
         }
     });
     
-    fileInput.addEventListener('change', function() {
-        geselecteerdBestaandLogo = null;
-        logoStatus.style.display = 'none';
-    });
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            geselecteerdBestaandLogo = null;
+            if (logoStatus) logoStatus.style.display = 'none';
+        });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -134,9 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAutocomplete();
 });
 
-// ==========================================
 // 3. OVERIGE FUNCTIES
-// ==========================================
 window.toggleAfwezig = function() {
     const status = document.getElementById('status').value;
     const redenBlok = document.getElementById('reden_afwezig_blok');
