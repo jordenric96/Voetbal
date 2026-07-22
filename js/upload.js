@@ -18,12 +18,21 @@ window.checkPin = async function() {
         if (editId) {
             await laadWedstrijdVoorBewerken(editId);
         } else {
-            // NIEUWE MATCH: Haal de laatst gebruikte eigen ploeg op!
-            const { data: lastMatch } = await supabaseClient.from('wedstrijden').select('eigen_ploeg, logo_eigen_ploeg').order('datum', { ascending: false }).limit(1).single();
-            if (lastMatch) {
-                document.getElementById('eigen_ploeg').value = lastMatch.eigen_ploeg || 'KV Kester Gooik';
-                bestaandEigenLogo = lastMatch.logo_eigen_ploeg;
+            // NIEUWE MATCH: Haal het geheugen van de telefoon op!
+            const opgeslagenPloeg = localStorage.getItem('laatsteEigenPloeg');
+            const opgeslagenLogo = localStorage.getItem('laatsteEigenLogo');
+            
+            if (opgeslagenPloeg) {
+                document.getElementById('eigen_ploeg').value = opgeslagenPloeg;
+            } else {
+                document.getElementById('eigen_ploeg').value = "KV Kester Gooik"; // Standaard
             }
+
+            if (opgeslagenLogo) {
+                bestaandEigenLogo = opgeslagenLogo;
+                document.getElementById('logo-eigen-gevonden-status').style.display = 'block';
+            }
+            
             addScoreRow();
         }
     } else {
@@ -86,7 +95,12 @@ async function laadWedstrijdVoorBewerken(id) {
             }
 
             geselecteerdBestaandLogo = data.logo_tegenstander; 
-            bestaandEigenLogo = data.logo_eigen_ploeg;
+            
+            if (data.logo_eigen_ploeg) {
+                bestaandEigenLogo = data.logo_eigen_ploeg;
+                document.getElementById('logo-eigen-gevonden-status').style.display = 'block';
+            }
+
             bestaandeFotos = data.fotos || [];
             document.getElementById('matchForm').dataset.editId = data.id;
             document.querySelector('.submit-btn').innerText = "Wijzigingen Opslaan";
@@ -143,6 +157,11 @@ function setupAutocomplete() {
     });
     document.addEventListener('click', function (e) { if (e.target !== input && e.target !== lijst) lijst.style.display = 'none'; });
     if (fileInput) fileInput.addEventListener('change', function() { geselecteerdBestaandLogo = null; if (logoStatus) logoStatus.style.display = 'none'; });
+    
+    // Verberg het 'gevonden' vinkje als de gebruiker toch handmatig een nieuw logo uploadt
+    const eigenFileInput = document.getElementById('logo_eigen_ploeg');
+    const eigenLogoStatus = document.getElementById('logo-eigen-gevonden-status');
+    if (eigenFileInput) eigenFileInput.addEventListener('change', function() { bestaandEigenLogo = null; if(eigenLogoStatus) eigenLogoStatus.style.display = 'none'; });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -168,8 +187,35 @@ async function uploadBestandNaarSupabase(bestand, mapNaam) {
 
 window.saveMatch = async function() {
     const submitBtn = document.querySelector('.submit-btn');
-    submitBtn.innerText = "Bezig met opslaan... ⏳"; submitBtn.disabled = true;
+    submitBtn.innerText = "Bezig met valideren... ⏳"; 
+    submitBtn.disabled = true;
 
+    // 1. BEVEILIGING: VALIDATIE VAN DE DOELPUNTEN (Meteen stoppen bij onmogelijke cijfers)
+    const scoreRows = document.querySelectorAll('.score-row-item');
+    const speelLocatie = document.getElementById('locatie').value;
+    let validatieFout = null;
+
+    scoreRows.forEach((row, index) => {
+        const t = parseInt(row.querySelector('.mini-score-thuis').value) || 0;
+        const u = parseInt(row.querySelector('.mini-score-uit').value) || 0;
+        const g = parseInt(row.querySelector('.mini-score-goals').value) || 0;
+        
+        // Welke score is van de eigen ploeg?
+        const eigenScore = (speelLocatie === 'Thuis') ? t : u;
+
+        if (g > eigenScore) {
+            validatieFout = `Fout in Match ${index + 1}: Je speler kan geen ${g} goals maken als de eigen ploeg er maar ${eigenScore} scoort!`;
+        }
+    });
+
+    if (validatieFout) {
+        alert(validatieFout);
+        submitBtn.innerText = "Opslaan";
+        submitBtn.disabled = false;
+        return; // STOP DE UPLOAD!
+    }
+
+    // 2. DOORGAAN MET UPLOADEN ALS ALLES KLOPT
     try {
         const logoBestandTegenstander = document.getElementById('logo_tegenstander').files[0];
         const logoBestandEigen = document.getElementById('logo_eigen_ploeg').files[0];
@@ -193,7 +239,6 @@ window.saveMatch = async function() {
         }
 
         submitBtn.innerText = "Gegevens opslaan...";
-        const scoreRows = document.querySelectorAll('.score-row-item');
         let miniScoresArray = [];
         let totaalThuis = 0, totaalUit = 0, totaalGoals = 0, totaalAssists = 0;
         let wasDoelmanOoit = false;
@@ -212,6 +257,7 @@ window.saveMatch = async function() {
         const datumVal = document.getElementById('datum').value;
         const spelerVal = document.getElementById('speler').value;
         const editId = document.getElementById('matchForm').dataset.editId;
+        const ingevuldeEigenPloeg = document.getElementById('eigen_ploeg').value;
         
         const matchData = {
             id: editId ? editId : datumVal.replace(/-/g, '') + '-' + spelerVal.toLowerCase() + '-' + Date.now(),
@@ -219,11 +265,11 @@ window.saveMatch = async function() {
             datum: datumVal,
             seizoen: berekenSeizoen(datumVal),
             tegenstander: document.getElementById('tegenstander').value,
-            locatie: document.getElementById('locatie').value,
-            status: "Meegedaan", // Altijd meegedaan nu!
+            locatie: speelLocatie,
+            status: "Meegedaan",
             opmerking: document.getElementById('opmerking').value,
             
-            eigen_ploeg: document.getElementById('eigen_ploeg').value,
+            eigen_ploeg: ingevuldeEigenPloeg,
             logo_eigen_ploeg: logoEigenUrl,
             categorie: document.getElementById('categorie').value,
             match_format: document.getElementById('match_format').value,
@@ -240,6 +286,13 @@ window.saveMatch = async function() {
 
         const { error } = await supabaseClient.from('wedstrijden').upsert([matchData]);
         if (error) throw error;
+
+        // 3. ONTHOUD DE EIGEN PLOEG VOOR DE VOLGENDE KEER!
+        localStorage.setItem('laatsteEigenPloeg', ingevuldeEigenPloeg);
+        if (logoEigenUrl) {
+            localStorage.setItem('laatsteEigenLogo', logoEigenUrl);
+        }
+
         alert(editId ? "Match succesvol bijgewerkt!" : "Match succesvol opgeslagen!");
         window.location.href = "index.html";
     } catch (err) { alert("Fout: " + err.message); submitBtn.innerText = "Opslaan"; submitBtn.disabled = false; }
