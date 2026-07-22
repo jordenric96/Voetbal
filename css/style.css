@@ -1,44 +1,67 @@
-/* Basis PWA reset voor een app-gevoel */
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-body { background-color: #f4f7f6; color: #333; -webkit-font-smoothing: antialiased; }
+/* Speels maar strak lettertype inladen */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
 
-/* Header */
+/* Basis PWA reset */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', sans-serif; }
+body { background-color: #f8f9fa; color: #1a1a1a; -webkit-font-smoothing: antialiased; }
+
+/* Header - Bordeaux met Goud */
 header { 
-    background-color: #2ecc71; 
-    color: white; 
+    background-color: #8A1538; 
+    color: #D4AF37; 
     padding: 15px 20px; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
+    border-bottom: 4px solid #1a1a1a;
 }
-header h1 { font-size: 20px; }
-header a { color: white; text-decoration: none; font-weight: bold; margin-left: 15px; font-size: 14px; opacity: 0.8;}
-header a.active { opacity: 1; border-bottom: 2px solid white; padding-bottom: 2px;}
+header h1 { font-size: 22px; font-weight: 900; letter-spacing: 0.5px; }
+header a { color: #fff; text-decoration: none; font-weight: 700; margin-left: 15px; font-size: 15px; opacity: 0.7;}
+header a.active { color: #D4AF37; opacity: 1; border-bottom: 2px solid #D4AF37; padding-bottom: 2px;}
 
 /* Tabs */
-.tabs { display: flex; background: white; border-bottom: 1px solid #ddd; }
+.tabs { display: flex; background: #fff; border-bottom: 2px solid #eaeaea; }
 .tab-btn { 
     flex: 1; padding: 15px; border: none; background: none; 
-    font-size: 16px; font-weight: bold; cursor: pointer; color: #999; 
+    font-size: 18px; font-weight: 900; cursor: pointer; color: #ccc; 
+    transition: all 0.2s ease-in-out;
 }
-.tab-btn.active { color: #2ecc71; border-bottom: 3px solid #2ecc71; }
+.tab-btn.active { color: #8A1538; border-bottom: 4px solid #D4AF37; }
 
 /* Tab inhoud */
-.tab-content { display: none; padding: 20px; padding-bottom: 80px; /* Ruimte voor de FAB */ }
+.tab-content { display: none; padding: 20px; padding-bottom: 90px; }
 .tab-content.active { display: block; }
-.tab-content h2 { font-size: 16px; color: #666; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+.tab-content h2 { font-size: 18px; color: #8A1538; margin-bottom: 15px; font-weight: 900; }
 
-/* Zwevende knop (+ Match) */
+/* Zwevende knop (+ Match) - Zwart met goud detail */
 .fab-btn { 
     position: fixed; bottom: 25px; right: 25px; 
-    background-color: #2ecc71; color: white; 
+    background-color: #1a1a1a; color: #D4AF37; 
     padding: 15px 25px; border-radius: 50px; 
-    text-decoration: none; font-weight: bold; 
-    box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4); 
+    text-decoration: none; font-weight: 900; font-size: 16px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
+    border: 2px solid #D4AF37;
+}
+
+/* Formulieren styling (voor add-match.html) */
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-weight: 700; margin-bottom: 5px; color: #1a1a1a; }
+.form-group input, .form-group select { 
+    width: 100%; padding: 12px; border: 2px solid #ddd; 
+    border-radius: 12px; font-size: 16px; background-color: #fff;
+    outline: none; transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus { border-color: #8A1538; }
+.form-row { display: flex; gap: 15px; }
+.form-row .form-group { flex: 1; }
+
+.submit-btn {
+    width: 100%; background-color: #8A1538; color: #D4AF37;
+    padding: 15px; border: none; border-radius: 12px;
+    font-size: 18px; font-weight: 900; margin-top: 10px;
+    box-shadow: 0 4px 10px rgba(138, 21, 56, 0.3); cursor: pointer;
 }
 
 /* Lege statussen */
-.empty-state { text-align: center; margin-top: 40px; color: #999; font-style: italic; }
-.empty-state-noe { text-align: center; margin-top: 60px; }
-.empty-state-noe h2 { font-size: 22px; color: #333; text-transform: none; margin-bottom: 10px;}
-.empty-state-noe p { color: #666; line-height: 1.5; }
+.empty-state, .empty-state-noe { text-align: center; margin-top: 40px; color: #999; }
+.empty-state-noe h2 { font-size: 24px; color: #1a1a1a; margin-bottom: 10px; }

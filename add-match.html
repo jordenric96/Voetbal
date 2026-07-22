@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Match Toevoegen</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="theme-color" content="#8A1538">
+</head>
+<body>
+    <header>
+        <h1>+ Nieuwe Match</h1>
+        <nav>
+            <a href="index.html">Annuleer</a>
+        </nav>
+    </header>
+
+    <main style="padding: 20px;">
+        <form id="matchForm">
+            <!-- Speler & Datum -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Speler</label>
+                    <select id="speler" required>
+                        <option value="Lou">Lou</option>
+                        <option value="Noé">Noé</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Datum</label>
+                    <input type="date" id="datum" required>
+                </div>
+            </div>
+
+            <!-- Wedstrijd details -->
+            <div class="form-group">
+                <label>Type Wedstrijd</label>
+                <select id="type_wedstrijd" required>
+                    <option value="Competitie">Competitie</option>
+                    <option value="Toernooi">Toernooi</option>
+                    <option value="Vriendschappelijk">Vriendschappelijk</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Tegenstander</label>
+                <input type="text" id="tegenstander" placeholder="Bijv. KFC Lennik" required>
+            </div>
+
+            <!-- Logo Tegenstander -->
+            <div class="form-group">
+                <label>Logo Tegenstander (optioneel)</label>
+                <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
+            </div>
+
+            <!-- Locatie & Status -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Locatie</label>
+                    <select id="locatie" required>
+                        <option value="Thuis">Thuis</option>
+                        <option value="Uit">Uit</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="status" onchange="toggleAfwezig()" required>
+                        <option value="Meegedaan">Meegedaan</option>
+                        <option value="Afwezig">Afwezig</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Reden Afwezigheid (Verborgen tenzij 'Afwezig' is gekozen) -->
+            <div class="form-group" id="reden_afwezig_blok" style="display: none;">
+                <label>Reden van afwezigheid</label>
+                <input type="text" id="reden_afwezig" placeholder="Bijv. Ziek, vakantie...">
+            </div>
+
+            <!-- Score -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Score Thuis</label>
+                    <input type="number" id="score_thuis" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Score Uit</label>
+                    <input type="number" id="score_uit" min="0" required>
+                </div>
+            </div>
+
+            <!-- Persoonlijke stats -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Doelpunten Speler</label>
+                    <input type="number" id="doelpunten" min="0" value="0">
+                </div>
+            </div>
+
+            <!-- Kaarten -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Gele Kaart</label>
+                    <input type="number" id="geel" min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Rode Kaart</label>
+                    <input type="number" id="rood" min="0" value="0">
+                </div>
+            </div>
+
+            <!-- Foto's uploaden -->
+            <div class="form-group" style="margin-top: 10px;">
+                <label>Wedstrijdfoto's (meerdere mogelijk)</label>
+                <input type="file" id="fotos" accept="image/png, image/jpeg" multiple>
+            </div>
+
+            <button type="button" class="submit-btn" onclick="saveMatch()">Opslaan</button>
+        </form>
+    </main>
+
+    <script>
+        // Toon of verberg het afwezigheids-veld
+        function toggleAfwezig() {
+            const status = document.getElementById('status').value;
+            const redenBlok = document.getElementById('reden_afwezig_blok');
+            if (status === 'Afwezig') {
+                redenBlok.style.display = 'block';
+            } else {
+                redenBlok.style.display = 'none';
+                document.getElementById('reden_afwezig').value = '';
+            }
+        }
+
+        // Automatisch het seizoen berekenen (bijv. 26-27)
+        function berekenSeizoen(datumString) {
+            if (!datumString) return "Onbekend";
+            const datum = new Date(datumString);
+            const jaar = datum.getFullYear();
+            const maand = datum.getMonth() + 1; // JavaScript telt maanden vanaf 0
+
+            // We gaan ervan uit dat het nieuwe seizoen start in juli (maand 7)
+            if (maand >= 7) {
+                return `${jaar.toString().slice(-2)}-${(jaar + 1).toString().slice(-2)}`;
+            } else {
+                return `${(jaar - 1).toString().slice(-2)}-${jaar.toString().slice(-2)}`;
+            }
+        }
+
+        // De hoofdfunctie om de match op te slaan
+        function saveMatch() {
+            // 1. Haal de bestanden op (logo en actiefoto's)
+            const logoBestand = document.getElementById('logo_tegenstander').files[0];
+            const fotoBestanden = document.getElementById('fotos').files;
+
+            // 2. Bouw het JSON object met alle ingevulde data
+            const matchData = {
+                id: document.getElementById('datum').value.replace(/-/g, '') + '-' + document.getElementById('speler').value.toLowerCase(),
+                speler: document.getElementById('speler').value,
+                datum: document.getElementById('datum').value,
+                seizoen: berekenSeizoen(document.getElementById('datum').value),
+                type_wedstrijd: document.getElementById('type_wedstrijd').value,
+                tegenstander: document.getElementById('tegenstander').value,
+                locatie: document.getElementById('locatie').value,
+                status: document.getElementById('status').value,
+                reden_afwezig: document.getElementById('status').value === 'Afwezig' ? document.getElementById('reden_afwezig').value : null,
+                
+                score_thuis: parseInt(document.getElementById('score_thuis').value) || 0,
+                score_uit: parseInt(document.getElementById('score_uit').value) || 0,
+                doelpunten_speler: parseInt(document.getElementById('doelpunten').value) || 0,
+                
+                kaarten: {
+                    geel: parseInt(document.getElementById('geel').value) || 0,
+                    rood: parseInt(document.getElementById('rood').value) || 0
+                }
+            };
+
+            // 3. Toon het resultaat in de console om te testen
+            console.log("Gestructureerde data voor de database:", matchData);
+            
+            if (logoBestand) {
+                console.log("Logo geselecteerd:", logoBestand.name);
+            }
+            if (fotoBestanden.length > 0) {
+                console.log(`Er zijn ${fotoBestanden.length} foto's geselecteerd om te comprimeren.`);
+            }
+
+            alert("Kijk in de console (F12)! Data is succesvol gestructureerd.");
+        }
+
+        // Zet de datum van vandaag alvast als standaardwaarde in het formulier
+        document.getElementById('datum').valueAsDate = new Date();
+    </script>
+</body>
+</html>
