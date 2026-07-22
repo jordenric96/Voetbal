@@ -44,33 +44,40 @@
                 if (error) throw error;
 
                 if (matchen.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state-noe">
-                            <h2>Geen matchen</h2>
-                            <p style="color: var(--rebecca-purple); font-weight:700;">Voeg de eerste wedstrijd toe voor ${speler}!</p>
-                        </div>`;
+                    container.innerHTML = `<div class="empty-state-noe"><h2>Geen matchen</h2><p style="color: var(--rebecca-purple); font-weight:700;">Voeg de eerste wedstrijd toe voor ${speler}!</p></div>`;
                     return;
                 }
 
-                let gespeeld = 0;
+                // 1. STATS BEREKENEN (Doelman vs Veldspeler)
+                let gespeeldSpeler = 0;
+                let gespeeldDoelman = 0;
                 let goals = 0;
                 let assists = 0;
 
                 matchen.forEach(m => {
                     if (m.status === 'Meegedaan') {
-                        gespeeld++;
+                        if (m.is_doelman) {
+                            gespeeldDoelman++;
+                        } else {
+                            gespeeldSpeler++;
+                        }
                         goals += (m.doelpunten_speler || 0);
                         assists += (m.assists || 0);
                     }
                 });
 
-                // De nieuwe Premium Kaartjes HTML
+                // 2. 4 QUICK STATS BLOKKEN (2x2 Grid)
                 let html = `
-                    <div class="quick-stats-container">
+                    <div class="quick-stats-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;">
                         <div class="qs-card indigo">
-                            <span class="qs-icon">🏟️</span>
-                            <span class="qs-num">${gespeeld}</span>
-                            <span class="qs-text">Matchen</span>
+                            <span class="qs-icon">👟</span>
+                            <span class="qs-num">${gespeeldSpeler}</span>
+                            <span class="qs-text">Veldspeler</span>
+                        </div>
+                        <div class="qs-card" style="background: var(--almond-silk); color: var(--space-indigo); border-bottom: 4px solid var(--rebecca-purple);">
+                            <span class="qs-icon">🧤</span>
+                            <span class="qs-num">${gespeeldDoelman}</span>
+                            <span class="qs-text">Doelman</span>
                         </div>
                         <div class="qs-card purple">
                             <span class="qs-icon">⚽</span>
@@ -78,37 +85,62 @@
                             <span class="qs-text">Goals</span>
                         </div>
                         <div class="qs-card pink">
-                            <span class="qs-icon">👟</span>
+                            <span class="qs-icon">🎯</span>
                             <span class="qs-num">${assists}</span>
                             <span class="qs-text">Assists</span>
                         </div>
                     </div>
                 `;
 
+                // 3. WEDSTRIJDKAARTJES GENEREREN
                 matchen.forEach(match => {
-                    const isWin = (match.locatie === 'Thuis' && match.score_thuis > match.score_uit) || 
-                                  (match.locatie === 'Uit' && match.score_uit > match.score_thuis);
-                    const isLoss = (match.locatie === 'Thuis' && match.score_thuis < match.score_uit) || 
-                                   (match.locatie === 'Uit' && match.score_uit < match.score_thuis);
-                    
-                    let borderClass = 'draw';
-                    if (isWin) borderClass = 'win';
-                    if (isLoss) borderClass = 'loss';
-                    
                     const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' });
                     
-                    const logoHtml = match.logo_tegenstander 
-                        ? `<img src="${match.logo_tegenstander}" class="match-logo">`
+                    // BEIDE LOGO'S NAAST ELKAAR MET 'VS' ERTUSSEN
+                    const logoEigen = match.logo_eigen_ploeg 
+                        ? `<img src="${match.logo_eigen_ploeg}" class="match-logo">` 
+                        : `<div class="match-logo" style="font-size:10px; text-align:center; line-height:1.2;">Eigen<br>Ploeg</div>`;
+                        
+                    const logoTegen = match.logo_tegenstander 
+                        ? `<img src="${match.logo_tegenstander}" class="match-logo">` 
                         : `<div class="match-logo">🛡️</div>`;
 
+                    // MINI-SCORES UITLEZEN
+                    let scoresHtml = '';
+                    if (match.mini_scores && match.mini_scores.length > 0) {
+                        match.mini_scores.forEach(score => {
+                            let statusClass = 'draw';
+                            if (score.thuis > score.uit) statusClass = match.locatie === 'Thuis' ? 'win' : 'loss';
+                            if (score.thuis < score.uit) statusClass = match.locatie === 'Thuis' ? 'loss' : 'win';
+                            scoresHtml += `<span class="mini-score ${statusClass}">${score.thuis} - ${score.uit}</span>`;
+                        });
+                    } else if (match.score_thuis !== null) {
+                        scoresHtml += `<span class="mini-score draw">${match.score_thuis} - ${match.score_uit}</span>`;
+                    }
+
+                    // BADGES (U6, FORMAT, ROL)
+                    const catBadge = match.categorie ? `<span class="badge u-cat">${match.categorie}</span>` : '';
+                    const formatBadge = match.match_format ? `<span class="badge format">${match.match_format}</span>` : '';
+                    const roleBadge = match.is_doelman ? `<span class="badge role">🧤 Doelman</span>` : `<span class="badge role">👟 Speler</span>`;
+
                     html += `
-                        <a href="match-detail.html?id=${match.id}" class="match-card ${borderClass}">
-                            ${logoHtml}
-                            <div class="match-info">
-                                <h3>${match.tegenstander}</h3>
-                                <p>${datumMooi} • ${match.locatie}</p>
+                        <a href="match-detail.html?id=${match.id}" class="match-card" style="border-left: none; flex-direction: column; align-items: flex-start; gap: 10px;">
+                            <div style="display: flex; width: 100%; justify-content: space-between; align-items: flex-start;">
+                                
+                                <div class="match-logos">
+                                    ${logoEigen} <span class="vs-badge">VS</span> ${logoTegen}
+                                </div>
+                                
+                                <div style="text-align: right;">
+                                    <div class="badges-row" style="justify-content: flex-end;">${catBadge} ${formatBadge} ${roleBadge}</div>
+                                    <h3 style="font-size: 16px; font-weight: 900; color: var(--space-indigo); margin-bottom:2px;">${match.tegenstander}</h3>
+                                    <p style="font-size: 11px; color: var(--rebecca-purple); font-weight: 700;">${datumMooi} • ${match.locatie}</p>
+                                </div>
                             </div>
-                            <div class="match-score">${match.score_thuis} - ${match.score_uit}</div>
+                            
+                            <div class="mini-scores-container">
+                                ${scoresHtml}
+                            </div>
                         </a>
                     `;
                 });
@@ -116,7 +148,7 @@
                 container.innerHTML = html;
 
             } catch (err) {
-                console.error("Fout bij laden van wedstrijden:", err);
+                console.error("Fout:", err);
                 container.innerHTML = '<p class="empty-state">Kon wedstrijden niet laden.</p>';
             }
         }
@@ -126,10 +158,7 @@
             evt.currentTarget.classList.add('active');
             laadWedstrijden(speler);
         };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            laadWedstrijden('Lou');
-        });
+        document.addEventListener('DOMContentLoaded', () => laadWedstrijden('Lou'));
     </script>
 </body>
 </html>

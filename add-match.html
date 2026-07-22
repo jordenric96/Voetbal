@@ -5,31 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Match Toevoegen</title>
     <link rel="stylesheet" href="css/style.css">
-    <meta name="theme-color" content="#8A1538">
+    <meta name="theme-color" content="#171738">
 </head>
 <body>
     <header>
         <h1>+ Nieuwe Match</h1>
-        <nav>
-            <a href="index.html">Annuleer</a>
-        </nav>
+        <nav><a href="index.html">Annuleer</a></nav>
     </header>
 
     <main style="padding: 20px;">
-        
-        <!-- Pincode Scherm (Dit zie je als eerste) -->
         <div id="pin-screen" class="pin-container">
             <h2>Toegang Beveiligd 🔒</h2>
-            <p>Geef de pincode in om een nieuwe wedstrijd te registreren.</p>
             <input type="password" id="pincode-input" class="pin-input" pattern="[0-9]*" inputmode="numeric" maxlength="4" placeholder="****">
             <button type="button" class="submit-btn" onclick="checkPin()">Ontgrendel</button>
-            <p id="pin-error" style="color: #e74c3c; display: none; margin-top: 15px; font-weight: bold;">Foutieve code, probeer opnieuw.</p>
+            <p id="pin-error" style="color: var(--lobster-pink); display: none; font-weight: 900;">Foutieve code.</p>
         </div>
 
-        <!-- Het Formulier (Verborgen tot de code juist is) -->
         <div id="form-screen" style="display: none;">
             <form id="matchForm">
-                <!-- Speler & Datum -->
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label>Speler</label>
@@ -44,27 +38,54 @@
                     </div>
                 </div>
 
-                <!-- Wedstrijd details -->
-                <div class="form-group">
-                    <label>Type Wedstrijd</label>
-                    <select id="type_wedstrijd" required>
-                        <option value="Competitie">Competitie</option>
-                        <option value="Toernooi">Toernooi</option>
-                        <option value="Vriendschappelijk">Vriendschappelijk</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Categorie</label>
+                        <input type="text" id="categorie" value="U6" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Wedstrijdvorm</label>
+                        <select id="match_format" required>
+                            <option value="2v2" selected>2v2</option>
+                            <option value="3v3">3v3</option>
+                            <option value="5v5">5v5</option>
+                            <option value="8v8">8v8</option>
+                            <option value="11v11">11v11</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Tegenstander</label>
-                    <input type="text" id="tegenstander" placeholder="Bijv. KFC Lennik" required>
+                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 800; background: #fff; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--almond-silk);">
+                        <input type="checkbox" id="is_doelman" style="width: 24px; height: 24px; margin-right: 14px;">
+                        Speelde vandaag als Doelman 🧤
+                    </label>
                 </div>
 
-                <div class="form-group">
-                    <label>Logo Tegenstander (optioneel)</label>
-                    <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Eigen Ploeg</label>
+                        <input type="text" id="eigen_ploeg" placeholder="Typ ploegnaam...">
+                    </div>
+                    <div class="form-group autocomplete-container">
+                        <label>Tegenstander</label>
+                        <input type="text" id="tegenstander" placeholder="Typ om te zoeken..." required autocomplete="off">
+                        <div id="autocomplete-lijst" class="autocomplete-items"></div>
+                    </div>
                 </div>
 
-                <!-- Locatie & Status -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Logo Eigen Ploeg</label>
+                        <input type="file" id="logo_eigen_ploeg" accept="image/png, image/jpeg">
+                    </div>
+                    <div class="form-group">
+                        <label>Logo Tegenstander</label>
+                        <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
+                        <div id="logo-gevonden-status" class="logo-status">✅ Bekend logo gevonden!</div>
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Locatie</label>
@@ -87,74 +108,26 @@
                     <input type="text" id="reden_afwezig" placeholder="Bijv. Ziek, vakantie...">
                 </div>
 
-                <!-- Omstandigheden (Nieuw) -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Ondergrond</label>
-                        <select id="ondergrond">
-                            <option value="Natuurgras">Natuurgras</option>
-                            <option value="Kunstgras">Kunstgras</option>
-                            <option value="Zaal">Zaal / Indoor</option>
-                            <option value="Modderpoel">Zware Modder</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Weer</label>
-                        <select id="weer">
-                            <option value="Zon">Zon</option>
-                            <option value="Bewolkt">Bewolkt</option>
-                            <option value="Regen">Regen</option>
-                            <option value="Sneeuw/Koud">Koud / Sneeuw</option>
-                        </select>
-                    </div>
+                <!-- DYNAMISCHE UITSLAGEN (Toernooivorm) -->
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Uitslagen (Voeg er zoveel toe als nodig)</label>
+                    <div id="mini-scores-wrapper"></div>
+                    <button type="button" class="add-score-btn" onclick="addScoreRow()">+ Extra uitslag toevoegen</button>
                 </div>
 
-                <!-- Score -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Score Thuis</label>
-                        <input type="number" id="score_thuis" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Score Uit</label>
-                        <input type="number" id="score_uit" min="0" required>
-                    </div>
-                </div>
-
-                <!-- Persoonlijke stats (Nu met Assists) -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Doelpunten</label>
+                        <label>Totaal Doelpunten</label>
                         <input type="number" id="doelpunten" min="0" value="0">
                     </div>
                     <div class="form-group">
-                        <label>Assists</label>
+                        <label>Totaal Assists</label>
                         <input type="number" id="assists" min="0" value="0">
                     </div>
                 </div>
 
-                <!-- Kaarten (Verborgen achter een vinkje) -->
                 <div class="form-group">
-                    <label style="display: flex; align-items: center; cursor: pointer; font-weight: 800; color: var(--space-indigo); background: #fff; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--almond-silk);">
-                        <input type="checkbox" id="heeft_kaarten" onchange="toggleKaarten()" style="width: 24px; height: 24px; margin-right: 14px; padding: 0; background: var(--bg-color); border: 2px solid var(--rebecca-purple);">
-                        Kaarten uitgedeeld in deze match?
-                    </label>
-                </div>
-
-                <div class="form-row" id="kaarten_blok" style="display: none; animation: fadeUp 0.3s ease;">
-                    <div class="form-group">
-                        <label>Gele Kaart</label>
-                        <input type="number" id="geel" min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Rode Kaart</label>
-                        <input type="number" id="rood" min="0" value="0">
-                    </div>
-                </div>
-
-                <!-- Foto's uploaden -->
-                <div class="form-group" style="margin-top: 10px;">
-                    <label>Wedstrijdfoto's (meerdere mogelijk)</label>
+                    <label>Wedstrijdfoto's</label>
                     <input type="file" id="fotos" accept="image/png, image/jpeg" multiple>
                 </div>
 
@@ -163,11 +136,8 @@
         </div>
     </main>
 
-    <!-- Supabase SDK & Image Compression inladen -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
-
-    <!-- Jouw eigen scripts -->
     <script src="js/database.js"></script>
     <script src="js/upload.js"></script>
 </body>
