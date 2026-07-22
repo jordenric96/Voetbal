@@ -6,8 +6,8 @@
     <title>Voetbal Stats</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/style.css">
-    <!-- De kleur van de adresbalk op mobiel -->
-    <meta name="theme-color" content="#2ecc71">
+    <!-- De kleur van de adresbalk op mobiel (Bordeaux) -->
+    <meta name="theme-color" content="#8A1538">
 </head>
 <body>
     <!-- Bovenste navigatiebalk -->
@@ -30,11 +30,11 @@
         <h2>Seizoen 26-27</h2>
         
         <div class="wedstrijden-lijst" id="wedstrijden-container-lou">
-            <!-- Straks laadt JavaScript hier de wedstrijden in -->
-            <p class="empty-state">Nog geen wedstrijden gespeeld.</p>
+            <!-- JavaScript (app.js) laadt hier de kaartjes in via Supabase -->
+            <p class="empty-state">Wedstrijden ophalen... ⏳</p>
         </div>
 
-        <!-- Zwevende knop om een match toe te voegen (zoals in veel apps) -->
+        <!-- Zwevende knop om een match toe te voegen -->
         <a href="add-match.html" class="fab-btn">+ Match</a>
     </main>
 
@@ -46,6 +46,11 @@
         </div>
     </main>
 
+    <!-- Supabase SDK inladen via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Jouw eigen scripts -->
+    <script src="js/database.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

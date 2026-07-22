@@ -65,3 +65,119 @@ header a.active { color: #D4AF37; opacity: 1; border-bottom: 2px solid #D4AF37; 
 /* Lege statussen */
 .empty-state, .empty-state-noe { text-align: center; margin-top: 40px; color: #999; }
 .empty-state-noe h2 { font-size: 24px; color: #1a1a1a; margin-bottom: 10px; }
+
+/* Wedstrijd Kaartjes (Homepagina) */
+.match-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #1a1a1a;
+    border-left: 6px solid #ccc; /* Standaard grijs */
+    transition: transform 0.2s;
+}
+.match-card:active { transform: scale(0.98); }
+.match-card.win { border-left-color: #2ecc71; } /* Groen voor winst */
+.match-card.loss { border-left-color: #e74c3c; } /* Rood voor verlies */
+.match-card.draw { border-left-color: #f1c40f; } /* Geel voor gelijk */
+
+.match-logo {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+    background: #f4f7f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.match-info { flex: 1; }
+.match-info h3 { font-size: 16px; margin-bottom: 3px; font-weight: 900; }
+.match-info p { font-size: 13px; color: #666; }
+
+.match-score {
+    font-size: 20px;
+    font-weight: 900;
+    color: #8A1538;
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 8px;
+    min-width: 65px;
+    text-align: center;
+}
+
+/* Detailpagina - Scorebord & Galerij */
+.detail-header { text-align: center; margin-bottom: 25px; }
+.detail-header h2 { font-size: 24px; color: #1a1a1a; margin-bottom: 5px; }
+.detail-header p { color: #666; font-size: 14px; }
+
+.scoreboard {
+    display: flex; justify-content: center; align-items: center;
+    background: #8A1538; color: #D4AF37;
+    padding: 20px; border-radius: 15px; margin-bottom: 25px;
+    box-shadow: 0 5px 15px rgba(138, 21, 56, 0.2);
+}
+.score-block { text-align: center; flex: 1; }
+.score-block span { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #fff; opacity: 0.8;}
+.score-block strong { font-size: 36px; font-weight: 900; }
+.score-divider { font-size: 24px; font-weight: 900; padding: 0 15px; opacity: 0.5; }
+
+.stats-card {
+    background: #fff; padding: 15px; border-radius: 12px;
+    margin-bottom: 20px; border: 1px solid #eaeaea;
+}
+.stats-card p { margin-bottom: 8px; font-size: 15px; }
+.stats-card p strong { color: #8A1538; }
+
+.photo-gallery {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+}
+.photo-gallery img {
+    width: 100%; height: 150px; object-fit: cover;
+    border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Statistieken Dashboard */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-box {
+    background: #fff;
+    padding: 20px 15px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border-top: 4px solid #8A1538;
+}
+
+.stat-box.gold { border-top-color: #D4AF37; }
+.stat-box.dark { border-top-color: #1a1a1a; }
+
+.stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: 900;
+    color: #1a1a1a;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+
+.stat-full-width { grid-column: span 2; }

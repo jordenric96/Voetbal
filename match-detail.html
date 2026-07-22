@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Match Details</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="theme-color" content="#8A1538">
+</head>
+<body>
+    <header>
+        <h1>Match Details</h1>
+        <nav>
+            <a href="index.html">← Terug</a>
+        </nav>
+    </header>
+
+    <main style="padding: 20px;" id="detail-content">
+        <p class="empty-state">Wedstrijdgegevens laden... ⏳</p>
+    </main>
+
+    <!-- Supabase SDK inladen -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/database.js"></script>
+
+    <script>
+        async function laadMatchDetails() {
+            // 1. Haal het ID uit de URL (bijv. ?id=20260912-lou)
+            const urlParams = new URLSearchParams(window.location.search);
+            const matchId = urlParams.get('id');
+            const contentDiv = document.getElementById('detail-content');
+
+            if (!matchId) {
+                contentDiv.innerHTML = '<p class="empty-state">Geen wedstrijd geselecteerd.</p>';
+                return;
+            }
+
+            try {
+                // 2. Haal de specifieke match op uit Supabase
+                const { data: match, error } = await supabaseClient
+                    .from('wedstrijden')
+                    .select('*')
+                    .eq('id', matchId)
+                    .single(); // .single() omdat we er exact 1 verwachten
+
+                if (error) throw error;
+
+                // 3. Formatteer de datum
+                const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+                // 4. Bouw de fotogalerij HTML
+                let galerijHtml = '<p class="empty-state">Geen foto\'s toegevoegd.</p>';
+                if (match.fotos && match.fotos.length > 0) {
+                    galerijHtml = '<div class="photo-gallery">';
+                    match.fotos.forEach(fotoUrl => {
+                        // Linkt naar de originele foto als je erop klikt
+                        galerijHtml += `<a href="${fotoUrl}" target="_blank"><img src="${fotoUrl}" alt="Actiefoto"></a>`;
+                    });
+                    galerijHtml += '</div>';
+                }
+
+                // 5. Bouw de volledige pagina-inhoud
+                contentDiv.innerHTML = `
+                    <div class="detail-header">
+                        <h2>${match.tegenstander}</h2>
+                        <p>${datumMooi} • ${match.type_wedstrijd}</p>
+                    </div>
+
+                    <div class="scoreboard">
+                        <div class="score-block">
+                            <span>Thuis</span>
+                            <strong>${match.score_thuis}</strong>
+                        </div>
+                        <div class="score-divider">-</div>
+                        <div class="score-block">
+                            <span>Uit</span>
+                            <strong>${match.score_uit}</strong>
+                        </div>
+                    </div>
+
+                    <div class="stats-card">
+                        <h3 style="margin-bottom: 10px; color:#1a1a1a;">Statistieken ${match.speler}</h3>
+                        ${match.status === 'Afwezig' 
+                            ? `<p style="color:#e74c3c; font-weight:bold;">Afwezig: ${match.reden_afwezig}</p>` 
+                            : `<p><strong>Doelpunten:</strong> ${match.doelpunten_speler}</p>`
+                        }
+                        <p><strong>Locatie:</strong> ${match.locatie}</p>
+                        <p><strong>Kaarten:</strong> ${match.kaarten.geel} Geel, ${match.kaarten.rood} Rood</p>
+                    </div>
+
+                    <h3 style="margin-bottom: 15px; color:#1a1a1a; margin-top:25px;">Wedstrijdfoto's</h3>
+                    ${galerijHtml}
+                `;
+
+            } catch (error) {
+                console.error("Fout:", error);
+                contentDiv.innerHTML = '<p class="empty-state">Fout bij het laden van de wedstrijd.</p>';
+            }
+        }
+
+        // Start de functie zodra de pagina laadt
+        document.addEventListener('DOMContentLoaded', laadMatchDetails);
+    </script>
+</body>
+</html>

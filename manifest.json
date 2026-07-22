@@ -1,0 +1,21 @@
+{
+  "name": "Voetbal Stats Lou & Noé",
+  "short_name": "VoetbalStats",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#8A1538",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/placeholder.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "assets/placeholder.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

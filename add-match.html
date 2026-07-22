@@ -119,77 +119,12 @@
         </form>
     </main>
 
-    <script>
-        // Toon of verberg het afwezigheids-veld
-        function toggleAfwezig() {
-            const status = document.getElementById('status').value;
-            const redenBlok = document.getElementById('reden_afwezig_blok');
-            if (status === 'Afwezig') {
-                redenBlok.style.display = 'block';
-            } else {
-                redenBlok.style.display = 'none';
-                document.getElementById('reden_afwezig').value = '';
-            }
-        }
+    <!-- Supabase SDK & Image Compression inladen via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
 
-        // Automatisch het seizoen berekenen (bijv. 26-27)
-        function berekenSeizoen(datumString) {
-            if (!datumString) return "Onbekend";
-            const datum = new Date(datumString);
-            const jaar = datum.getFullYear();
-            const maand = datum.getMonth() + 1; // JavaScript telt maanden vanaf 0
-
-            // We gaan ervan uit dat het nieuwe seizoen start in juli (maand 7)
-            if (maand >= 7) {
-                return `${jaar.toString().slice(-2)}-${(jaar + 1).toString().slice(-2)}`;
-            } else {
-                return `${(jaar - 1).toString().slice(-2)}-${jaar.toString().slice(-2)}`;
-            }
-        }
-
-        // De hoofdfunctie om de match op te slaan
-        function saveMatch() {
-            // 1. Haal de bestanden op (logo en actiefoto's)
-            const logoBestand = document.getElementById('logo_tegenstander').files[0];
-            const fotoBestanden = document.getElementById('fotos').files;
-
-            // 2. Bouw het JSON object met alle ingevulde data
-            const matchData = {
-                id: document.getElementById('datum').value.replace(/-/g, '') + '-' + document.getElementById('speler').value.toLowerCase(),
-                speler: document.getElementById('speler').value,
-                datum: document.getElementById('datum').value,
-                seizoen: berekenSeizoen(document.getElementById('datum').value),
-                type_wedstrijd: document.getElementById('type_wedstrijd').value,
-                tegenstander: document.getElementById('tegenstander').value,
-                locatie: document.getElementById('locatie').value,
-                status: document.getElementById('status').value,
-                reden_afwezig: document.getElementById('status').value === 'Afwezig' ? document.getElementById('reden_afwezig').value : null,
-                
-                score_thuis: parseInt(document.getElementById('score_thuis').value) || 0,
-                score_uit: parseInt(document.getElementById('score_uit').value) || 0,
-                doelpunten_speler: parseInt(document.getElementById('doelpunten').value) || 0,
-                
-                kaarten: {
-                    geel: parseInt(document.getElementById('geel').value) || 0,
-                    rood: parseInt(document.getElementById('rood').value) || 0
-                }
-            };
-
-            // 3. Toon het resultaat in de console om te testen
-            console.log("Gestructureerde data voor de database:", matchData);
-            
-            if (logoBestand) {
-                console.log("Logo geselecteerd:", logoBestand.name);
-            }
-            if (fotoBestanden.length > 0) {
-                console.log(`Er zijn ${fotoBestanden.length} foto's geselecteerd om te comprimeren.`);
-            }
-
-            alert("Kijk in de console (F12)! Data is succesvol gestructureerd.");
-        }
-
-        // Zet de datum van vandaag alvast als standaardwaarde in het formulier
-        document.getElementById('datum').valueAsDate = new Date();
-    </script>
+    <!-- Jouw eigen scripts -->
+    <script src="js/database.js"></script>
+    <script src="js/upload.js"></script>
 </body>
 </html>
