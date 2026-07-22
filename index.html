@@ -2,39 +2,50 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Voetbalcarrière Lou & Noé</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; background: #f4f4f4; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-        th { background: #2c3e50; color: white; }
-        h1 { color: #2c3e50; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Voetbal Stats</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+    <!-- De kleur van de adresbalk op mobiel -->
+    <meta name="theme-color" content="#2ecc71">
 </head>
 <body>
-    <h1>Statistieken Lou & Noé</h1>
-    <div id="stats-tabel">Laden van statistieken...</div>
+    <!-- Bovenste navigatiebalk -->
+    <header>
+        <h1>Voetbal Stats</h1>
+        <nav>
+            <a href="index.html" class="active">Home</a>
+            <a href="stats.html">Statistieken</a>
+        </nav>
+    </header>
 
-    <script>
-        // PLAK HIER JE GOOGLE SHEETS CSV LINK
-        const csvUrl = 'JOUW_GOOGLE_SHEETS_CSV_LINK_HIER';
+    <!-- Tabbladen voor de spelers -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab(event, 'lou')">Lou</button>
+        <button class="tab-btn" onclick="openTab(event, 'noe')">Noé</button>
+    </div>
 
-        async function laadStats() {
-            const response = await fetch(csvUrl);
-            const data = await response.text();
-            const rijen = data.split('\n').slice(1);
-            let html = '<table><tr><th>Datum</th><th>Speler</th><th>Type</th><th>Tegenstander</th><th>Score</th><th>Goals</th><th>Assists</th></tr>';
-            
-            rijen.forEach(rij => {
-                const kolommen = rij.split(',');
-                if(kolommen.length > 1) {
-                    html += `<tr>${kolommen.map(k => `<td>${k}</td>`).join('')}</tr>`;
-                }
-            });
-            html += '</table>';
-            document.getElementById('stats-tabel').innerHTML = html;
-        }
-        laadStats();
-    </script>
+    <!-- Inhoud Lou -->
+    <main id="lou" class="tab-content active">
+        <h2>Seizoen 26-27</h2>
+        
+        <div class="wedstrijden-lijst" id="wedstrijden-container-lou">
+            <!-- Straks laadt JavaScript hier de wedstrijden in -->
+            <p class="empty-state">Nog geen wedstrijden gespeeld.</p>
+        </div>
+
+        <!-- Zwevende knop om een match toe te voegen (zoals in veel apps) -->
+        <a href="add-match.html" class="fab-btn">+ Match</a>
+    </main>
+
+    <!-- Inhoud Noé -->
+    <main id="noe" class="tab-content">
+        <div class="empty-state-noe">
+            <h2>Nog even geduld! ⏳</h2>
+            <p>Noé start pas binnen 2 jaar. Het veld wacht op hem!</p>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
 </body>
 </html>

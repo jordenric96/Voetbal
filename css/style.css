@@ -1,0 +1,44 @@
+/* Basis PWA reset voor een app-gevoel */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body { background-color: #f4f7f6; color: #333; -webkit-font-smoothing: antialiased; }
+
+/* Header */
+header { 
+    background-color: #2ecc71; 
+    color: white; 
+    padding: 15px 20px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+header h1 { font-size: 20px; }
+header a { color: white; text-decoration: none; font-weight: bold; margin-left: 15px; font-size: 14px; opacity: 0.8;}
+header a.active { opacity: 1; border-bottom: 2px solid white; padding-bottom: 2px;}
+
+/* Tabs */
+.tabs { display: flex; background: white; border-bottom: 1px solid #ddd; }
+.tab-btn { 
+    flex: 1; padding: 15px; border: none; background: none; 
+    font-size: 16px; font-weight: bold; cursor: pointer; color: #999; 
+}
+.tab-btn.active { color: #2ecc71; border-bottom: 3px solid #2ecc71; }
+
+/* Tab inhoud */
+.tab-content { display: none; padding: 20px; padding-bottom: 80px; /* Ruimte voor de FAB */ }
+.tab-content.active { display: block; }
+.tab-content h2 { font-size: 16px; color: #666; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+
+/* Zwevende knop (+ Match) */
+.fab-btn { 
+    position: fixed; bottom: 25px; right: 25px; 
+    background-color: #2ecc71; color: white; 
+    padding: 15px 25px; border-radius: 50px; 
+    text-decoration: none; font-weight: bold; 
+    box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4); 
+}
+
+/* Lege statussen */
+.empty-state { text-align: center; margin-top: 40px; color: #999; font-style: italic; }
+.empty-state-noe { text-align: center; margin-top: 60px; }
+.empty-state-noe h2 { font-size: 22px; color: #333; text-transform: none; margin-bottom: 10px;}
+.empty-state-noe p { color: #666; line-height: 1.5; }
