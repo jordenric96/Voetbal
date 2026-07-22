@@ -23,7 +23,6 @@
 
         <div id="form-screen" style="display: none;">
             <form id="matchForm">
-                
                 <div class="form-row">
                     <div class="form-group">
                         <label>Speler</label>
@@ -40,24 +39,11 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Categorie</label>
-                        <input type="text" id="categorie" value="U6" required>
+                        <label>Eigen Ploeg</label>
+                        <input type="text" id="eigen_ploeg" required>
                     </div>
-                    <div class="form-group">
-                        <label>Wedstrijdvorm</label>
-                        <select id="match_format" required>
-                            <option value="2v2" selected>2v2</option>
-                            <option value="3v3">3v3</option>
-                            <option value="5v5">5v5</option>
-                            <option value="8v8">8v8</option>
-                            <option value="11v11">11v11</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group autocomplete-container" style="flex: 1;">
-                        <label>Tegenstander (Ploegnaam)</label>
+                    <div class="form-group autocomplete-container">
+                        <label>Tegenstander</label>
                         <input type="text" id="tegenstander" placeholder="Typ om te zoeken..." required autocomplete="off">
                         <div id="autocomplete-lijst" class="autocomplete-items"></div>
                     </div>
@@ -65,9 +51,20 @@
 
                 <div class="form-row">
                     <div class="form-group">
+                        <label>Logo Eigen Ploeg</label>
+                        <input type="file" id="logo_eigen_ploeg" accept="image/png, image/jpeg">
+                    </div>
+                    <div class="form-group">
                         <label>Logo Tegenstander</label>
                         <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
                         <div id="logo-gevonden-status" class="logo-status">✅ Bekend logo gevonden!</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Categorie</label>
+                        <input type="text" id="categorie" value="U6" required>
                     </div>
                     <div class="form-group">
                         <label>Locatie</label>
@@ -79,27 +76,29 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Status</label>
-                    <select id="status" onchange="toggleAfwezig()" required>
-                        <option value="Meegedaan">Meegedaan</option>
-                        <option value="Afwezig">Afwezig</option>
-                    </select>
-                </div>
-
-                <div class="form-group" id="reden_afwezig_blok" style="display: none;">
-                    <label>Reden van afwezigheid</label>
-                    <input type="text" id="reden_afwezig" placeholder="Bijv. Ziek, vakantie...">
+                    <label>Opmerking / Verslag (Optioneel)</label>
+                    <textarea id="opmerking" rows="2" placeholder="Bijv. Geweldige match gespeeld, veel regen..."></textarea>
                 </div>
 
                 <!-- DYNAMISCHE UITSLAGEN -->
                 <div class="form-group" style="margin-top: 25px; border-top: 2px dashed var(--almond-silk); padding-top: 20px;">
                     <label style="font-size: 16px; color: var(--space-indigo);">⚽ De Wedstrijdjes (Uitslagen & Stats)</label>
-                    <div id="mini-scores-wrapper" style="margin-top: 10px;"></div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size: 12px;">Wedstrijdvorm (voor alle matchjes):</label>
+                        <select id="match_format" style="width: 100%; max-width: 150px; padding: 6px; font-size: 12px;" required>
+                            <option value="2v2" selected>2v2</option>
+                            <option value="3v3">3v3</option>
+                            <option value="5v5">5v5</option>
+                        </select>
+                    </div>
+
+                    <div id="mini-scores-wrapper"></div>
                     <button type="button" class="add-score-btn" onclick="addScoreRow()">+ Extra uitslag toevoegen</button>
                 </div>
 
                 <div class="form-group">
-                    <label>Wedstrijdfoto's (Heel het toernooi)</label>
+                    <label>Wedstrijdfoto's</label>
                     <input type="file" id="fotos" accept="image/png, image/jpeg" multiple>
                 </div>
 

@@ -1,6 +1,6 @@
-const STANDAARD_EIGEN_PLOEG = "KV Kester Gooik";
 let bekendeTegenstanders = [];
 let geselecteerdBestaandLogo = null;
+let bestaandEigenLogo = null;
 let bestaandeFotos = []; 
 
 window.checkPin = async function() {
@@ -18,6 +18,12 @@ window.checkPin = async function() {
         if (editId) {
             await laadWedstrijdVoorBewerken(editId);
         } else {
+            // NIEUWE MATCH: Haal de laatst gebruikte eigen ploeg op!
+            const { data: lastMatch } = await supabaseClient.from('wedstrijden').select('eigen_ploeg, logo_eigen_ploeg').order('datum', { ascending: false }).limit(1).single();
+            if (lastMatch) {
+                document.getElementById('eigen_ploeg').value = lastMatch.eigen_ploeg || 'KV Kester Gooik';
+                bestaandEigenLogo = lastMatch.logo_eigen_ploeg;
+            }
             addScoreRow();
         }
     } else {
@@ -66,23 +72,21 @@ async function laadWedstrijdVoorBewerken(id) {
             document.getElementById('datum').value = data.datum;
             document.getElementById('tegenstander').value = data.tegenstander;
             document.getElementById('locatie').value = data.locatie;
-            document.getElementById('status').value = data.status;
-            window.toggleAfwezig();
-            if (data.reden_afwezig) document.getElementById('reden_afwezig').value = data.reden_afwezig;
+            document.getElementById('eigen_ploeg').value = data.eigen_ploeg || 'KV Kester Gooik';
             document.getElementById('categorie').value = data.categorie || 'U6';
             document.getElementById('match_format').value = data.match_format || '2v2';
+            if (data.opmerking) document.getElementById('opmerking').value = data.opmerking;
             
             const wrapper = document.getElementById('mini-scores-wrapper');
             wrapper.innerHTML = ''; 
             if (data.mini_scores && data.mini_scores.length > 0) {
-                data.mini_scores.forEach(score => addScoreRow(score.thuis, score.uit, score.is_doelman, score.goals, score.assists));
-            } else if (data.score_thuis !== null && data.score_uit !== null) {
-                addScoreRow(data.score_thuis, data.score_uit, data.is_doelman, data.doelpunten_speler, data.assists);
+                data.mini_scores.forEach(s => addScoreRow(s.thuis, s.uit, s.is_doelman, s.goals, s.assists));
             } else {
-                addScoreRow();
+                addScoreRow(data.score_thuis || 0, data.score_uit || 0, data.is_doelman, data.doelpunten_speler, data.assists);
             }
 
             geselecteerdBestaandLogo = data.logo_tegenstander; 
+            bestaandEigenLogo = data.logo_eigen_ploeg;
             bestaandeFotos = data.fotos || [];
             document.getElementById('matchForm').dataset.editId = data.id;
             document.querySelector('.submit-btn').innerText = "Wijzigingen Opslaan";
@@ -92,20 +96,19 @@ async function laadWedstrijdVoorBewerken(id) {
 
 async function haalPloegenOp() {
     try {
-        const { data, error } = await supabaseClient.from('wedstrijden').select('tegenstander, logo_tegenstander');
-        if (error) throw error;
+        const { data } = await supabaseClient.from('wedstrijden').select('tegenstander, logo_tegenstander');
         const uniekePloegenMap = new Map();
-        if (data && data.length > 0) {
-            data.forEach(match => {
-                if (!match.tegenstander) return;
-                const naamLower = match.tegenstander.trim().toLowerCase();
-                if (!uniekePloegenMap.has(naamLower)) uniekePloegenMap.set(naamLower, { naam: match.tegenstander.trim(), logo: match.logo_tegenstander });
-                else if (!uniekePloegenMap.get(naamLower).logo && match.logo_tegenstander) uniekePloegenMap.get(naamLower).logo = match.logo_tegenstander;
+        if (data) {
+            data.forEach(m => {
+                if (!m.tegenstander) return;
+                const naam = m.tegenstander.trim().toLowerCase();
+                if (!uniekePloegenMap.has(naam)) uniekePloegenMap.set(naam, { naam: m.tegenstander.trim(), logo: m.logo_tegenstander });
+                else if (!uniekePloegenMap.get(naam).logo && m.logo_tegenstander) uniekePloegenMap.get(naam).logo = m.logo_tegenstander;
             });
         }
         bekendeTegenstanders = Array.from(uniekePloegenMap.values());
         document.getElementById('tegenstander').placeholder = `Typ om te zoeken in ${bekendeTegenstanders.length} bekende ploeg(en)...`;
-    } catch (err) { document.getElementById('tegenstander').placeholder = "Kon ploegen niet laden."; }
+    } catch (err) {}
 }
 
 function setupAutocomplete() {
@@ -113,11 +116,8 @@ function setupAutocomplete() {
     if (!input) return;
     let lijst = document.getElementById('autocomplete-lijst');
     if (!lijst) {
-        lijst = document.createElement('div');
-        lijst.id = 'autocomplete-lijst';
-        lijst.className = 'autocomplete-items';
-        input.parentNode.style.position = 'relative'; 
-        input.parentNode.insertBefore(lijst, input.nextSibling);
+        lijst = document.createElement('div'); lijst.id = 'autocomplete-lijst'; lijst.className = 'autocomplete-items';
+        input.parentNode.style.position = 'relative'; input.parentNode.insertBefore(lijst, input.nextSibling);
     }
     const fileInput = document.getElementById('logo_tegenstander');
     const logoStatus = document.getElementById('logo-gevonden-status');
@@ -126,15 +126,15 @@ function setupAutocomplete() {
         const val = this.value.toLowerCase().trim();
         lijst.innerHTML = ''; geselecteerdBestaandLogo = null; if (logoStatus) logoStatus.style.display = 'none';
         if (!val) { lijst.style.display = 'none'; return; }
-        const matches = bekendeTegenstanders.filter(ploeg => ploeg.naam.toLowerCase().includes(val));
+        const matches = bekendeTegenstanders.filter(p => p.naam.toLowerCase().includes(val));
         if (matches.length > 0) {
             lijst.style.display = 'block';
-            matches.forEach(ploeg => {
+            matches.forEach(p => {
                 const div = document.createElement('div'); div.className = 'autocomplete-item';
-                div.innerHTML = `${ploeg.logo ? `<img src="${ploeg.logo}" class="autocomplete-logo">` : `<div class="autocomplete-logo">🛡️</div>`} ${ploeg.naam}`;
+                div.innerHTML = `${p.logo ? `<img src="${p.logo}" class="autocomplete-logo">` : `<div class="autocomplete-logo">🛡️</div>`} ${p.naam}`;
                 div.addEventListener('mousedown', function(e) {
-                    e.preventDefault(); input.value = ploeg.naam; 
-                    if (ploeg.logo) { geselecteerdBestaandLogo = ploeg.logo; if (logoStatus) logoStatus.style.display = 'block'; }
+                    e.preventDefault(); input.value = p.naam; 
+                    if (p.logo) { geselecteerdBestaandLogo = p.logo; if (logoStatus) logoStatus.style.display = 'block'; }
                     lijst.style.display = 'none'; 
                 });
                 lijst.appendChild(div);
@@ -151,14 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAutocomplete();
 });
 
-window.toggleAfwezig = function() {
-    const status = document.getElementById('status').value;
-    const redenBlok = document.getElementById('reden_afwezig_blok');
-    if (status === 'Afwezig') { redenBlok.style.display = 'block'; } else { redenBlok.style.display = 'none'; document.getElementById('reden_afwezig').value = ''; }
-};
-
 function berekenSeizoen(datumString) {
-    if (!datumString) return "Onbekend";
     const datum = new Date(datumString);
     const jaar = datum.getFullYear();
     const maand = datum.getMonth() + 1;
@@ -175,28 +168,31 @@ async function uploadBestandNaarSupabase(bestand, mapNaam) {
 
 window.saveMatch = async function() {
     const submitBtn = document.querySelector('.submit-btn');
-    submitBtn.innerText = "Bezig met opslaan... ⏳";
-    submitBtn.disabled = true;
+    submitBtn.innerText = "Bezig met opslaan... ⏳"; submitBtn.disabled = true;
 
     try {
         const logoBestandTegenstander = document.getElementById('logo_tegenstander').files[0];
+        const logoBestandEigen = document.getElementById('logo_eigen_ploeg').files[0];
         const fotoBestanden = document.getElementById('fotos').files;
         
         let logoTegenUrl = geselecteerdBestaandLogo; 
-        if (logoBestandTegenstander) { submitBtn.innerText = "Logo tegenstander uploaden..."; logoTegenUrl = await uploadBestandNaarSupabase(logoBestandTegenstander, 'logos'); }
+        if (logoBestandTegenstander) { submitBtn.innerText = "Logo tegen uploaden..."; logoTegenUrl = await uploadBestandNaarSupabase(logoBestandTegenstander, 'logos'); }
         
+        let logoEigenUrl = bestaandEigenLogo;
+        if (logoBestandEigen) { submitBtn.innerText = "Eigen logo uploaden..."; logoEigenUrl = await uploadBestandNaarSupabase(logoBestandEigen, 'logos'); }
+
         let fotoUrls = bestaandeFotos; 
         if (fotoBestanden.length > 0) {
             const compressieOpties = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true };
             for (let i = 0; i < fotoBestanden.length; i++) {
-                submitBtn.innerText = `Foto ${i + 1}/${fotoBestanden.length} uploaden...`;
+                submitBtn.innerText = `Foto ${i + 1}/${fotoBestanden.length}...`;
                 const gecomprimeerdeFoto = await imageCompression(fotoBestanden[i], compressieOpties);
                 const url = await uploadBestandNaarSupabase(gecomprimeerdeFoto, 'actiefotos');
                 if (url) fotoUrls.push(url);
             }
         }
 
-        submitBtn.innerText = "Gegevens berekenen...";
+        submitBtn.innerText = "Gegevens opslaan...";
         const scoreRows = document.querySelectorAll('.score-row-item');
         let miniScoresArray = [];
         let totaalThuis = 0, totaalUit = 0, totaalGoals = 0, totaalAssists = 0;
@@ -208,7 +204,6 @@ window.saveMatch = async function() {
             const isD = row.querySelector('.mini-score-doelman').checked;
             const g = parseInt(row.querySelector('.mini-score-goals').value) || 0;
             const a = parseInt(row.querySelector('.mini-score-assists').value) || 0;
-            
             miniScoresArray.push({ thuis: t, uit: u, is_doelman: isD, goals: g, assists: a });
             totaalThuis += t; totaalUit += u; totaalGoals += g; totaalAssists += a;
             if(isD) wasDoelmanOoit = true;
@@ -223,13 +218,13 @@ window.saveMatch = async function() {
             speler: spelerVal,
             datum: datumVal,
             seizoen: berekenSeizoen(datumVal),
-            type_wedstrijd: document.getElementById('match_format').value === 'Competitie' ? 'Competitie' : 'Toernooi', 
             tegenstander: document.getElementById('tegenstander').value,
             locatie: document.getElementById('locatie').value,
-            status: document.getElementById('status').value,
-            reden_afwezig: document.getElementById('status').value === 'Afwezig' ? document.getElementById('reden_afwezig').value : null,
+            status: "Meegedaan", // Altijd meegedaan nu!
+            opmerking: document.getElementById('opmerking').value,
             
-            eigen_ploeg: STANDAARD_EIGEN_PLOEG, // <--- Automatisch ingesteld!
+            eigen_ploeg: document.getElementById('eigen_ploeg').value,
+            logo_eigen_ploeg: logoEigenUrl,
             categorie: document.getElementById('categorie').value,
             match_format: document.getElementById('match_format').value,
             

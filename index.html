@@ -33,28 +33,27 @@
             container.innerHTML = '<p class="empty-state">Wedstrijden laden... ⏳</p>';
 
             try {
-                const { data: matchen, error } = await supabaseClient.from('wedstrijden').select('*').eq('speler', speler).order('datum', { ascending: false });
+                // Let op: negeer wedstrijden met status 'Afwezig' uit het verleden
+                const { data: matchen, error } = await supabaseClient.from('wedstrijden').select('*').eq('speler', speler).neq('status', 'Afwezig').order('datum', { ascending: false });
                 if (error) throw error;
                 
                 if (matchen.length === 0) {
                     container.innerHTML = `<div class="empty-state-noe"><h2>Geen matchen</h2><p style="color: var(--rebecca-purple); font-weight:700;">Voeg de eerste wedstrijd toe voor ${speler}!</p></div>`; return;
                 }
 
-                // 1. QUICK STATS BEREKENEN
+                // QUICK STATS
                 let gespeeldSpeler = 0; let gespeeldDoelman = 0; let goals = 0; let assists = 0;
                 matchen.forEach(m => {
-                    if (m.status === 'Meegedaan') {
-                        if (m.mini_scores && m.mini_scores.length > 0) {
-                            m.mini_scores.forEach(score => {
-                                if (score.is_doelman) gespeeldDoelman++; else gespeeldSpeler++;
-                                goals += (score.goals || 0);
-                                assists += (score.assists || 0);
-                            });
-                        } else {
-                            if (m.is_doelman) gespeeldDoelman++; else gespeeldSpeler++;
-                            goals += (m.doelpunten_speler || 0);
-                            assists += (m.assists || 0);
-                        }
+                    if (m.mini_scores && m.mini_scores.length > 0) {
+                        m.mini_scores.forEach(score => {
+                            if (score.is_doelman) gespeeldDoelman++; else gespeeldSpeler++;
+                            goals += (score.goals || 0);
+                            assists += (score.assists || 0);
+                        });
+                    } else {
+                        if (m.is_doelman) gespeeldDoelman++; else gespeeldSpeler++;
+                        goals += (m.doelpunten_speler || 0);
+                        assists += (m.assists || 0);
                     }
                 });
 
@@ -67,12 +66,10 @@
                     </div>
                 `;
 
-                // 2. WEDSTRIJDKAARTJES GENEREREN
+                // WEDSTRIJDKAARTJES
                 matchen.forEach(match => {
-                    // Mooie datum genereren voor de balk
                     const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long' });
                     
-                    // Berekenen van de totale uitslag van de dag
                     let totaalThuis = 0; let totaalUit = 0;
                     if (match.mini_scores && match.mini_scores.length > 0) {
                         match.mini_scores.forEach(s => { totaalThuis += s.thuis; totaalUit += s.uit; });
@@ -80,24 +77,17 @@
                         totaalThuis = match.score_thuis || 0; totaalUit = match.score_uit || 0;
                     }
 
-                    // Logica: Wie staat links en wie staat rechts? (Afhankelijk van Thuis/Uit)
-                    let eigenPloegNaam = match.eigen_ploeg || "KV Kester Gooik";
-                    let tegenstanderNaam = match.tegenstander;
-                    let linksTeam, rechtsTeam, linksScore, rechtsScore;
+                    // Logica: Thuisploeg bovenaan, Uitploeg onderaan (inclusief logo's)
+                    let thuisTeamNaam = match.locatie === 'Thuis' ? (match.eigen_ploeg || 'Eigen Ploeg') : match.tegenstander;
+                    let uitTeamNaam = match.locatie === 'Thuis' ? match.tegenstander : (match.eigen_ploeg || 'Eigen Ploeg');
+                    
+                    let logoEigenHtml = match.logo_eigen_ploeg ? `<img src="${match.logo_eigen_ploeg}" class="score-team-logo">` : `<div class="score-team-logo">Eigen</div>`;
+                    let logoTegenHtml = match.logo_tegenstander ? `<img src="${match.logo_tegenstander}" class="score-team-logo">` : `<div class="score-team-logo">🛡️</div>`;
+                    
+                    let thuisLogo = match.locatie === 'Thuis' ? logoEigenHtml : logoTegenHtml;
+                    let uitLogo = match.locatie === 'Thuis' ? logoTegenHtml : logoEigenHtml;
 
-                    if (match.locatie === 'Uit') {
-                        linksTeam = tegenstanderNaam;
-                        rechtsTeam = eigenPloegNaam;
-                        linksScore = totaalThuis;  // Bij Uit spelen is de tegenstander de thuisploeg
-                        rechtsScore = totaalUit;
-                    } else {
-                        linksTeam = eigenPloegNaam;
-                        rechtsTeam = tegenstanderNaam;
-                        linksScore = totaalThuis;
-                        rechtsScore = totaalUit;
-                    }
-
-                    // Lijntjes per sub-match genereren
+                    // Lijntjes per sub-match
                     let subMatchesHtml = '';
                     if (match.mini_scores && match.mini_scores.length > 0) {
                         match.mini_scores.forEach((score, index) => {
@@ -120,14 +110,27 @@
                         });
                     }
 
+                    // Optionele opmerking weergeven
+                    let commentHtml = match.opmerking ? `<div class="match-comment">💬 "${match.opmerking}"</div>` : '';
+
                     html += `
                         <a href="match-detail.html?id=${match.id}" class="match-card-v2">
                             <div class="match-date-header">📅 ${datumMooi}</div>
-                            <div class="total-score-bar">
-                                <span class="team-name left">${linksTeam}</span>
-                                <span class="score-badge">${linksScore} - ${rechtsScore}</span>
-                                <span class="team-name right">${rechtsTeam}</span>
+                            
+                            <!-- HET NIEUWE VERTICALE SCOREBORD -->
+                            <div class="scoreboard-v2">
+                                <div class="score-row">
+                                    <div class="score-team">${thuisLogo} <span class="score-team-name">${thuisTeamNaam}</span></div>
+                                    <span class="score-number">${totaalThuis}</span>
+                                </div>
+                                <div class="score-row">
+                                    <div class="score-team">${uitLogo} <span class="score-team-name">${uitTeamNaam}</span></div>
+                                    <span class="score-number">${totaalUit}</span>
+                                </div>
                             </div>
+                            
+                            ${commentHtml}
+
                             <div class="sub-matches-list">
                                 ${subMatchesHtml || '<div class="sub-match-line" style="justify-content:center;">Geen data ingegeven</div>'}
                             </div>

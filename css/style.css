@@ -403,3 +403,25 @@ header a.active { color: var(--soft-cyan); opacity: 1; font-weight: 900;}
 .sub-match-score.loss { color: var(--lobster-pink); }
 .sub-match-score.draw { color: var(--rebecca-purple); }
 .sub-match-icons { display: flex; gap: 4px; font-size: 14px; }
+
+/* =========================================
+   12. SCOREBORD LAYOUT (Onder Elkaar)
+   ========================================= */
+.scoreboard-v2 { background: #fff; padding: 15px; }
+.score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.score-row:last-child { margin-bottom: 0; }
+
+.score-team { display: flex; align-items: center; gap: 12px; flex: 1; }
+.score-team-logo { 
+    width: 36px; height: 36px; border-radius: 8px; object-fit: cover; 
+    background: var(--almond-silk); display: flex; align-items: center; justify-content: center; 
+    font-size: 10px; font-weight: bold; color: var(--space-indigo); text-align: center; line-height: 1.1;
+}
+.score-team-name { font-size: 16px; font-weight: 900; color: var(--space-indigo); white-space: normal; line-height: 1.2; }
+.score-number { font-size: 24px; font-weight: 900; color: var(--rebecca-purple); min-width: 35px; text-align: right; }
+
+.match-comment { 
+    font-size: 12px; font-style: italic; padding: 10px 15px; 
+    background: var(--bg-color); color: var(--rebecca-purple); 
+    border-bottom: 1px solid var(--almond-silk);
+}
