@@ -1,6 +1,35 @@
 // js/upload.js
 
-// Functie voor afwezigheid (stond eerst in de HTML)
+// 1. PINCODE LOGICA
+window.checkPin = function() {
+    const pin = document.getElementById('pincode-input').value;
+    
+    // Jouw geheime code (pas dit getal aan naar wens)
+    if (pin === "2026") {
+        document.getElementById('pin-screen').style.display = "none";
+        document.getElementById('form-screen').style.display = "block";
+        // Zet datum automatisch op vandaag nadat ontgrendeld is
+        document.getElementById('datum').valueAsDate = new Date();
+    } else {
+        document.getElementById('pin-error').style.display = "block";
+        document.getElementById('pincode-input').value = ""; // Maak veld leeg
+    }
+};
+
+// Laat "Enter" toets ook werken voor de pincode
+document.addEventListener('DOMContentLoaded', () => {
+    const pinInput = document.getElementById('pincode-input');
+    if (pinInput) {
+        pinInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                window.checkPin();
+            }
+        });
+    }
+});
+
+// Functie voor afwezigheid
 window.toggleAfwezig = function() {
     const status = document.getElementById('status').value;
     const redenBlok = document.getElementById('reden_afwezig_blok');
@@ -24,12 +53,12 @@ function berekenSeizoen(datumString) {
     }
 }
 
-// Algemene upload functie voor één bestand naar Supabase
+// Upload functie
 async function uploadBestandNaarSupabase(bestand, mapNaam) {
     const bestandsNaam = `${mapNaam}/${Date.now()}-${bestand.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
     
     const { data, error } = await supabaseClient.storage
-        .from('media') // De naam van jouw bucket
+        .from('media')
         .upload(bestandsNaam, bestand);
 
     if (error) {
@@ -37,12 +66,11 @@ async function uploadBestandNaarSupabase(bestand, mapNaam) {
         return null;
     }
     
-    // Vraag de publieke URL op van de geüploade foto
     const { data: publicUrlData } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
     return publicUrlData.publicUrl;
 }
 
-// De hoofdfunctie gekoppeld aan de "Opslaan" knop
+// Data opslaan
 window.saveMatch = async function() {
     const submitBtn = document.querySelector('.submit-btn');
     submitBtn.innerText = "Bezig met opslaan... ⏳";
@@ -55,33 +83,30 @@ window.saveMatch = async function() {
         let logoUrl = null;
         let fotoUrls = [];
 
-        // 1. Logo uploaden (indien geselecteerd)
         if (logoBestand) {
+            submitBtn.innerText = "Logo uploaden...";
             logoUrl = await uploadBestandNaarSupabase(logoBestand, 'logos');
         }
 
-        // 2. Foto's comprimeren en uploaden
         if (fotoBestanden.length > 0) {
             const compressieOpties = {
-                maxSizeMB: 0.5, // Maximaal 500kb per foto
+                maxSizeMB: 0.5,
                 maxWidthOrHeight: 1920,
                 useWebWorker: true
             };
 
             for (let i = 0; i < fotoBestanden.length; i++) {
-                submitBtn.innerText = `Foto ${i + 1}/${fotoBestanden.length} comprimeren...`;
-                const gecomprimeerdeFoto = await imageCompression(fotoBestanden[i], compressieOpties);
-                
                 submitBtn.innerText = `Foto ${i + 1}/${fotoBestanden.length} uploaden...`;
+                const gecomprimeerdeFoto = await imageCompression(fotoBestanden[i], compressieOpties);
                 const url = await uploadBestandNaarSupabase(gecomprimeerdeFoto, 'actiefotos');
                 if (url) fotoUrls.push(url);
             }
         }
 
-        // 3. Data structureren
         submitBtn.innerText = "Gegevens opslaan...";
         const datumVal = document.getElementById('datum').value;
         const spelerVal = document.getElementById('speler').value;
+        
         const matchData = {
             id: datumVal.replace(/-/g, '') + '-' + spelerVal.toLowerCase(),
             speler: spelerVal,
@@ -92,9 +117,18 @@ window.saveMatch = async function() {
             locatie: document.getElementById('locatie').value,
             status: document.getElementById('status').value,
             reden_afwezig: document.getElementById('status').value === 'Afwezig' ? document.getElementById('reden_afwezig').value : null,
+            
+            // Nieuwe velden voor omstandigheden
+            weer: document.getElementById('weer').value,
+            ondergrond: document.getElementById('ondergrond').value,
+            
             score_thuis: parseInt(document.getElementById('score_thuis').value) || 0,
             score_uit: parseInt(document.getElementById('score_uit').value) || 0,
+            
             doelpunten_speler: parseInt(document.getElementById('doelpunten').value) || 0,
+            // Nieuw veld voor assists
+            assists: parseInt(document.getElementById('assists').value) || 0,
+            
             kaarten: {
                 geel: parseInt(document.getElementById('geel').value) || 0,
                 rood: parseInt(document.getElementById('rood').value) || 0
@@ -103,14 +137,12 @@ window.saveMatch = async function() {
             fotos: fotoUrls
         };
 
-        // 4. Naar database sturen
         const { error } = await supabaseClient
             .from('wedstrijden')
             .insert([matchData]);
 
         if (error) throw error;
 
-        // Succes! Reset formulier en ga terug
         alert("Match succesvol opgeslagen!");
         window.location.href = "index.html";
 
@@ -121,9 +153,3 @@ window.saveMatch = async function() {
         submitBtn.disabled = false;
     }
 };
-
-// Startdatum vandaag
-document.addEventListener('DOMContentLoaded', () => {
-    const datumVeld = document.getElementById('datum');
-    if (datumVeld) datumVeld.valueAsDate = new Date();
-});

@@ -24,8 +24,44 @@
     <script src="js/database.js"></script>
 
     <script>
+        // Wereldwijde variabele om matchdata even in te bewaren voor de deelfunctie
+        let huidigeMatch = null;
+
+        // De functie die wordt aangeroepen als je op de WhatsApp knop klikt
+        window.deelViaWhatsApp = function() {
+            if (!huidigeMatch) return;
+
+            let tekst = `⚽ *Wedstrijd update ${huidigeMatch.speler}!*\n\n`;
+            tekst += `Tegenstander: *${huidigeMatch.tegenstander}*\n`;
+            tekst += `Uitslag: *${huidigeMatch.score_thuis} - ${huidigeMatch.score_uit}*\n\n`;
+
+            if (huidigeMatch.status === 'Afwezig') {
+                tekst += `${huidigeMatch.speler} was afwezig (${huidigeMatch.reden_afwezig}).\n\n`;
+            } else {
+                const goals = huidigeMatch.doelpunten_speler || 0;
+                const assists = huidigeMatch.assists || 0;
+
+                if (goals > 0 || assists > 0) {
+                    tekst += `📊 *Stats ${huidigeMatch.speler}:*\n`;
+                    if (goals > 0) tekst += `- ${goals} Doelpunt(en) 🎯\n`;
+                    if (assists > 0) tekst += `- ${assists} Assist(s) 👟\n`;
+                    tekst += `\n`;
+                } else {
+                    tekst += `Goed gewerkt op het veld! 💪\n\n`;
+                }
+            }
+            
+            // Plak de link van de huidige pagina erbij
+            tekst += `Bekijk alle foto's en details in de app:\n${window.location.href}`;
+
+            // Codeer de tekst zodat speciale tekens en spaties goed in WhatsApp komen
+            const encodedTekst = encodeURIComponent(tekst);
+            
+            // Open WhatsApp (werkt op gsm direct in de app, op pc in WhatsApp Web)
+            window.open(`https://wa.me/?text=${encodedTekst}`, '_blank');
+        };
+
         async function laadMatchDetails() {
-            // 1. Haal het ID uit de URL (bijv. ?id=20260912-lou)
             const urlParams = new URLSearchParams(window.location.search);
             const matchId = urlParams.get('id');
             const contentDiv = document.getElementById('detail-content');
@@ -36,34 +72,36 @@
             }
 
             try {
-                // 2. Haal de specifieke match op uit Supabase
                 const { data: match, error } = await supabaseClient
                     .from('wedstrijden')
                     .select('*')
                     .eq('id', matchId)
-                    .single(); // .single() omdat we er exact 1 verwachten
+                    .single();
 
                 if (error) throw error;
+                
+                // Bewaar de match globaal voor de WhatsApp functie
+                huidigeMatch = match;
 
-                // 3. Formatteer de datum
                 const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                const assists = match.assists || 0;
+                const weer = match.weer || 'Onbekend weer';
+                const ondergrond = match.ondergrond || 'Onbekende ondergrond';
 
-                // 4. Bouw de fotogalerij HTML
                 let galerijHtml = '<p class="empty-state">Geen foto\'s toegevoegd.</p>';
                 if (match.fotos && match.fotos.length > 0) {
                     galerijHtml = '<div class="photo-gallery">';
                     match.fotos.forEach(fotoUrl => {
-                        // Linkt naar de originele foto als je erop klikt
                         galerijHtml += `<a href="${fotoUrl}" target="_blank"><img src="${fotoUrl}" alt="Actiefoto"></a>`;
                     });
                     galerijHtml += '</div>';
                 }
 
-                // 5. Bouw de volledige pagina-inhoud
                 contentDiv.innerHTML = `
                     <div class="detail-header">
                         <h2>${match.tegenstander}</h2>
                         <p>${datumMooi} • ${match.type_wedstrijd}</p>
+                        <p style="font-size: 12px; margin-top: 5px; opacity: 0.8;">☁️ ${weer} • ⚽ ${ondergrond}</p>
                     </div>
 
                     <div class="scoreboard">
@@ -82,11 +120,15 @@
                         <h3 style="margin-bottom: 10px; color:#1a1a1a;">Statistieken ${match.speler}</h3>
                         ${match.status === 'Afwezig' 
                             ? `<p style="color:#e74c3c; font-weight:bold;">Afwezig: ${match.reden_afwezig}</p>` 
-                            : `<p><strong>Doelpunten:</strong> ${match.doelpunten_speler}</p>`
+                            : `<p><strong>Doelpunten:</strong> ${match.doelpunten_speler} &nbsp;|&nbsp; <strong>Assists:</strong> ${assists}</p>`
                         }
                         <p><strong>Locatie:</strong> ${match.locatie}</p>
                         <p><strong>Kaarten:</strong> ${match.kaarten.geel} Geel, ${match.kaarten.rood} Rood</p>
                     </div>
+
+                    <button class="wa-share-btn" onclick="deelViaWhatsApp()">
+                        <span>📱</span> Deel via WhatsApp
+                    </button>
 
                     <h3 style="margin-bottom: 15px; color:#1a1a1a; margin-top:25px;">Wedstrijdfoto's</h3>
                     ${galerijHtml}
@@ -98,7 +140,6 @@
             }
         }
 
-        // Start de functie zodra de pagina laadt
         document.addEventListener('DOMContentLoaded', laadMatchDetails);
     </script>
 </body>

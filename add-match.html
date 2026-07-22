@@ -16,110 +16,147 @@
     </header>
 
     <main style="padding: 20px;">
-        <form id="matchForm">
-            <!-- Speler & Datum -->
-            <div class="form-row">
+        
+        <!-- Pincode Scherm (Dit zie je als eerste) -->
+        <div id="pin-screen" class="pin-container">
+            <h2>Toegang Beveiligd 🔒</h2>
+            <p>Geef de pincode in om een nieuwe wedstrijd te registreren.</p>
+            <input type="password" id="pincode-input" class="pin-input" pattern="[0-9]*" inputmode="numeric" maxlength="4" placeholder="****">
+            <button type="button" class="submit-btn" onclick="checkPin()">Ontgrendel</button>
+            <p id="pin-error" style="color: #e74c3c; display: none; margin-top: 15px; font-weight: bold;">Foutieve code, probeer opnieuw.</p>
+        </div>
+
+        <!-- Het Formulier (Verborgen tot de code juist is) -->
+        <div id="form-screen" style="display: none;">
+            <form id="matchForm">
+                <!-- Speler & Datum -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Speler</label>
+                        <select id="speler" required>
+                            <option value="Lou">Lou</option>
+                            <option value="Noé">Noé</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Datum</label>
+                        <input type="date" id="datum" required>
+                    </div>
+                </div>
+
+                <!-- Wedstrijd details -->
                 <div class="form-group">
-                    <label>Speler</label>
-                    <select id="speler" required>
-                        <option value="Lou">Lou</option>
-                        <option value="Noé">Noé</option>
+                    <label>Type Wedstrijd</label>
+                    <select id="type_wedstrijd" required>
+                        <option value="Competitie">Competitie</option>
+                        <option value="Toernooi">Toernooi</option>
+                        <option value="Vriendschappelijk">Vriendschappelijk</option>
                     </select>
                 </div>
+
                 <div class="form-group">
-                    <label>Datum</label>
-                    <input type="date" id="datum" required>
+                    <label>Tegenstander</label>
+                    <input type="text" id="tegenstander" placeholder="Bijv. KFC Lennik" required>
                 </div>
-            </div>
 
-            <!-- Wedstrijd details -->
-            <div class="form-group">
-                <label>Type Wedstrijd</label>
-                <select id="type_wedstrijd" required>
-                    <option value="Competitie">Competitie</option>
-                    <option value="Toernooi">Toernooi</option>
-                    <option value="Vriendschappelijk">Vriendschappelijk</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Tegenstander</label>
-                <input type="text" id="tegenstander" placeholder="Bijv. KFC Lennik" required>
-            </div>
-
-            <!-- Logo Tegenstander -->
-            <div class="form-group">
-                <label>Logo Tegenstander (optioneel)</label>
-                <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
-            </div>
-
-            <!-- Locatie & Status -->
-            <div class="form-row">
                 <div class="form-group">
-                    <label>Locatie</label>
-                    <select id="locatie" required>
-                        <option value="Thuis">Thuis</option>
-                        <option value="Uit">Uit</option>
-                    </select>
+                    <label>Logo Tegenstander (optioneel)</label>
+                    <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
                 </div>
-                <div class="form-group">
-                    <label>Status</label>
-                    <select id="status" onchange="toggleAfwezig()" required>
-                        <option value="Meegedaan">Meegedaan</option>
-                        <option value="Afwezig">Afwezig</option>
-                    </select>
-                </div>
-            </div>
 
-            <!-- Reden Afwezigheid (Verborgen tenzij 'Afwezig' is gekozen) -->
-            <div class="form-group" id="reden_afwezig_blok" style="display: none;">
-                <label>Reden van afwezigheid</label>
-                <input type="text" id="reden_afwezig" placeholder="Bijv. Ziek, vakantie...">
-            </div>
-
-            <!-- Score -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Score Thuis</label>
-                    <input type="number" id="score_thuis" min="0" required>
+                <!-- Locatie & Status -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Locatie</label>
+                        <select id="locatie" required>
+                            <option value="Thuis">Thuis</option>
+                            <option value="Uit">Uit</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="status" onchange="toggleAfwezig()" required>
+                            <option value="Meegedaan">Meegedaan</option>
+                            <option value="Afwezig">Afwezig</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Score Uit</label>
-                    <input type="number" id="score_uit" min="0" required>
-                </div>
-            </div>
 
-            <!-- Persoonlijke stats -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Doelpunten Speler</label>
-                    <input type="number" id="doelpunten" min="0" value="0">
+                <div class="form-group" id="reden_afwezig_blok" style="display: none;">
+                    <label>Reden van afwezigheid</label>
+                    <input type="text" id="reden_afwezig" placeholder="Bijv. Ziek, vakantie...">
                 </div>
-            </div>
 
-            <!-- Kaarten -->
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Gele Kaart</label>
-                    <input type="number" id="geel" min="0" value="0">
+                <!-- Omstandigheden (Nieuw) -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Ondergrond</label>
+                        <select id="ondergrond">
+                            <option value="Natuurgras">Natuurgras</option>
+                            <option value="Kunstgras">Kunstgras</option>
+                            <option value="Zaal">Zaal / Indoor</option>
+                            <option value="Modderpoel">Zware Modder</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Weer</label>
+                        <select id="weer">
+                            <option value="Zon">Zon</option>
+                            <option value="Bewolkt">Bewolkt</option>
+                            <option value="Regen">Regen</option>
+                            <option value="Sneeuw/Koud">Koud / Sneeuw</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Rode Kaart</label>
-                    <input type="number" id="rood" min="0" value="0">
+
+                <!-- Score -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Score Thuis</label>
+                        <input type="number" id="score_thuis" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Score Uit</label>
+                        <input type="number" id="score_uit" min="0" required>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Foto's uploaden -->
-            <div class="form-group" style="margin-top: 10px;">
-                <label>Wedstrijdfoto's (meerdere mogelijk)</label>
-                <input type="file" id="fotos" accept="image/png, image/jpeg" multiple>
-            </div>
+                <!-- Persoonlijke stats (Nu met Assists) -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Doelpunten</label>
+                        <input type="number" id="doelpunten" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Assists</label>
+                        <input type="number" id="assists" min="0" value="0">
+                    </div>
+                </div>
 
-            <button type="button" class="submit-btn" onclick="saveMatch()">Opslaan</button>
-        </form>
+                <!-- Kaarten -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Gele Kaart</label>
+                        <input type="number" id="geel" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Rode Kaart</label>
+                        <input type="number" id="rood" min="0" value="0">
+                    </div>
+                </div>
+
+                <!-- Foto's uploaden -->
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Wedstrijdfoto's (meerdere mogelijk)</label>
+                    <input type="file" id="fotos" accept="image/png, image/jpeg" multiple>
+                </div>
+
+                <button type="button" class="submit-btn" onclick="saveMatch()">Opslaan</button>
+            </form>
+        </div>
     </main>
 
-    <!-- Supabase SDK & Image Compression inladen via CDN -->
+    <!-- Supabase SDK & Image Compression inladen -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
 

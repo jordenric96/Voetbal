@@ -181,3 +181,50 @@ header a.active { color: #D4AF37; opacity: 1; border-bottom: 2px solid #D4AF37; 
 }
 
 .stat-full-width { grid-column: span 2; }
+
+/* Pincode Scherm */
+.pin-container {
+    text-align: center;
+    background: #fff;
+    padding: 30px 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin: 40px auto;
+    max-width: 350px;
+    border-top: 4px solid #8A1538;
+}
+.pin-container h2 { color: #1a1a1a; margin-bottom: 10px; }
+.pin-container p { color: #666; margin-bottom: 20px; font-size: 14px; }
+.pin-input {
+    width: 100%;
+    text-align: center;
+    font-size: 24px;
+    letter-spacing: 10px;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+.pin-input:focus { border-color: #D4AF37; outline: none; }
+
+/* WhatsApp Deel Knop */
+.wa-share-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #25D366;
+    color: white;
+    padding: 15px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 900;
+    font-size: 16px;
+    margin-top: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
+    border: none;
+    cursor: pointer;
+    width: 100%;
+}
+.wa-share-btn:active { transform: scale(0.98); }
+.wa-share-btn span { margin-right: 8px; font-size: 20px; }
