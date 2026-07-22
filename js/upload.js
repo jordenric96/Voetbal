@@ -1,3 +1,4 @@
+const STANDAARD_EIGEN_PLOEG = "KV Kester Gooik";
 let bekendeTegenstanders = [];
 let geselecteerdBestaandLogo = null;
 let bestaandEigenLogo = null;
@@ -25,18 +26,20 @@ window.checkPin = async function() {
             if (opgeslagenPloeg) {
                 document.getElementById('eigen_ploeg').value = opgeslagenPloeg;
             } else {
-                document.getElementById('eigen_ploeg').value = "KV Kester Gooik"; // Standaard
+                document.getElementById('eigen_ploeg').value = STANDAARD_EIGEN_PLOEG;
             }
 
             if (opgeslagenLogo) {
                 bestaandEigenLogo = opgeslagenLogo;
-                document.getElementById('logo-eigen-gevonden-status').style.display = 'block';
+                const eigenLogoStatus = document.getElementById('logo-eigen-gevonden-status');
+                if (eigenLogoStatus) eigenLogoStatus.style.display = 'block';
             }
             
             addScoreRow();
         }
     } else {
-        document.getElementById('pin-error').style.display = "block";
+        const pinError = document.getElementById('pin-error');
+        if (pinError) pinError.style.display = "block";
         document.getElementById('pincode-input').value = ""; 
     }
 };
@@ -45,25 +48,47 @@ window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, 
     const wrapper = document.getElementById('mini-scores-wrapper');
     const row = document.createElement('div');
     row.className = 'score-row-item';
+    row.style.width = "100%"; 
+    row.style.boxSizing = "border-box";
+    
     row.innerHTML = `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <label style="font-size: 11px; font-weight: 900; color: var(--space-indigo);">Uitslag</label>
-            <button type="button" class="remove-score-btn" style="width: 24px; height: 24px; font-size: 10px;" onclick="this.parentElement.parentElement.remove()">X</button>
+        <!-- HEADER MET VERWIJDER KNOP -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--almond-silk); width: 100%;">
+            <label style="font-size: 13px; font-weight: 900; color: var(--space-indigo); text-transform: uppercase; letter-spacing: 1px;">Wedstrijd</label>
+            <button type="button" class="remove-score-btn" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; cursor: pointer; padding: 0;" onclick="this.closest('.score-row-item').remove()">✖</button>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-            <input type="number" class="mini-score-thuis" min="0" value="${thuis}" placeholder="Thuis" required style="flex:1; padding: 10px; border-radius: 8px; border: 2px solid var(--almond-silk); text-align: center; font-weight: 900;">
-            <span style="font-weight: 900; color: var(--space-indigo);">-</span>
-            <input type="number" class="mini-score-uit" min="0" value="${uit}" placeholder="Uit" required style="flex:1; padding: 10px; border-radius: 8px; border: 2px solid var(--almond-silk); text-align: center; font-weight: 900;">
+
+        <!-- SCORE INPUTS (GROOT EN DUIDELIJK) -->
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%;">
+            <div style="flex: 1; text-align: center;">
+                <label style="font-size: 10px; font-weight: 900; color: var(--rebecca-purple); display: block; margin-bottom: 6px; text-transform: uppercase;">Thuis</label>
+                <input type="number" class="mini-score-thuis" min="0" value="${thuis}" required style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); text-align: center; font-size: 18px; font-weight: 900; color: var(--space-indigo); box-sizing: border-box;">
+            </div>
+            <div style="font-weight: 900; color: var(--space-indigo); font-size: 24px; margin-top: 15px;">-</div>
+            <div style="flex: 1; text-align: center;">
+                <label style="font-size: 10px; font-weight: 900; color: var(--rebecca-purple); display: block; margin-bottom: 6px; text-transform: uppercase;">Uit</label>
+                <input type="number" class="mini-score-uit" min="0" value="${uit}" required style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); text-align: center; font-size: 18px; font-weight: 900; color: var(--space-indigo); box-sizing: border-box;">
+            </div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px; border-radius: 8px;">
-            <label style="font-size: 11px; font-weight: 800; display:flex; align-items:center; cursor:pointer; color: var(--space-indigo);">
-                <input type="checkbox" class="mini-score-doelman" ${doelman ? 'checked' : ''} style="margin-right: 6px; width:16px; height:16px;"> 🧤 Doelman
+
+        <!-- STATISTIEKEN VELD (KEEPER, GOALS, ASSISTS) -->
+        <div style="background: #fff; padding: 15px; border-radius: 12px; border: 1px solid var(--almond-silk); width: 100%; box-sizing: border-box;">
+            
+            <label style="font-size: 13px; font-weight: 900; display: flex; align-items: center; cursor: pointer; color: var(--space-indigo); margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee;">
+                <input type="checkbox" class="mini-score-doelman" ${doelman ? 'checked' : ''} style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--rebecca-purple);"> 
+                🧤 Speelde als Doelman
             </label>
-            <div style="display: flex; gap: 5px; align-items: center;">
-                <span style="font-size: 14px;">⚽</span>
-                <input type="number" class="mini-score-goals" min="0" value="${goals}" style="width: 40px; padding: 6px; border-radius: 6px; border: 1px solid #ddd; text-align:center; font-weight:bold;">
-                <span style="font-size: 14px; margin-left: 8px;">👟</span>
-                <input type="number" class="mini-score-assists" min="0" value="${assists}" style="width: 40px; padding: 6px; border-radius: 6px; border: 1px solid #ddd; text-align:center; font-weight:bold;">
+            
+            <div style="display: flex; justify-content: space-around; align-items: center;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; font-weight: 900; color: var(--rebecca-purple);">⚽ Goals</span>
+                    <input type="number" class="mini-score-goals" min="0" value="${goals}" style="width: 65px; padding: 10px; border-radius: 8px; border: 2px solid #eee; text-align: center; font-weight: 900; font-size: 16px; color: var(--space-indigo);">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; font-weight: 900; color: var(--rebecca-purple);">👟 Assists</span>
+                    <input type="number" class="mini-score-assists" min="0" value="${assists}" style="width: 65px; padding: 10px; border-radius: 8px; border: 2px solid #eee; text-align: center; font-weight: 900; font-size: 16px; color: var(--space-indigo);">
+                </div>
             </div>
         </div>
     `;
@@ -81,7 +106,7 @@ async function laadWedstrijdVoorBewerken(id) {
             document.getElementById('datum').value = data.datum;
             document.getElementById('tegenstander').value = data.tegenstander;
             document.getElementById('locatie').value = data.locatie;
-            document.getElementById('eigen_ploeg').value = data.eigen_ploeg || 'KV Kester Gooik';
+            document.getElementById('eigen_ploeg').value = data.eigen_ploeg || STANDAARD_EIGEN_PLOEG;
             document.getElementById('categorie').value = data.categorie || 'U6';
             document.getElementById('match_format').value = data.match_format || '2v2';
             if (data.opmerking) document.getElementById('opmerking').value = data.opmerking;
@@ -98,7 +123,8 @@ async function laadWedstrijdVoorBewerken(id) {
             
             if (data.logo_eigen_ploeg) {
                 bestaandEigenLogo = data.logo_eigen_ploeg;
-                document.getElementById('logo-eigen-gevonden-status').style.display = 'block';
+                const eigenLogoStatus = document.getElementById('logo-eigen-gevonden-status');
+                if (eigenLogoStatus) eigenLogoStatus.style.display = 'block';
             }
 
             bestaandeFotos = data.fotos || [];
@@ -190,7 +216,7 @@ window.saveMatch = async function() {
     submitBtn.innerText = "Bezig met valideren... ⏳"; 
     submitBtn.disabled = true;
 
-    // 1. BEVEILIGING: VALIDATIE VAN DE DOELPUNTEN (Meteen stoppen bij onmogelijke cijfers)
+    // 1. BEVEILIGING: VALIDATIE VAN DE DOELPUNTEN
     const scoreRows = document.querySelectorAll('.score-row-item');
     const speelLocatie = document.getElementById('locatie').value;
     let validatieFout = null;
@@ -212,7 +238,7 @@ window.saveMatch = async function() {
         alert(validatieFout);
         submitBtn.innerText = "Opslaan";
         submitBtn.disabled = false;
-        return; // STOP DE UPLOAD!
+        return; // STOP DE UPLOAD
     }
 
     // 2. DOORGAAN MET UPLOADEN ALS ALLES KLOPT
@@ -259,6 +285,8 @@ window.saveMatch = async function() {
         const editId = document.getElementById('matchForm').dataset.editId;
         const ingevuldeEigenPloeg = document.getElementById('eigen_ploeg').value;
         
+        let opmerkingVeld = document.getElementById('opmerking');
+        
         const matchData = {
             id: editId ? editId : datumVal.replace(/-/g, '') + '-' + spelerVal.toLowerCase() + '-' + Date.now(),
             speler: spelerVal,
@@ -267,7 +295,7 @@ window.saveMatch = async function() {
             tegenstander: document.getElementById('tegenstander').value,
             locatie: speelLocatie,
             status: "Meegedaan",
-            opmerking: document.getElementById('opmerking').value,
+            opmerking: opmerkingVeld ? opmerkingVeld.value : null,
             
             eigen_ploeg: ingevuldeEigenPloeg,
             logo_eigen_ploeg: logoEigenUrl,
