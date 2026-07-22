@@ -19,7 +19,6 @@
         <p class="empty-state">Wedstrijdgegevens laden... ⏳</p>
     </main>
 
-    <!-- Supabase SDK inladen -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
 
@@ -28,17 +27,14 @@
 
         window.deelViaWhatsApp = function() {
             if (!huidigeMatch) return;
-
             let tekst = `⚽ *Wedstrijd update ${huidigeMatch.speler}!*\n\n`;
             tekst += `Tegenstander: *${huidigeMatch.tegenstander}*\n`;
             tekst += `Uitslag: *${huidigeMatch.score_thuis} - ${huidigeMatch.score_uit}*\n\n`;
-
             if (huidigeMatch.status === 'Afwezig') {
                 tekst += `${huidigeMatch.speler} was afwezig (${huidigeMatch.reden_afwezig}).\n\n`;
             } else {
                 const goals = huidigeMatch.doelpunten_speler || 0;
                 const assists = huidigeMatch.assists || 0;
-
                 if (goals > 0 || assists > 0) {
                     tekst += `📊 *Stats ${huidigeMatch.speler}:*\n`;
                     if (goals > 0) tekst += `- ${goals} Doelpunt(en) 🎯\n`;
@@ -48,10 +44,25 @@
                     tekst += `Goed gewerkt op het veld! 💪\n\n`;
                 }
             }
-            
-            tekst += `Bekijk alle foto's en details in de app:\n${window.location.href}`;
-            const encodedTekst = encodeURIComponent(tekst);
-            window.open(`https://wa.me/?text=${encodedTekst}`, '_blank');
+            tekst += `Bekijk foto's en details in de app:\n${window.location.href}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(tekst)}`, '_blank');
+        };
+
+        window.bewerkMatch = function(id) {
+            window.location.href = `add-match.html?edit=${id}`;
+        };
+
+        window.verwijderMatch = async function(id) {
+            const pin = prompt("Voer de pincode in om te verwijderen:");
+            if (pin === "0204") {
+                if (confirm("Weet je zeker dat je deze wedstrijd wilt wissen? Dit is definitief.")) {
+                    await supabaseClient.from('wedstrijden').delete().eq('id', id);
+                    alert("Wedstrijd succesvol verwijderd!");
+                    window.location.href = "index.html";
+                }
+            } else if (pin !== null) {
+                alert("Foutieve pincode.");
+            }
         };
 
         async function laadMatchDetails() {
@@ -59,81 +70,63 @@
             const matchId = urlParams.get('id');
             const contentDiv = document.getElementById('detail-content');
 
-            if (!matchId) {
-                contentDiv.innerHTML = '<p class="empty-state">Geen wedstrijd geselecteerd.</p>';
-                return;
-            }
+            if (!matchId) return;
 
             try {
-                const { data: match, error } = await supabaseClient
-                    .from('wedstrijden')
-                    .select('*')
-                    .eq('id', matchId)
-                    .single();
-
+                const { data: match, error } = await supabaseClient.from('wedstrijden').select('*').eq('id', matchId).single();
                 if (error) throw error;
                 huidigeMatch = match;
 
                 const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                const assists = match.assists || 0;
-                const weer = match.weer || 'Onbekend weer';
-                const ondergrond = match.ondergrond || 'Onbekende ondergrond';
-
+                
                 let galerijHtml = '<p class="empty-state">Geen foto\'s toegevoegd.</p>';
                 if (match.fotos && match.fotos.length > 0) {
                     galerijHtml = '<div class="photo-gallery">';
-                    match.fotos.forEach(fotoUrl => {
-                        galerijHtml += `<a href="${fotoUrl}" target="_blank"><img src="${fotoUrl}" alt="Actiefoto"></a>`;
-                    });
+                    match.fotos.forEach(url => galerijHtml += `<a href="${url}" target="_blank"><img src="${url}"></a>`);
                     galerijHtml += '</div>';
                 }
 
-                // Check of er kaarten zijn, zo niet, toon niets
-                const heeftKaarten = match.kaarten && (match.kaarten.geel > 0 || match.kaarten.rood > 0);
-                const kaartenHtml = heeftKaarten 
-                    ? `<p><strong>Kaarten:</strong> ${match.kaarten.geel} Geel, ${match.kaarten.rood} Rood</p>` 
-                    : ``;
+                const kaartenHtml = (match.kaarten && (match.kaarten.geel > 0 || match.kaarten.rood > 0)) 
+                    ? `<p><strong>Kaarten:</strong> ${match.kaarten.geel} Geel, ${match.kaarten.rood} Rood</p>` : ``;
 
                 contentDiv.innerHTML = `
                     <div class="detail-header">
                         <h2>${match.tegenstander}</h2>
                         <p>${datumMooi} • ${match.type_wedstrijd}</p>
-                        <p style="font-size: 12px; margin-top: 5px; opacity: 0.8;">☁️ ${weer} • ⚽ ${ondergrond}</p>
                     </div>
 
                     <div class="scoreboard">
-                        <div class="score-block">
-                            <span>Thuis</span>
-                            <strong>${match.score_thuis}</strong>
-                        </div>
+                        <div class="score-block"><span>Thuis</span><strong>${match.score_thuis}</strong></div>
                         <div class="score-divider">-</div>
-                        <div class="score-block">
-                            <span>Uit</span>
-                            <strong>${match.score_uit}</strong>
-                        </div>
+                        <div class="score-block"><span>Uit</span><strong>${match.score_uit}</strong></div>
                     </div>
 
                     <div class="stats-card">
                         <h3 style="margin-bottom: 10px; color: var(--space-indigo);">Statistieken ${match.speler}</h3>
-                        ${match.status === 'Afwezig' 
-                            ? `<p style="color: var(--lobster-pink); font-weight:bold;">Afwezig: ${match.reden_afwezig}</p>` 
-                            : `<p><strong>Doelpunten:</strong> ${match.doelpunten_speler} &nbsp;|&nbsp; <strong>Assists:</strong> ${assists}</p>`
-                        }
+                        ${match.status === 'Afwezig' ? `<p style="color: var(--lobster-pink); font-weight:bold;">Afwezig: ${match.reden_afwezig}</p>` : `<p><strong>Doelpunten:</strong> ${match.doelpunten_speler} &nbsp;|&nbsp; <strong>Assists:</strong> ${match.assists || 0}</p>`}
                         <p><strong>Locatie:</strong> ${match.locatie}</p>
                         ${kaartenHtml}
                     </div>
 
-                    <button class="wa-share-btn" onclick="deelViaWhatsApp()">
+                    <button class="wa-share-btn" onclick="deelViaWhatsApp()" style="width: 100%; padding: 14px; border:none; color: white; font-weight: bold; cursor:pointer; margin-bottom: 25px;">
                         <span>📱</span> Deel via WhatsApp
                     </button>
 
-                    <h3 style="margin-bottom: 15px; color: var(--space-indigo); margin-top:25px;">Wedstrijdfoto's</h3>
+                    <!-- NIEUW: BEWERK EN VERWIJDER KNOPPEN -->
+                    <div style="display: flex; gap: 12px; margin-bottom: 30px;">
+                        <button onclick="bewerkMatch('${match.id}')" style="flex: 1; background: var(--rebecca-purple); color: #fff; padding: 14px; border: none; border-radius: 14px; font-weight: 900; box-shadow: 0 6px 16px rgba(89,60,143,0.3); cursor:pointer;">
+                            ✏️ Bewerk
+                        </button>
+                        <button onclick="verwijderMatch('${match.id}')" style="flex: 1; background: var(--lobster-pink); color: #fff; padding: 14px; border: none; border-radius: 14px; font-weight: 900; box-shadow: 0 6px 16px rgba(219,84,97,0.3); cursor:pointer;">
+                            🗑️ Wis
+                        </button>
+                    </div>
+
+                    <h3 style="margin-bottom: 15px; color: var(--space-indigo);">Wedstrijdfoto's</h3>
                     ${galerijHtml}
                 `;
-
-            } catch (error) {
-                console.error("Fout:", error);
-                contentDiv.innerHTML = '<p class="empty-state">Fout bij het laden van de wedstrijd.</p>';
+            } catch (err) {
+                contentDiv.innerHTML = '<p class="empty-state">Fout bij het laden.</p>';
             }
         }
 

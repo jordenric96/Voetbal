@@ -1,7 +1,7 @@
 let bekendeTegenstanders = [];
 let geselecteerdBestaandLogo = null;
+let bestaandeFotos = []; // Onthoud de foto's als we bewerken
 
-// 1. PINCODE LOGICA
 window.checkPin = async function() {
     const pin = document.getElementById('pincode-input').value;
     
@@ -9,47 +9,90 @@ window.checkPin = async function() {
         document.getElementById('pin-screen').style.display = "none";
         document.getElementById('form-screen').style.display = "block";
         document.getElementById('datum').valueAsDate = new Date();
-        
         document.getElementById('tegenstander').placeholder = "Ploegen laden... ⏳";
+        
         await haalPloegenOp();
+
+        // BEWERKEN LOGICA: Is er doorgeklikt vanuit de detailpagina?
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('edit');
+        if (editId) {
+            await laadWedstrijdVoorBewerken(editId);
+        }
     } else {
         document.getElementById('pin-error').style.display = "block";
         document.getElementById('pincode-input').value = ""; 
     }
 };
 
-// 2. AUTOCOMPLETE LOGICA
+async function laadWedstrijdVoorBewerken(id) {
+    try {
+        const { data, error } = await supabaseClient.from('wedstrijden').select('*').eq('id', id).single();
+        if (error) throw error;
+        
+        if (data) {
+            // Pas de header titel aan
+            document.querySelector('header h1').innerText = "✏️ Match Bewerken";
+            
+            // Velden invullen
+            document.getElementById('speler').value = data.speler;
+            document.getElementById('datum').value = data.datum;
+            document.getElementById('type_wedstrijd').value = data.type_wedstrijd;
+            document.getElementById('tegenstander').value = data.tegenstander;
+            document.getElementById('locatie').value = data.locatie;
+            document.getElementById('status').value = data.status;
+            
+            window.toggleAfwezig();
+            if (data.reden_afwezig) document.getElementById('reden_afwezig').value = data.reden_afwezig;
+            
+            document.getElementById('ondergrond').value = data.ondergrond || 'Natuurgras';
+            document.getElementById('weer').value = data.weer || 'Zon';
+            document.getElementById('score_thuis').value = data.score_thuis;
+            document.getElementById('score_uit').value = data.score_uit;
+            document.getElementById('doelpunten').value = data.doelpunten_speler || 0;
+            document.getElementById('assists').value = data.assists || 0;
+            
+            if (data.kaarten && (data.kaarten.geel > 0 || data.kaarten.rood > 0)) {
+                document.getElementById('heeft_kaarten').checked = true;
+                window.toggleKaarten();
+                document.getElementById('geel').value = data.kaarten.geel;
+                document.getElementById('rood').value = data.kaarten.rood;
+            }
+
+            // Onthoud logo en foto's
+            geselecteerdBestaandLogo = data.logo_tegenstander; 
+            bestaandeFotos = data.fotos || [];
+            
+            // Knop aanpassen en ID opslaan
+            document.getElementById('matchForm').dataset.editId = data.id;
+            document.querySelector('.submit-btn').innerText = "Wijzigingen Opslaan";
+        }
+    } catch (err) {
+        console.error("Fout bij laden bewerking:", err);
+    }
+}
+
 async function haalPloegenOp() {
     try {
-        const { data, error } = await supabaseClient
-            .from('wedstrijden')
-            .select('tegenstander, logo_tegenstander');
-            
+        const { data, error } = await supabaseClient.from('wedstrijden').select('tegenstander, logo_tegenstander');
         if (error) throw error;
 
         const uniekePloegenMap = new Map();
-        
         if (data && data.length > 0) {
             data.forEach(match => {
                 if (!match.tegenstander) return;
                 const naamClean = match.tegenstander.trim();
                 const naamLower = naamClean.toLowerCase();
-                
                 if (!uniekePloegenMap.has(naamLower)) {
                     uniekePloegenMap.set(naamLower, { naam: naamClean, logo: match.logo_tegenstander });
-                } else {
-                    if (!uniekePloegenMap.get(naamLower).logo && match.logo_tegenstander) {
-                        uniekePloegenMap.get(naamLower).logo = match.logo_tegenstander;
-                    }
+                } else if (!uniekePloegenMap.get(naamLower).logo && match.logo_tegenstander) {
+                    uniekePloegenMap.get(naamLower).logo = match.logo_tegenstander;
                 }
             });
         }
-        
         bekendeTegenstanders = Array.from(uniekePloegenMap.values());
         document.getElementById('tegenstander').placeholder = `Typ om te zoeken in ${bekendeTegenstanders.length} bekende ploeg(en)...`;
-        
     } catch (err) {
-        console.error("Fout bij ophalen tegenstanders:", err);
         document.getElementById('tegenstander').placeholder = "Kon ploegen niet laden.";
     }
 }
@@ -58,7 +101,6 @@ function setupAutocomplete() {
     const input = document.getElementById('tegenstander');
     if (!input) return;
 
-    // MAGIE: Als het onzichtbare lijstje niet bestaat in de HTML, bouwen we het nu zelf!
     let lijst = document.getElementById('autocomplete-lijst');
     if (!lijst) {
         lijst = document.createElement('div');
@@ -77,10 +119,7 @@ function setupAutocomplete() {
         geselecteerdBestaandLogo = null; 
         if (logoStatus) logoStatus.style.display = 'none';
 
-        if (!val) {
-            lijst.style.display = 'none';
-            return;
-        }
+        if (!val) { lijst.style.display = 'none'; return; }
 
         const matches = bekendeTegenstanders.filter(ploeg => ploeg.naam.toLowerCase().includes(val));
         
@@ -89,20 +128,12 @@ function setupAutocomplete() {
             matches.forEach(ploeg => {
                 const div = document.createElement('div');
                 div.className = 'autocomplete-item';
-                
-                const logoHtml = ploeg.logo 
-                    ? `<img src="${ploeg.logo}" class="autocomplete-logo">` 
-                    : `<div class="autocomplete-logo">🛡️</div>`;
-                
+                const logoHtml = ploeg.logo ? `<img src="${ploeg.logo}" class="autocomplete-logo">` : `<div class="autocomplete-logo">🛡️</div>`;
                 div.innerHTML = `${logoHtml} ${ploeg.naam}`;
-                
                 div.addEventListener('mousedown', function(e) {
                     e.preventDefault(); 
                     input.value = ploeg.naam; 
-                    if (ploeg.logo) {
-                        geselecteerdBestaandLogo = ploeg.logo; 
-                        if (logoStatus) logoStatus.style.display = 'block'; 
-                    }
+                    if (ploeg.logo) { geselecteerdBestaandLogo = ploeg.logo; if (logoStatus) logoStatus.style.display = 'block'; }
                     lijst.style.display = 'none'; 
                 });
                 lijst.appendChild(div);
@@ -113,9 +144,7 @@ function setupAutocomplete() {
     });
 
     document.addEventListener('click', function (e) {
-        if (e.target !== input && e.target !== lijst) {
-            lijst.style.display = 'none';
-        }
+        if (e.target !== input && e.target !== lijst) lijst.style.display = 'none';
     });
     
     if (fileInput) {
@@ -130,37 +159,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const pinInput = document.getElementById('pincode-input');
     if (pinInput) {
         pinInput.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                window.checkPin();
-            }
+            if (event.key === "Enter") { event.preventDefault(); window.checkPin(); }
         });
     }
     setupAutocomplete();
 });
 
-// 3. OVERIGE FUNCTIES
 window.toggleAfwezig = function() {
     const status = document.getElementById('status').value;
     const redenBlok = document.getElementById('reden_afwezig_blok');
-    if (status === 'Afwezig') {
-        redenBlok.style.display = 'block';
-    } else {
-        redenBlok.style.display = 'none';
-        document.getElementById('reden_afwezig').value = '';
-    }
+    if (status === 'Afwezig') { redenBlok.style.display = 'block'; } else { redenBlok.style.display = 'none'; document.getElementById('reden_afwezig').value = ''; }
 };
 
 window.toggleKaarten = function() {
     const blok = document.getElementById('kaarten_blok');
     const checkbox = document.getElementById('heeft_kaarten');
-    if (checkbox.checked) {
-        blok.style.display = 'flex';
-    } else {
-        blok.style.display = 'none';
-        document.getElementById('geel').value = 0;
-        document.getElementById('rood').value = 0;
-    }
+    if (checkbox.checked) { blok.style.display = 'flex'; } else { blok.style.display = 'none'; document.getElementById('geel').value = 0; document.getElementById('rood').value = 0; }
 };
 
 function berekenSeizoen(datumString) {
@@ -168,11 +182,7 @@ function berekenSeizoen(datumString) {
     const datum = new Date(datumString);
     const jaar = datum.getFullYear();
     const maand = datum.getMonth() + 1;
-    if (maand >= 7) {
-        return `${jaar.toString().slice(-2)}-${(jaar + 1).toString().slice(-2)}`;
-    } else {
-        return `${(jaar - 1).toString().slice(-2)}-${jaar.toString().slice(-2)}`;
-    }
+    return maand >= 7 ? `${jaar.toString().slice(-2)}-${(jaar + 1).toString().slice(-2)}` : `${(jaar - 1).toString().slice(-2)}-${jaar.toString().slice(-2)}`;
 }
 
 async function uploadBestandNaarSupabase(bestand, mapNaam) {
@@ -193,13 +203,12 @@ window.saveMatch = async function() {
         const fotoBestanden = document.getElementById('fotos').files;
         
         let logoUrl = geselecteerdBestaandLogo; 
-
         if (logoBestand) {
             submitBtn.innerText = "Nieuw logo uploaden...";
             logoUrl = await uploadBestandNaarSupabase(logoBestand, 'logos');
         }
 
-        let fotoUrls = [];
+        let fotoUrls = bestaandeFotos; // Neem bestaande foto's mee als we bewerken
         if (fotoBestanden.length > 0) {
             const compressieOpties = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true };
             for (let i = 0; i < fotoBestanden.length; i++) {
@@ -214,8 +223,11 @@ window.saveMatch = async function() {
         const datumVal = document.getElementById('datum').value;
         const spelerVal = document.getElementById('speler').value;
         
+        // Magie: Gebruik het opgeslagen editId als we updaten, anders een nieuw ID maken!
+        const editId = document.getElementById('matchForm').dataset.editId;
+        
         const matchData = {
-            id: datumVal.replace(/-/g, '') + '-' + spelerVal.toLowerCase() + '-' + Date.now(),
+            id: editId ? editId : datumVal.replace(/-/g, '') + '-' + spelerVal.toLowerCase() + '-' + Date.now(),
             speler: spelerVal,
             datum: datumVal,
             seizoen: berekenSeizoen(datumVal),
@@ -230,22 +242,19 @@ window.saveMatch = async function() {
             score_uit: parseInt(document.getElementById('score_uit').value) || 0,
             doelpunten_speler: parseInt(document.getElementById('doelpunten').value) || 0,
             assists: parseInt(document.getElementById('assists').value) || 0,
-            kaarten: {
-                geel: parseInt(document.getElementById('geel').value) || 0,
-                rood: parseInt(document.getElementById('rood').value) || 0
-            },
+            kaarten: { geel: parseInt(document.getElementById('geel').value) || 0, rood: parseInt(document.getElementById('rood').value) || 0 },
             logo_tegenstander: logoUrl,
             fotos: fotoUrls
         };
 
-        const { error } = await supabaseClient.from('wedstrijden').insert([matchData]);
+        // UPSERT = Als het ID al bestaat in de database, overschrijft hij het (Update). Anders maakt hij een nieuwe (Insert).
+        const { error } = await supabaseClient.from('wedstrijden').upsert([matchData]);
         if (error) throw error;
 
-        alert("Match succesvol opgeslagen!");
+        alert(editId ? "Match succesvol bijgewerkt!" : "Match succesvol opgeslagen!");
         window.location.href = "index.html";
 
     } catch (err) {
-        console.error(err);
         alert("Er is iets misgegaan: " + err.message);
         submitBtn.innerText = "Opslaan";
         submitBtn.disabled = false;
