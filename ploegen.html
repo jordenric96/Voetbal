@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ploegen Beheren</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="theme-color" content="#171738">
+</head>
+<body>
+    <header>
+        <h1>Ploegen 🛡️</h1>
+        <nav>
+            <a href="index.html">← Terug</a>
+        </nav>
+    </header>
+
+    <main style="padding: 20px; padding-bottom: 100px;">
+        
+        <!-- Formulier om een nieuwe ploeg toe te voegen -->
+        <div style="background: #fff; padding: 20px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
+            <h2 style="color: var(--space-indigo); font-size: 16px; margin-bottom: 15px;">+ Nieuwe Ploeg Voordefiniëren</h2>
+            <input type="text" id="nieuwe-ploeg-naam" placeholder="Naam van de club..." style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); margin-bottom: 15px; font-weight: bold;">
+            <input type="file" id="nieuwe-ploeg-logo" accept="image/png, image/jpeg" style="margin-bottom: 15px;">
+            <button onclick="slaPloegOp()" id="save-btn" style="width: 100%; padding: 12px; background: var(--rebecca-purple); color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer;">Ploeg Opslaan</button>
+        </div>
+
+        <h2 style="color: var(--space-indigo); font-size: 16px; margin-bottom: 15px;">Opgeslagen Ploegen</h2>
+        <div id="ploegen-lijst">
+            <p class="empty-state">Ploegen laden... ⏳</p>
+        </div>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/database.js"></script>
+
+    <script>
+        async function laadPloegen() {
+            const lijst = document.getElementById('ploegen-lijst');
+            const { data, error } = await supabaseClient.from('ploegen').select('*').order('naam', { ascending: true });
+            
+            if (error) {
+                lijst.innerHTML = '<p class="empty-state">Fout bij laden ploegen.</p>';
+                return;
+            }
+
+            if (data.length === 0) {
+                lijst.innerHTML = '<p class="empty-state" style="font-size: 12px;">Je hebt nog geen ploegen voorgedefinieerd.</p>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(ploeg => {
+                const logoHtml = ploeg.logo_url ? `<img src="${ploeg.logo_url}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">` : `<div style="width: 40px; height: 40px; border-radius: 8px; background: var(--almond-silk); display: flex; align-items:center; justify-content:center; font-size: 16px;">🛡️</div>`;
+                html += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 12px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            ${logoHtml}
+                            <strong style="color: var(--space-indigo);">${ploeg.naam}</strong>
+                        </div>
+                        <button onclick="verwijderPloeg('${ploeg.id}')" style="background: var(--lobster-pink); color: #fff; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">Wis</button>
+                    </div>
+                `;
+            });
+            lijst.innerHTML = html;
+        }
+
+        window.slaPloegOp = async function() {
+            const naam = document.getElementById('nieuwe-ploeg-naam').value.trim();
+            const logoBestand = document.getElementById('nieuwe-ploeg-logo').files[0];
+            const btn = document.getElementById('save-btn');
+
+            if (!naam) { alert("Vul een ploegnaam in!"); return; }
+
+            btn.innerText = "Bezig met opslaan... ⏳";
+            btn.disabled = true;
+
+            try {
+                let logoUrl = null;
+                if (logoBestand) {
+                    const bestandsNaam = `logos/${Date.now()}-${logoBestand.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+                    await supabaseClient.storage.from('media').upload(bestandsNaam, logoBestand);
+                    const { data } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
+                    logoUrl = data.publicUrl;
+                }
+
+                await supabaseClient.from('ploegen').insert([{ naam: naam, logo_url: logoUrl }]);
+                
+                document.getElementById('nieuwe-ploeg-naam').value = '';
+                document.getElementById('nieuwe-ploeg-logo').value = '';
+                laadPloegen();
+            } catch (err) {
+                alert("Fout bij opslaan.");
+            }
+            btn.innerText = "Ploeg Opslaan";
+            btn.disabled = false;
+        };
+
+        window.verwijderPloeg = async function(id) {
+            const pin = prompt("Voer de pincode in om te verwijderen (0204):");
+            if (pin === "0204") {
+                await supabaseClient.from('ploegen').delete().eq('id', id);
+                laadPloegen();
+            } else if (pin !== null) {
+                alert("Foutieve code.");
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', laadPloegen);
+    </script>
+</body>
+</html>
