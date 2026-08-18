@@ -425,3 +425,20 @@ header a.active { color: var(--soft-cyan); opacity: 1; font-weight: 900;}
     background: var(--bg-color); color: var(--rebecca-purple); 
     border-bottom: 1px solid var(--almond-silk);
 }
+
+/* =========================================
+   13. INDIVIDUELE MATCH-RIJEN MET LOGO
+   ========================================= */
+.sub-match-line {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0; border-bottom: 1px dashed var(--almond-silk);
+}
+.sub-match-line:last-child { border-bottom: none; }
+
+.sub-match-team { display: flex; align-items: center; gap: 10px; flex: 1; }
+.sub-match-logo { 
+    width: 28px; height: 28px; border-radius: 6px; object-fit: cover; 
+    background: var(--almond-silk); display: flex; align-items: center; justify-content: center; 
+    font-size: 10px; font-weight: bold; color: var(--space-indigo); text-align: center; line-height: 1.1;
+}
+.sub-match-team-name { font-size: 14px; font-weight: 900; color: var(--space-indigo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;}
