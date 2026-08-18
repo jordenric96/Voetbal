@@ -10,7 +10,10 @@
 <body>
     <header>
         <h1>Overzicht</h1>
-        <nav><a href="stats.html">Statistieken</a></nav>
+        <nav>
+            <a href="stats.html">Stats</a>
+            <a href="ploegen.html">Ploegen</a>
+        </nav>
     </header>
 
     <div class="tabs">
@@ -33,7 +36,6 @@
             container.innerHTML = '<p class="empty-state">Wedstrijden laden... ⏳</p>';
 
             try {
-                // Let op: negeer wedstrijden met status 'Afwezig' uit het verleden
                 const { data: matchen, error } = await supabaseClient.from('wedstrijden').select('*').eq('speler', speler).neq('status', 'Afwezig').order('datum', { ascending: false });
                 if (error) throw error;
                 
@@ -77,7 +79,6 @@
                         totaalThuis = match.score_thuis || 0; totaalUit = match.score_uit || 0;
                     }
 
-                    // Logica: Thuisploeg bovenaan, Uitploeg onderaan (inclusief logo's)
                     let thuisTeamNaam = match.locatie === 'Thuis' ? (match.eigen_ploeg || 'Eigen Ploeg') : match.tegenstander;
                     let uitTeamNaam = match.locatie === 'Thuis' ? match.tegenstander : (match.eigen_ploeg || 'Eigen Ploeg');
                     
@@ -87,7 +88,6 @@
                     let thuisLogo = match.locatie === 'Thuis' ? logoEigenHtml : logoTegenHtml;
                     let uitLogo = match.locatie === 'Thuis' ? logoTegenHtml : logoEigenHtml;
 
-                    // Lijntjes per sub-match
                     let subMatchesHtml = '';
                     if (match.mini_scores && match.mini_scores.length > 0) {
                         match.mini_scores.forEach((score, index) => {
@@ -110,15 +110,18 @@
                         });
                     }
 
-                    // Optionele opmerking weergeven
                     let commentHtml = match.opmerking ? `<div class="match-comment">💬 "${match.opmerking}"</div>` : '';
+                    
+                    // Nieuwe badge voor Type Wedstrijd (Competitie/Toernooi)
+                    let typeBadgeKleur = match.type_wedstrijd === 'Toernooi' ? 'var(--lobster-pink)' : 'var(--rebecca-purple)';
+                    let typeBadge = match.type_wedstrijd ? `<span class="badge" style="background: ${typeBadgeKleur}; color: #fff; margin-bottom: 8px; display: inline-block;">${match.type_wedstrijd}</span>` : '';
 
                     html += `
                         <a href="match-detail.html?id=${match.id}" class="match-card-v2">
                             <div class="match-date-header">📅 ${datumMooi}</div>
                             
-                            <!-- HET NIEUWE VERTICALE SCOREBORD -->
                             <div class="scoreboard-v2">
+                                <div style="text-align: center;">${typeBadge}</div>
                                 <div class="score-row">
                                     <div class="score-team">${thuisLogo} <span class="score-team-name">${thuisTeamNaam}</span></div>
                                     <span class="score-number">${totaalThuis}</span>
