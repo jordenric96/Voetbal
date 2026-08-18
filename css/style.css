@@ -1,575 +1,80 @@
-/* =========================================
-   1. KLEURENPALET & BASIS (PREMIUM UI)
-   ========================================= */
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
-
 :root {
-    /* Jouw custom palet uit de bijlage */
-    --lobster-pink: #DB5461;
-    --almond-silk: #FFD9CE;
-    --rebecca-purple: #593C8F;
-    --soft-cyan: #8EF9F3;
-    --space-indigo: #171738;
-    
-    /* Afgeleide kleuren voor de UI */
-    --bg-color: #FAF6F5; /* Een hele lichte variant van Almond Silk voor rust */
-    --card-shadow: 0 12px 32px rgba(23, 23, 56, 0.08); /* Space Indigo tinted shadow */
+    /* Premium Kleurenpalet (iOS Style) */
+    --space-indigo: #111827;   /* Diep zwart/blauw voor titels */
+    --rebecca-purple: #4b5563; /* Subtiel grijs voor subtitels */
+    --lobster-pink: #111827;   /* Knoppen worden strak donker */
+    --soft-cyan: #f9fafb;      /* Lichte achtergronden */
+    --almond-silk: #e5e7eb;    /* Zachte randen/borders */
+    --bg-color: #f3f4f6;       /* Hoofd achtergrondkleur van de app */
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', sans-serif; }
-
-body { 
-    background-color: var(--bg-color); 
-    color: var(--space-indigo); 
-    -webkit-font-smoothing: antialiased; 
-    padding-bottom: 100px;
-}
-
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* =========================================
-   2. HEADER (Glassmorphism & Gradients)
-   ========================================= */
-header { 
-    background: linear-gradient(135deg, var(--space-indigo) 0%, var(--rebecca-purple) 100%);
-    color: var(--soft-cyan); 
-    padding: 18px 20px; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    box-shadow: 0 8px 24px rgba(23, 23, 56, 0.2);
-    position: sticky; 
-    top: 0;
-    z-index: 100;
-    /* Moderne blur voor de header */
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-header h1 { font-size: 24px; font-weight: 900; letter-spacing: 0.5px; }
-header a { color: var(--almond-silk); text-decoration: none; font-weight: 600; margin-left: 15px; font-size: 15px; opacity: 0.8; transition: 0.3s;}
-header a.active { color: var(--soft-cyan); opacity: 1; font-weight: 900;}
-
-/* =========================================
-   3. TABS (Zachte Almond Silk stijl)
-   ========================================= */
-.tabs { 
-    display: flex; 
-    background: var(--almond-silk); 
-    border-radius: 30px; 
-    margin: 20px; 
-    padding: 6px;
-    box-shadow: inset 0 2px 6px rgba(23, 23, 56, 0.05);
-}
-.tab-btn { 
-    flex: 1; padding: 12px; border: none; background: transparent; 
-    font-size: 16px; font-weight: 800; cursor: pointer; color: var(--space-indigo); 
-    opacity: 0.6; border-radius: 25px;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-.tab-btn.active { 
-    background: #fff; 
-    color: var(--rebecca-purple); 
-    opacity: 1;
-    box-shadow: 0 4px 12px rgba(23, 23, 56, 0.1); 
-}
-
-/* =========================================
-   4. WEDSTRIJD KAARTJES
-   ========================================= */
-.tab-content { display: none; padding: 0 20px; }
-.tab-content.active { display: block; animation: fadeUp 0.4s ease forwards; }
-.tab-content h2 { font-size: 18px; color: var(--space-indigo); margin-bottom: 15px; font-weight: 900; }
-
-.match-card {
-    background: #fff;
-    border-radius: 20px;
-    padding: 16px;
-    margin-bottom: 16px;
-    box-shadow: var(--card-shadow);
-    display: flex;
-    align-items: center;
-    text-decoration: none;
+body {
+    background-color: var(--bg-color);
     color: var(--space-indigo);
-    border-left: 6px solid var(--almond-silk); 
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    animation: fadeUp 0.5s ease backwards;
-}
-.match-card:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(23, 23, 56, 0.04); }
-
-/* Dynamische kleuren voor resultaten */
-.match-card.win { border-left-color: var(--soft-cyan); }
-.match-card.loss { border-left-color: var(--lobster-pink); }
-.match-card.draw { border-left-color: var(--rebecca-purple); }
-
-.match-logo {
-    width: 54px; height: 54px; border-radius: 14px;
-    object-fit: cover; margin-right: 16px;
-    background: var(--almond-silk); display: flex;
-    align-items: center; justify-content: center;
-    font-size: 24px; color: var(--space-indigo);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0; padding: 0;
+    -webkit-font-smoothing: antialiased;
 }
 
-.match-info { flex: 1; }
-.match-info h3 { font-size: 18px; margin-bottom: 4px; font-weight: 900; }
-.match-info p { font-size: 13px; color: var(--rebecca-purple); font-weight: 700; opacity: 0.8; }
-
-.match-score {
-    font-size: 22px; font-weight: 900;
-    color: var(--space-indigo); 
-    background: var(--soft-cyan);
-    padding: 12px 16px; border-radius: 14px;
-    min-width: 75px; text-align: center;
-    box-shadow: 0 4px 12px rgba(142, 249, 243, 0.4);
-}
-
-/* =========================================
-   5. ZWEVENDE KNOP (+ Match)
-   ========================================= */
-.fab-btn { 
-    position: fixed; bottom: 30px; right: 25px; 
-    background: var(--lobster-pink); 
-    color: #fff; 
-    padding: 16px 28px; border-radius: 50px; 
-    text-decoration: none; font-weight: 900; font-size: 16px;
-    box-shadow: 0 10px 24px rgba(219, 84, 97, 0.4); 
-    transition: transform 0.2s ease;
-    z-index: 999;
-}
-.fab-btn:active { transform: scale(0.92); }
-
-/* =========================================
-   6. DETAILS & DASHBOARD (Scoreborden)
-   ========================================= */
-.detail-header { text-align: center; margin-bottom: 25px; animation: fadeUp 0.4s ease backwards; }
-.detail-header h2 { font-size: 28px; color: var(--space-indigo); margin-bottom: 5px; font-weight: 900; }
-.detail-header p { color: var(--rebecca-purple); font-size: 14px; font-weight: 700;}
-
-.scoreboard {
-    display: flex; justify-content: center; align-items: center;
-    background: var(--space-indigo); 
-    color: var(--soft-cyan);
-    padding: 30px; border-radius: 24px; margin-bottom: 25px;
-    box-shadow: 0 14px 30px rgba(23, 23, 56, 0.25);
-    animation: fadeUp 0.5s ease backwards; animation-delay: 0.1s;
-    position: relative;
-    overflow: hidden;
-}
-/* Subtiele glow in het scorebord */
-.scoreboard::after {
-    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-    background: radial-gradient(circle, rgba(142,249,243,0.1) 0%, transparent 60%);
-    pointer-events: none;
-}
-
-.score-block { text-align: center; flex: 1; z-index: 2; }
-.score-block span { display: block; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: var(--almond-silk); opacity: 0.9; font-weight: 800; margin-bottom: 8px;}
-.score-block strong { font-size: 46px; font-weight: 900; line-height: 1; }
-.score-divider { font-size: 30px; font-weight: 900; padding: 0 20px; color: var(--rebecca-purple); z-index: 2;}
-
-.stats-card {
-    background: #fff; padding: 20px; border-radius: 20px;
-    margin-bottom: 20px; box-shadow: var(--card-shadow);
-    animation: fadeUp 0.5s ease backwards; animation-delay: 0.2s;
-}
-.stats-card p { margin-bottom: 12px; font-size: 16px; color: var(--space-indigo); }
-.stats-card p strong { color: var(--rebecca-purple); font-weight: 900; }
-
-.photo-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 30px;}
-.photo-gallery img {
-    width: 100%; height: 160px; object-fit: cover;
-    border-radius: 16px; box-shadow: 0 6px 16px rgba(23, 23, 56, 0.1);
-    transition: transform 0.2s;
-}
-.photo-gallery img:active { transform: scale(0.96); }
-
-/* =========================================
-   7. STATS GRID (Dashboard kaarten)
-   ========================================= */
-.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
-.stat-box {
-    background: #fff; padding: 25px 15px; border-radius: 20px;
-    text-align: center; box-shadow: var(--card-shadow);
-    border-top: 6px solid var(--rebecca-purple);
-    animation: fadeUp 0.5s ease backwards;
-}
-.stat-box.gold { border-top-color: var(--soft-cyan); background: var(--space-indigo); }
-.stat-box.gold .stat-value { color: var(--soft-cyan); }
-.stat-box.gold .stat-label { color: var(--almond-silk); }
-
-.stat-box.dark { border-top-color: var(--lobster-pink); background: var(--rebecca-purple); }
-.stat-box.dark .stat-value { color: #fff; }
-.stat-box.dark .stat-label { color: var(--almond-silk); }
-
-.stat-value { display: block; font-size: 34px; font-weight: 900; color: var(--space-indigo); margin-bottom: 6px; line-height: 1;}
-.stat-label { font-size: 12px; color: var(--rebecca-purple); text-transform: uppercase; letter-spacing: 1px; font-weight: 900; }
-.stat-full-width { grid-column: span 2; }
-
-/* =========================================
-   8. FORMUILIEREN & PINCODE
-   ========================================= */
-.form-group { margin-bottom: 22px; }
-.form-group label { display: block; font-weight: 900; margin-bottom: 10px; color: var(--space-indigo); font-size: 15px;}
-.form-group input, .form-group select { 
-    width: 100%; padding: 16px; border: 2px solid var(--almond-silk); 
-    border-radius: 16px; font-size: 16px; background-color: #fff;
-    outline: none; transition: all 0.3s ease;
-    font-weight: 700; color: var(--space-indigo);
-}
-.form-group input:focus, .form-group select:focus { 
-    border-color: var(--rebecca-purple); 
-    box-shadow: 0 0 0 4px rgba(89, 60, 143, 0.1); 
-}
-.form-row { display: flex; gap: 15px; }
-.form-row .form-group { flex: 1; }
-
-.submit-btn {
-    width: 100%; background: var(--lobster-pink); color: #fff;
-    padding: 18px; border: none; border-radius: 16px;
-    font-size: 18px; font-weight: 900; margin-top: 20px; margin-bottom: 30px;
-    box-shadow: 0 10px 24px rgba(219, 84, 97, 0.3); cursor: pointer; transition: 0.2s;
-}
-.submit-btn:active { transform: scale(0.98); }
-
-/* Pincode & Lege statussen */
-/* Pincode & Lege statussen */
-.pin-container { 
-    background: #fff; 
-    border-radius: 24px; 
-    box-shadow: var(--card-shadow); 
-    max-width: 340px; /* Zorgt dat het kader mooi smal blijft */
-    margin: 40px auto; /* Centreert het kader op het scherm */
-    padding: 35px 25px; /* Geeft wat ademruimte binnenin */
-    text-align: center; /* Zet tekst in het midden */
-}
-
-.pin-input { 
-    width: 100%; 
-    font-size: 36px; 
-    letter-spacing: 18px; 
-    border-radius: 20px; 
-    background: var(--almond-silk); 
-    color: var(--space-indigo); 
-    border: 2px solid transparent; 
-    padding: 20px;
-    text-align: center; /* Zet de cijfers mooi in het midden */
-    margin-bottom: 10px;
-    outline: none;
-    transition: 0.3s ease;
-}
-
-.pin-input:focus { 
-    box-shadow: 0 0 0 4px rgba(89, 60, 143, 0.2); 
-}.empty-state, .empty-state-noe { text-align: center; margin-top: 60px; color: var(--rebecca-purple); font-weight: 800; }
-.empty-state-noe h2 { font-size: 28px; color: var(--space-indigo); margin-bottom: 12px; font-weight: 900;}
-
-/* WhatsApp knop */
-.wa-share-btn { 
-    background-color: #25D366; /* Behoud WhatsApp groen voor herkenning */
-    border-radius: 16px; 
-    font-size: 17px; 
-    box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
-}
-/* =========================================
-   9. AUTOCOMPLETE (Zoeklijst tegenstanders)
-   ========================================= */
-.autocomplete-container { position: relative; z-index: 999; }
-.autocomplete-items {
-    position: absolute; top: 100%; left: 0; right: 0;
-    background: #fff; border-radius: 16px;
-    box-shadow: 0 12px 32px rgba(23, 23, 56, 0.15);
-    z-index: 9999; max-height: 220px; overflow-y: auto;
-    margin-top: 8px; border: 2px solid var(--almond-silk);
-    display: none;
-}
-.autocomplete-item {
-    padding: 14px 16px; cursor: pointer;
-    border-bottom: 1px solid var(--bg-color);
-    color: var(--space-indigo); font-weight: 800;
-    display: flex; align-items: center; transition: 0.2s;
-}
-.autocomplete-item:last-child { border-bottom: none; }
-.autocomplete-item:hover, .autocomplete-item:active { background-color: var(--bg-color); color: var(--rebecca-purple); }
-.autocomplete-logo {
-    width: 32px; height: 32px; border-radius: 8px; object-fit: cover; 
-    margin-right: 14px; background: var(--almond-silk);
-    display: flex; align-items: center; justify-content: center; font-size: 16px;
-}
-.logo-status {
-    font-size: 13px; color: #25D366; margin-top: 10px; 
-    font-weight: 900; display: none; padding-left: 5px;
-}
-
-/* =========================================
-   10. QUICK STATS (Bovenaan de index)
-   ========================================= */
-.quick-stats-container {
-    display: flex; gap: 12px; margin-bottom: 25px;
-    animation: fadeUp 0.4s ease forwards;
-}
-.qs-card {
-    flex: 1; border-radius: 20px; padding: 18px 5px; text-align: center;
-    box-shadow: 0 8px 24px rgba(23, 23, 56, 0.1);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    transition: transform 0.2s;
-}
-.qs-card:active { transform: scale(0.95); }
-.qs-card.indigo { background: var(--space-indigo); color: var(--soft-cyan); border-bottom: 4px solid var(--soft-cyan);}
-.qs-card.purple { background: var(--rebecca-purple); color: var(--almond-silk); border-bottom: 4px solid var(--almond-silk);}
-.qs-card.pink { background: var(--lobster-pink); color: #fff; border-bottom: 4px solid var(--space-indigo);}
-
-.qs-icon { font-size: 24px; margin-bottom: 6px; }
-.qs-num { font-size: 28px; font-weight: 900; line-height: 1; margin-bottom: 6px; }
-.qs-text { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 900; opacity: 0.9; }
-
-/* =========================================
-   11. U6 & TOERNOOI UPDATES (Versie 2.0)
-   ========================================= */
-.match-logos { display: flex; align-items: center; margin-right: 15px; }
-.match-logos .match-logo { margin-right: 0; width: 44px; height: 44px; }
-.match-logos .vs-badge { font-size: 10px; font-weight: 900; color: var(--rebecca-purple); margin: 0 6px; opacity: 0.5; }
-
-.badges-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
-.badge { font-size: 9px; font-weight: 900; padding: 4px 8px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-.badge.u-cat { background: var(--space-indigo); color: var(--soft-cyan); }
-.badge.format { background: var(--almond-silk); color: var(--rebecca-purple); }
-.badge.role { background: var(--lobster-pink); color: #fff; }
-
-.mini-scores-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.mini-score { font-size: 12px; font-weight: 900; padding: 4px 10px; border-radius: 8px; box-shadow: 0 2px 6px rgba(23,23,56,0.05); }
-.mini-score.win { background: var(--soft-cyan); color: var(--space-indigo); }
-.mini-score.draw { background: var(--almond-silk); color: var(--rebecca-purple); }
-.mini-score.loss { background: var(--lobster-pink); color: #fff; }
-
-/* Styling voor het formulier (scores toevoegen) */
-.score-row-item { display: flex; gap: 10px; align-items: center; background: var(--bg-color); padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--almond-silk); animation: fadeUp 0.3s ease; }
-.remove-score-btn { background: var(--lobster-pink); color: white; border: none; border-radius: 8px; width: 32px; height: 32px; font-weight: bold; cursor: pointer; }
-.add-score-btn { background: var(--almond-silk); color: var(--space-indigo); width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; margin-bottom: 20px;}
-
-/* Update voor de uitgebreide mini-score kaartjes */
-.score-row-item { 
-    display: flex; flex-direction: column; 
-    background: var(--bg-color); padding: 12px; 
-    border-radius: 12px; margin-bottom: 15px; 
-    border: 1px solid var(--almond-silk); 
-    animation: fadeUp 0.3s ease; 
-}
-.mini-score-icons { font-size: 10px; margin-left: 4px; letter-spacing: 1px; }
-
-/* =========================================
-   12. VERNIEUWDE MATCH CARD (Toernooi Weergave)
-   ========================================= */
-.match-card-v2 {
-    display: flex; flex-direction: column;
-    background: transparent;
-    box-shadow: 0 8px 24px rgba(23, 23, 56, 0.08);
-    border-radius: 12px; margin-bottom: 25px;
-    text-decoration: none; transition: transform 0.2s;
-}
-.match-card-v2:active { transform: scale(0.98); }
-
-.match-date-header {
-    width: 100%; background: var(--rebecca-purple); color: #fff;
-    padding: 10px 15px; border-radius: 12px 12px 0 0;
-    font-size: 13px; font-weight: 900; text-align: center;
-    letter-spacing: 1.5px; text-transform: uppercase;
-}
-
-.total-score-bar {
-    background: var(--space-indigo); color: var(--soft-cyan);
-    padding: 14px 12px; font-size: 15px; font-weight: 900;
-    display: flex; justify-content: center; align-items: center;
-    gap: 10px; border-bottom: 2px solid var(--bg-color);
-}
-.total-score-bar .team-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.total-score-bar .team-name.left { text-align: right; }
-.total-score-bar .team-name.right { text-align: left; }
-.total-score-bar .score-badge {
-    background: var(--almond-silk); color: var(--space-indigo);
-    padding: 6px 14px; border-radius: 8px; font-size: 20px;
-}
-
-.sub-matches-list { width: 100%; padding: 5px 15px 10px; background: #fff; border-radius: 0 0 12px 12px; }
-.sub-match-line {
+/* Premium Header */
+header {
+    padding: 40px 20px 20px;
     display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 0; border-bottom: 1px dashed var(--bg-color);
-    font-size: 13px; font-weight: 800; color: var(--space-indigo);
 }
-.sub-match-line:last-child { border-bottom: none; }
-.sub-match-score { background: var(--bg-color); padding: 4px 10px; border-radius: 6px; }
-.sub-match-score.win { color: #25D366; }
-.sub-match-score.loss { color: var(--lobster-pink); }
-.sub-match-score.draw { color: var(--rebecca-purple); }
-.sub-match-icons { display: flex; gap: 4px; font-size: 14px; }
-
-/* =========================================
-   12. SCOREBORD LAYOUT (Onder Elkaar)
-   ========================================= */
-.scoreboard-v2 { background: #fff; padding: 15px; }
-.score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.score-row:last-child { margin-bottom: 0; }
-
-.score-team { display: flex; align-items: center; gap: 12px; flex: 1; }
-.score-team-logo { 
-    width: 36px; height: 36px; border-radius: 8px; object-fit: cover; 
-    background: var(--almond-silk); display: flex; align-items: center; justify-content: center; 
-    font-size: 10px; font-weight: bold; color: var(--space-indigo); text-align: center; line-height: 1.1;
+header h1 {
+    font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.5px;
 }
-.score-team-name { font-size: 16px; font-weight: 900; color: var(--space-indigo); white-space: normal; line-height: 1.2; }
-.score-number { font-size: 24px; font-weight: 900; color: var(--rebecca-purple); min-width: 35px; text-align: right; }
-
-.match-comment { 
-    font-size: 12px; font-style: italic; padding: 10px 15px; 
-    background: var(--bg-color); color: var(--rebecca-purple); 
-    border-bottom: 1px solid var(--almond-silk);
+header nav a {
+    color: #9ca3af; font-size: 15px; font-weight: 600; text-decoration: none; margin-left: 15px; transition: color 0.2s;
 }
+header nav a.active { color: var(--space-indigo); }
 
-/* =========================================
-   13. INDIVIDUELE MATCH-RIJEN MET LOGO
-   ========================================= */
-.sub-match-line {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 12px 0; border-bottom: 1px dashed var(--almond-silk);
-}
-.sub-match-line:last-child { border-bottom: none; }
-
-.sub-match-team { display: flex; align-items: center; gap: 10px; flex: 1; }
-.sub-match-logo { 
-    width: 28px; height: 28px; border-radius: 6px; object-fit: cover; 
-    background: var(--almond-silk); display: flex; align-items: center; justify-content: center; 
-    font-size: 10px; font-weight: bold; color: var(--space-indigo); text-align: center; line-height: 1.1;
-}
-.sub-match-team-name { font-size: 14px; font-weight: 900; color: var(--space-indigo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;}
-
-/* =========================================
-   1. TABS (LOU & NOÉ) - iOS Segmented Control Stijl
-   ========================================= */
+/* Premium Tabs (Segmented Control) */
 .tabs {
-    display: flex;
-    background: #e9e9f0; /* Zacht grijze achtergrond */
-    border-radius: 14px;
-    padding: 4px;
-    margin: 0 20px 25px 20px;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    display: flex; margin: 0 20px 24px; border-bottom: 1px solid #e5e7eb;
 }
 .tab-btn {
-    flex: 1;
-    padding: 12px;
-    background: transparent;
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 800;
-    color: #8a8a9e;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    flex: 1; background: transparent; border: none; padding: 12px 0;
+    font-size: 15px; font-weight: 600; color: #9ca3af; 
+    border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer;
 }
 .tab-btn.active {
-    background: #ffffff;
-    color: var(--space-indigo);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    color: var(--space-indigo); border-bottom-color: var(--space-indigo);
 }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
-/* =========================================
-   2. MATCH CARDS & HEADERS - Naadloos design
-   ========================================= */
-.match-card-v2 {
-    display: flex; flex-direction: column;
-    background: #ffffff;
-    box-shadow: 0 10px 30px rgba(23, 23, 56, 0.08);
-    border-radius: 20px; 
-    margin-bottom: 25px;
-    text-decoration: none; 
-    transition: transform 0.2s, box-shadow 0.2s;
-    overflow: hidden; /* Zorgt dat de hoekjes perfect rond blijven */
-    border: 1px solid rgba(23, 23, 56, 0.05);
-}
-.match-card-v2:active { 
-    transform: scale(0.98); 
-    box-shadow: 0 4px 15px rgba(23, 23, 56, 0.05);
-}
+.empty-state { text-align: center; color: #6b7280; font-size: 14px; font-weight: 500; margin-top: 40px; }
 
-.match-date-header {
-    width: 100%; 
-    background: var(--rebecca-purple); 
-    color: #fff;
-    padding: 12px 15px; 
-    font-size: 12px; 
-    font-weight: 900; 
-    text-align: center;
-    letter-spacing: 2px; 
-    text-transform: uppercase;
-}
-
-/* De opmerking ("Eerste tornooi van Lou") strakker maken */
-.match-comment {
-    font-size: 13px; 
-    font-style: italic; 
-    padding: 12px 20px; 
-    background: #f8f8fb; 
-    color: var(--space-indigo); 
-    border-bottom: 1px solid rgba(23, 23, 56, 0.05);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* =========================================
-   3. SUB-MATCHES - Geen stippellijnen meer, wel zachte lijnen
-   ========================================= */
-.sub-match-line {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 14px 0; 
-    border-bottom: 1px solid #f0f0f5; /* Zachte volle lijn ipv dashed */
-}
-.sub-match-line:last-child { 
-    border-bottom: none; 
-}
-
-/* =========================================
-   4. SCORE BADGES - Moderne gekleurde achtergronden
-   ========================================= */
-.sub-match-score { 
-    padding: 6px 12px; 
-    border-radius: 8px; 
-    font-weight: 900;
-    font-size: 14px;
-    text-align: center;
-    min-width: 45px;
-}
-.sub-match-score.win { 
-    background: #e6f9ec; /* Zacht groen */
-    color: #1e874b;      /* Donker groen */
-}
-.sub-match-score.loss { 
-    background: #feeef0; /* Zacht rood */
-    color: #d92d40;      /* Donker rood */
-}
-.sub-match-score.draw { 
-    background: #f0f0f5; /* Zacht grijs/blauw */
-    color: var(--space-indigo); 
-}
-
-/* =========================================
-   5. FLOATING ACTION BUTTON (+ Match) - Mooiere schaduw
-   ========================================= */
+/* Zwevende + Knop */
 .fab-btn {
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    background: linear-gradient(135deg, var(--lobster-pink), #e84a5f);
-    color: #fff;
-    padding: 16px 28px;
-    border-radius: 30px;
-    font-size: 16px;
-    font-weight: 900;
-    text-decoration: none;
-    box-shadow: 0 10px 25px rgba(229, 90, 108, 0.4);
-    z-index: 1000;
-    transition: transform 0.2s;
+    position: fixed; bottom: 30px; right: 20px;
+    background: var(--space-indigo); color: #fff;
+    padding: 16px 28px; border-radius: 99px;
+    font-size: 16px; font-weight: 700; text-decoration: none;
+    box-shadow: 0 10px 25px rgba(17, 24, 39, 0.2);
+    display: flex; align-items: center; gap: 8px; z-index: 1000;
 }
-.fab-btn:active {
-    transform: scale(0.95);
+
+/* Formulieren styling behouden maar strakker maken */
+.form-group { margin-bottom: 20px; }
+label { display: block; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+input, select, textarea { 
+    width: 100%; padding: 14px; background: #fff; 
+    border: 1px solid #e5e7eb; border-radius: 12px; 
+    font-size: 15px; font-weight: 500; color: var(--space-indigo); box-sizing: border-box; outline: none; 
 }
+input:focus, select:focus { border-color: var(--space-indigo); }
+.submit-btn { 
+    width: 100%; background: var(--space-indigo); color: #fff; 
+    border: none; padding: 16px; border-radius: 12px; 
+    font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;
+}
+
+.pin-container { background: #fff; padding: 30px; border-radius: 20px; text-align: center; margin: 50px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+.pin-input { font-size: 24px; text-align: center; letter-spacing: 10px; margin-bottom: 20px; }
+
+.autocomplete-items { position: absolute; background: #fff; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 99; overflow: hidden; margin-top: 5px; }
+.autocomplete-item { padding: 12px 15px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.autocomplete-logo { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+.logo-status { font-size: 12px; font-weight: bold; color: #059669; margin-top: 8px; display: none; }
