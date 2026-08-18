@@ -5,99 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Match Toevoegen</title>
     <link rel="stylesheet" href="css/style.css">
-    <meta name="theme-color" content="#171738">
-
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f1f5f9">
 </head>
 <body>
     <header>
-        <h1>+ Nieuwe Match</h1>
+        <h1>Match Toevoegen</h1>
         <nav><a href="index.html">Annuleer</a></nav>
     </header>
 
-    <main style="padding: 20px;">
+    <main style="padding: 0 20px 40px 20px;">
         <div id="pin-screen" class="pin-container">
-            <h2>Toegang Beveiligd 🔒</h2>
+            <h2>Toegang Beveiligd</h2>
             <input type="password" id="pincode-input" class="pin-input" pattern="[0-9]*" inputmode="numeric" maxlength="4" placeholder="****">
             <button type="button" class="submit-btn" onclick="checkPin()">Ontgrendel</button>
-            <p id="pin-error" style="color: var(--lobster-pink); display: none; font-weight: 900;">Foutieve code.</p>
+            <p id="pin-error" style="color: #dc2626; display: none; font-weight: 700; margin-top: 15px;">Foutieve code.</p>
         </div>
 
         <div id="form-screen" style="display: none;">
             <form id="matchForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Speler</label>
-                        <select id="speler" required>
-                            <option value="Lou">Lou</option>
-                            <option value="Noé">Noé</option>
-                        </select>
+                
+                <div style="background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); margin-bottom: 20px;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Speler</label>
+                            <select id="speler" required>
+                                <option value="Lou">Lou</option>
+                                <option value="Noé">Noé</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Datum</label>
+                            <input type="date" id="datum" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Datum</label>
-                        <input type="date" id="datum" required>
-                    </div>
-                </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Categorie</label>
-                        <input type="text" id="categorie" value="U6" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Categorie</label>
+                            <input type="text" id="categorie" value="U6" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="type_wedstrijd" onchange="toggleWedstrijdType()" required>
+                                <option value="Competitie" selected>Competitie</option>
+                                <option value="Toernooi">Toernooi</option>
+                                <option value="Vriendschappelijk">Vriendschappelijk</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Type</label>
-                        <select id="type_wedstrijd" onchange="toggleWedstrijdType()" required>
-                            <option value="Competitie" selected>Competitie</option>
-                            <option value="Toernooi">Toernooi</option>
-                            <option value="Vriendschappelijk">Vriendschappelijk</option>
-                        </select>
-                    </div>
-                </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Eigen Ploeg</label>
-                        <input type="text" id="eigen_ploeg" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Eigen Ploeg</label>
+                            <input type="text" id="eigen_ploeg" required>
+                        </div>
+                        <div class="form-group autocomplete-container">
+                            <label id="label-tegenstander">Tegenstander</label>
+                            <input type="text" id="tegenstander" placeholder="Typ om te zoeken..." required autocomplete="off" oninput="checkTegenstanderLogo()">
+                            <div id="autocomplete-lijst" class="autocomplete-items"></div>
+                        </div>
                     </div>
-                    <div class="form-group autocomplete-container">
-                        <label id="label-tegenstander">Tegenstander</label>
-                        <input type="text" id="tegenstander" placeholder="Typ om te zoeken..." required autocomplete="off" oninput="checkTegenstanderLogo()">
-                        <div id="autocomplete-lijst" class="autocomplete-items"></div>
-                    </div>
-                </div>
 
-                <!-- DIT BLOK VERSCHIJNT ALLEEN ALS DE PLOEG ONBEKEND IS -->
-                <div class="form-row" id="global-logo-tegenstander-container" style="display: none;">
-                    <div class="form-group" style="flex: 1; background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px dashed var(--almond-silk);">
-                        <label style="color: var(--lobster-pink);">Onbekende ploeg! Voeg logo toe:</label>
-                        <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
+                    <div class="form-row" id="global-logo-tegenstander-container" style="display: none;">
+                        <div class="form-group" style="flex: 1; background: #fef2f2; padding: 12px; border-radius: 12px; border: 1px dashed #fca5a5;">
+                            <label style="color: #dc2626;">Nieuwe ploeg! Logo toevoegen:</label>
+                            <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-row">
                     <div class="form-group">
-                        <label>Locatie (Bepalend voor score!)</label>
+                        <label>Locatie</label>
                         <select id="locatie" required>
-                            <option value="Thuis">Thuis</option>
-                            <option value="Uit">Uit</option>
+                            <option value="Thuis">Thuiswedstrijd</option>
+                            <option value="Uit">Uitwedstrijd</option>
                         </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Opmerking / Verslag (Optioneel)</label>
+                        <textarea id="opmerking" rows="2" placeholder="Wat wil je herinneren aan deze match?"></textarea>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Opmerking / Verslag (Optioneel)</label>
-                    <textarea id="opmerking" rows="2" placeholder="Bijv. Geweldige match gespeeld..."></textarea>
-                </div>
-
-                <!-- DYNAMISCHE UITSLAGEN -->
-                <div class="form-group" style="margin-top: 25px; border-top: 2px dashed var(--almond-silk); padding-top: 20px;">
-                    <label style="font-size: 16px; color: var(--space-indigo);">⚽ De Uitslagen</label>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="font-size: 12px;">Wedstrijdvorm:</label>
-                        <select id="match_format" style="width: 100%; max-width: 150px; padding: 6px; font-size: 12px;" required>
+                <!-- DYNAMISCHE UITSLAGEN SECTIE -->
+                <div style="margin-top: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h2 style="font-size: 16px; font-weight: 800; margin: 0; color: #111827;">De Uitslagen</h2>
+                        <select id="match_format" style="width: auto; padding: 6px 12px; font-size: 12px; border-radius: 8px; background: #fff;" required>
                             <option value="2v2" selected>2v2</option>
                             <option value="3v3">3v3</option>
                             <option value="5v5">5v5</option>
@@ -105,15 +99,19 @@
                     </div>
 
                     <div id="mini-scores-wrapper"></div>
+                    
+                    <!-- De nieuwe Dashed Button! -->
                     <button type="button" class="add-score-btn" onclick="addScoreRow()">+ Extra uitslag toevoegen</button>
                 </div>
 
-                <div class="form-group">
-                    <label>Wedstrijdfoto's</label>
-                    <input type="file" id="fotos" accept="image/png, image/jpeg" multiple>
+                <div style="background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); margin-top: 20px; margin-bottom: 20px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Wedstrijdfoto's</label>
+                        <input type="file" id="fotos" accept="image/png, image/jpeg" multiple>
+                    </div>
                 </div>
 
-                <button type="button" class="submit-btn" onclick="saveMatch()">Opslaan</button>
+                <button type="button" class="submit-btn" onclick="saveMatch()">Gegevens Opslaan</button>
             </form>
         </div>
     </main>
