@@ -59,21 +59,16 @@
                     </div>
                     <div class="form-group autocomplete-container">
                         <label id="label-tegenstander">Tegenstander</label>
-                        <input type="text" id="tegenstander" placeholder="Typ om te zoeken..." required autocomplete="off">
+                        <input type="text" id="tegenstander" placeholder="Typ om te zoeken..." required autocomplete="off" oninput="checkTegenstanderLogo()">
                         <div id="autocomplete-lijst" class="autocomplete-items"></div>
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Logo Eigen Ploeg</label>
-                        <input type="file" id="logo_eigen_ploeg" accept="image/png, image/jpeg">
-                        <div id="logo-eigen-gevonden-status" class="logo-status">✅ Laatst gebruikt logo geladen!</div>
-                    </div>
-                    <div class="form-group" id="global-logo-tegenstander-container">
-                        <label>Logo Tegenstander</label>
+                <!-- DIT BLOK VERSCHIJNT ALLEEN ALS DE PLOEG ONBEKEND IS -->
+                <div class="form-row" id="global-logo-tegenstander-container" style="display: none;">
+                    <div class="form-group" style="flex: 1; background: var(--bg-color); padding: 12px; border-radius: 12px; border: 1px dashed var(--almond-silk);">
+                        <label style="color: var(--lobster-pink);">Onbekende ploeg! Voeg logo toe:</label>
                         <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
-                        <div id="logo-gevonden-status" class="logo-status">✅ Bekend logo gevonden!</div>
                     </div>
                 </div>
 
