@@ -1,4 +1,3 @@
-// UITGEBREID KLEUREN BREIN VOOR STATS
 const badgeColors = {
     'U6': { bg: '#fef08a', text: '#713f12' }, 
     'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
@@ -96,17 +95,16 @@ function renderStats() {
 
     let allGames = [];
     
-    // Basis variabelen
     let veldMatches = 0; let veldWins = 0; let veldGoals = 0; let veldAssists = 0;
     let keeperMatches = 0; let keeperWins = 0; let cleanSheets = 0; let goalsAgainst = 0; let keeperGoals = 0; 
     let totaalWins = 0; let totaalDraws = 0; let totaalLosses = 0;
-    
-    // Thuis / Uit variabelen
     let thuisGames = 0, thuisWins = 0, thuisLosses = 0, thuisDraws = 0;
     let uitGames = 0, uitWins = 0, uitLosses = 0, uitDraws = 0;
-
-    // Tegenstander Tracker
     let oppStats = {};
+
+    // NIEUWE VARIABELEN
+    let hattricks = 0; let braces = 0; // Tweeklappers
+    let totaalMinuten = 0; let totaalGeel = 0; let totaalRood = 0;
 
     data.forEach(m => {
         if (m.mini_scores && m.mini_scores.length > 0) {
@@ -119,20 +117,24 @@ function renderStats() {
                 const isDraw = eigenScore === tegenScore;
                 const isLoss = eigenScore < tegenScore;
                 const margin = eigenScore - tegenScore;
+                
+                const scoreGoals = score.goals || 0;
+                
+                // Extra berekeningen
+                if (scoreGoals === 2) braces++;
+                if (scoreGoals >= 3) hattricks++;
+                totaalMinuten += (score.minuten || 0);
+                totaalGeel += (score.geel || 0);
+                totaalRood += (score.rood || 0);
 
-                // Game Object opslaan voor complexe berekeningen
                 allGames.push({
                     datumMooi: new Date(m.datum).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }),
                     tegenstander: tegenstanderNaam,
-                    eigenScore: eigenScore,
-                    tegenScore: tegenScore,
+                    eigenScore: eigenScore, tegenScore: tegenScore,
                     isWin: isWin, isDraw: isDraw, isLoss: isLoss,
-                    margin: margin,
-                    goals: (score.goals || 0),
-                    assists: (score.assists || 0)
+                    margin: margin, goals: scoreGoals
                 });
 
-                // Tellers
                 if (isWin) totaalWins++;
                 if (isDraw) totaalDraws++;
                 if (isLoss) totaalLosses++;
@@ -140,7 +142,6 @@ function renderStats() {
                 if (isThuis) { thuisGames++; if (isWin) thuisWins++; if (isLoss) thuisLosses++; if (isDraw) thuisDraws++; } 
                 else { uitGames++; if (isWin) uitWins++; if (isLoss) uitLosses++; if (isDraw) uitDraws++; }
 
-                // Tegenstanders Tracker
                 if (!oppStats[tegenstanderNaam]) oppStats[tegenstanderNaam] = { count: 0, wins: 0, draws: 0, losses: 0 };
                 oppStats[tegenstanderNaam].count++;
                 if (isWin) oppStats[tegenstanderNaam].wins++;
@@ -152,18 +153,17 @@ function renderStats() {
                     if (isWin) keeperWins++;
                     if (tegenScore === 0) cleanSheets++; 
                     goalsAgainst += tegenScore;
-                    keeperGoals += (score.goals || 0);
+                    keeperGoals += scoreGoals;
                 } else {
                     veldMatches++;
                     if (isWin) veldWins++;
-                    veldGoals += (score.goals || 0);
+                    veldGoals += scoreGoals;
                     veldAssists += (score.assists || 0);
                 }
             });
         }
     });
 
-    // 1. Records berekenen (Grootste winst, verlies, max goals)
     let biggestWin = null, biggestLoss = null, maxGoalsGame = null;
     allGames.forEach(g => {
         if (g.isWin) { if (!biggestWin || g.margin > biggestWin.margin) biggestWin = g; }
@@ -171,36 +171,21 @@ function renderStats() {
         if (g.goals > 0) { if (!maxGoalsGame || g.goals > maxGoalsGame.goals) maxGoalsGame = g; }
     });
 
-    // 2. Langste Winstreeks (Chronologisch zoeken)
-    // Supabase sorteert descending (nieuw -> oud), dus we reverse() voor chronologisch (oud -> nieuw)
     let currentStreak = 0, maxStreak = 0;
     let currentStreakMatches = [], bestStreakMatches = [];
-    
     let allGamesChronological = [...allGames].reverse();
     allGamesChronological.forEach(g => {
         if (g.isWin) {
-            currentStreak++;
-            currentStreakMatches.push(g);
-            if (currentStreak > maxStreak) {
-                maxStreak = currentStreak;
-                bestStreakMatches = [...currentStreakMatches];
-            }
-        } else {
-            currentStreak = 0;
-            currentStreakMatches = [];
-        }
+            currentStreak++; currentStreakMatches.push(g);
+            if (currentStreak > maxStreak) { maxStreak = currentStreak; bestStreakMatches = [...currentStreakMatches]; }
+        } else { currentStreak = 0; currentStreakMatches = []; }
     });
 
-    // 3. Meest Gespeeld Tegen (Aartsrivaal)
     let mostPlayedOpp = null, maxPlayed = 0;
     for (let opp in oppStats) {
-        if (oppStats[opp].count > maxPlayed) {
-            maxPlayed = oppStats[opp].count;
-            mostPlayedOpp = { name: opp, ...oppStats[opp] };
-        }
+        if (oppStats[opp].count > maxPlayed) { maxPlayed = oppStats[opp].count; mostPlayedOpp = { name: opp, ...oppStats[opp] }; }
     }
 
-    // Vorm (Laatste 5) - we gebruiken de normale array (nieuwste eerst)
     let vormLijst = allGames.slice(0, 5).map(g => g.isWin ? 'W' : (g.isDraw ? 'D' : 'L')).reverse();
     let vormHtml = '';
     vormLijst.forEach(result => {
@@ -210,7 +195,6 @@ function renderStats() {
     });
     if(vormLijst.length === 0) vormHtml = `<span style="font-size:12px; color:#9ca3af;">Geen data</span>`;
 
-    // Opmaak en Weergave
     loader.style.display = 'none';
     const cardStyle = "background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);";
     const titleStyle = "font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 15px 0;";
@@ -218,6 +202,10 @@ function renderStats() {
 
     let html = '';
     const totaleGoalsNum = veldGoals + keeperGoals;
+    let totaalMiniMatches = veldMatches + keeperMatches;
+    
+    // G/A Ratio (Directe goal contributie per gespeelde match)
+    const goalContribRatio = totaalMiniMatches > 0 ? ((totaleGoalsNum + veldAssists) / totaalMiniMatches).toFixed(2) : "0.00";
 
     // CARD 1: PRODUCTIVITEIT
     html += `
@@ -239,7 +227,52 @@ function renderStats() {
         </div>
     `;
 
-    // CARD 2: REEKSEN & RECORD
+    // CARD NIEUW: GEVAAR VOOR DOEL (Hattricks & Contributie)
+    html += `
+        <div style="${cardStyle}">
+            <h3 style="${titleStyle}">Gevaar voor het doel</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div style="${statBoxStyle}; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <span style="font-size: 28px; font-weight: 800; color: #111827; line-height: 1; margin-bottom: 4px;">${goalContribRatio}</span>
+                    <span style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: center;">G/A Ratio<br>(Betrokken bij x goals per match)</span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="${statBoxStyle}; padding: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase;">Hat-tricks (3+)</span>
+                        <span style="font-size: 18px; font-weight: 800; color: #111827;">${hattricks}</span>
+                    </div>
+                    <div style="${statBoxStyle}; padding: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase;">Tweeklappers</span>
+                        <span style="font-size: 18px; font-weight: 800; color: #111827;">${braces}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // CARD NIEUW: DISCIPLINE & INZET
+    html += `
+        <div style="${cardStyle}">
+            <h3 style="${titleStyle}">Discipline & Speeltijd</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <div style="${statBoxStyle}; text-align: center; padding: 15px 10px;">
+                    <span style="font-size: 24px; font-weight: 800; color: #111827; display: block; margin-bottom: 4px;">${totaalMinuten}'</span>
+                    <span style="font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase;">Gespeeld</span>
+                </div>
+                <div style="background: #fefce8; border: 1px solid #fef08a; border-radius: 12px; text-align: center; padding: 15px 10px;">
+                    <span style="font-size: 24px; font-weight: 800; color: #a16207; display: block; margin-bottom: 4px;">${totaalGeel}</span>
+                    <span style="font-size: 9px; font-weight: 800; color: #854d0e; text-transform: uppercase;">Geel 🟨</span>
+                </div>
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; text-align: center; padding: 15px 10px;">
+                    <span style="font-size: 24px; font-weight: 800; color: #b91c1c; display: block; margin-bottom: 4px;">${totaalRood}</span>
+                    <span style="font-size: 9px; font-weight: 800; color: #991b1b; text-transform: uppercase;">Rood 🟥</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // CARD REEKSEN & RECORDS
     let streakDetailHtml = '';
     if (maxStreak > 0) {
         bestStreakMatches.forEach(m => {
@@ -249,11 +282,9 @@ function renderStats() {
 
     html += `
         <div style="${cardStyle}">
-            <h3 style="${titleStyle}">Reeksen & Records</h3>
+            <h3 style="${titleStyle}">Records</h3>
             
-            <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px;">
-                
-                <!-- Win Streak -->
+            <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
                 <div style="${statBoxStyle}">
                     <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight:800; display:block; margin-bottom: 4px;">Langste Winstreeks</span>
                     <div style="font-size: 24px; font-weight: 800; color: #059669; margin-bottom: 6px;">${maxStreak} Matchen</div>
@@ -262,7 +293,6 @@ function renderStats() {
                     </div>
                 </div>
 
-                <!-- Biggest Win -->
                 <div style="${statBoxStyle}; border-left: 3px solid #059669;">
                     <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight:800; display:block; margin-bottom: 2px;">Grootste Overwinning</span>
                     ${biggestWin ? `
@@ -271,7 +301,6 @@ function renderStats() {
                     ` : '<span style="font-size: 12px; color: #94a3b8;">Geen overwinning geregistreerd.</span>'}
                 </div>
 
-                <!-- Biggest Loss -->
                 <div style="${statBoxStyle}; border-left: 3px solid #dc2626;">
                     <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight:800; display:block; margin-bottom: 2px;">Zwaarste Verlies</span>
                     ${biggestLoss ? `
@@ -280,7 +309,6 @@ function renderStats() {
                     ` : '<span style="font-size: 12px; color: #94a3b8;">Geen verlies geregistreerd.</span>'}
                 </div>
 
-                <!-- Max Goals in 1 match -->
                 <div style="${statBoxStyle}; border-left: 3px solid #111827;">
                     <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight:800; display:block; margin-bottom: 2px;">Persoonlijk Record (Meeste Goals)</span>
                     ${maxGoalsGame ? `
@@ -292,7 +320,7 @@ function renderStats() {
         </div>
     `;
 
-    // CARD 3: THUIS VS UIT
+    // CARD THUIS VS UIT
     const thuisWinPerc = thuisGames > 0 ? Math.round((thuisWins / thuisGames) * 100) : 0;
     const uitWinPerc = uitGames > 0 ? Math.round((uitWins / uitGames) * 100) : 0;
     
@@ -314,7 +342,7 @@ function renderStats() {
         </div>
     `;
 
-    // CARD 4: AARTSRIVAAL
+    // CARD AARTSRIVAAL
     if (mostPlayedOpp) {
         html += `
             <div style="${cardStyle}">
