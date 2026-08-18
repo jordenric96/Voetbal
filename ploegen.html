@@ -17,7 +17,6 @@
 
     <main style="padding: 20px; padding-bottom: 100px;">
         
-        <!-- Formulier om een nieuwe ploeg toe te voegen -->
         <div style="background: #fff; padding: 20px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
             <h2 style="color: var(--space-indigo); font-size: 16px; margin-bottom: 15px;">+ Nieuwe Ploeg Voordefiniëren</h2>
             <input type="text" id="nieuwe-ploeg-naam" placeholder="Naam van de club..." style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); margin-bottom: 15px; font-weight: bold;">
@@ -41,7 +40,7 @@
             const { data, error } = await supabaseClient.from('ploegen').select('*').order('naam', { ascending: true });
             
             if (error) {
-                lijst.innerHTML = '<p class="empty-state">Fout bij laden ploegen.</p>';
+                lijst.innerHTML = `<p class="empty-state">Fout: ${error.message}</p>`;
                 return;
             }
 
@@ -80,18 +79,20 @@
                 let logoUrl = null;
                 if (logoBestand) {
                     const bestandsNaam = `logos/${Date.now()}-${logoBestand.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-                    await supabaseClient.storage.from('media').upload(bestandsNaam, logoBestand);
+                    const { error: uploadError } = await supabaseClient.storage.from('media').upload(bestandsNaam, logoBestand);
+                    if (uploadError) throw uploadError;
                     const { data } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
                     logoUrl = data.publicUrl;
                 }
 
-                await supabaseClient.from('ploegen').insert([{ naam: naam, logo_url: logoUrl }]);
+                const { error: insertError } = await supabaseClient.from('ploegen').insert([{ naam: naam, logo_url: logoUrl }]);
+                if (insertError) throw insertError;
                 
                 document.getElementById('nieuwe-ploeg-naam').value = '';
                 document.getElementById('nieuwe-ploeg-logo').value = '';
                 laadPloegen();
             } catch (err) {
-                alert("Fout bij opslaan.");
+                alert("Fout bij opslaan: " + err.message);
             }
             btn.innerText = "Ploeg Opslaan";
             btn.disabled = false;
