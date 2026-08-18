@@ -42,7 +42,23 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Categorie</label>
-                            <input type="text" id="categorie" value="U6" required>
+                            <select id="categorie" required>
+                                <option value="U6" selected>U6</option>
+                                <option value="U7">U7</option>
+                                <option value="U8">U8</option>
+                                <option value="U9">U9</option>
+                                <option value="U10">U10</option>
+                                <option value="U11">U11</option>
+                                <option value="U12">U12</option>
+                                <option value="U13">U13</option>
+                                <option value="U14">U14</option>
+                                <option value="U15">U15</option>
+                                <option value="U16">U16</option>
+                                <option value="U17">U17</option>
+                                <option value="Beloften">Beloften</option>
+                                <option value="Eerste Ploeg">Eerste Ploeg</option>
+                                <option value="Veteranen">Veteranen</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label>Type</label>
@@ -87,7 +103,6 @@
                     </div>
                 </div>
 
-                <!-- DYNAMISCHE UITSLAGEN SECTIE -->
                 <div style="margin-top: 30px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h2 style="font-size: 16px; font-weight: 800; margin: 0; color: #111827;">De Uitslagen</h2>
@@ -100,7 +115,6 @@
 
                     <div id="mini-scores-wrapper"></div>
                     
-                    <!-- De nieuwe Dashed Button! -->
                     <button type="button" class="add-score-btn" onclick="addScoreRow()">+ Extra uitslag toevoegen</button>
                 </div>
 
