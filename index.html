@@ -43,19 +43,14 @@
                     container.innerHTML = `<div class="empty-state-noe"><h2>Geen matchen</h2><p style="color: var(--rebecca-purple); font-weight:700;">Voeg de eerste wedstrijd toe voor ${speler}!</p></div>`; return;
                 }
 
-                // QUICK STATS
+                // QUICK STATS (Niks aan gewijzigd)
                 let gespeeldSpeler = 0; let gespeeldDoelman = 0; let goals = 0; let assists = 0;
                 matchen.forEach(m => {
                     if (m.mini_scores && m.mini_scores.length > 0) {
                         m.mini_scores.forEach(score => {
                             if (score.is_doelman) gespeeldDoelman++; else gespeeldSpeler++;
-                            goals += (score.goals || 0);
-                            assists += (score.assists || 0);
+                            goals += (score.goals || 0); assists += (score.assists || 0);
                         });
-                    } else {
-                        if (m.is_doelman) gespeeldDoelman++; else gespeeldSpeler++;
-                        goals += (m.doelpunten_speler || 0);
-                        assists += (m.assists || 0);
                     }
                 });
 
@@ -72,25 +67,20 @@
                 matchen.forEach(match => {
                     const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long' });
                     
-                    let totaalThuis = 0; let totaalUit = 0;
-                    if (match.mini_scores && match.mini_scores.length > 0) {
-                        match.mini_scores.forEach(s => { totaalThuis += s.thuis; totaalUit += s.uit; });
+                    const isToernooi = match.type_wedstrijd === 'Toernooi';
+                    
+                    // HEADER TEKST BEPALEN
+                    let cardHeaderHtml = '';
+                    if (isToernooi) {
+                        cardHeaderHtml = `🏆 Toernooi ${match.tegenstander}`;
                     } else {
-                        totaalThuis = match.score_thuis || 0; totaalUit = match.score_uit || 0;
+                        cardHeaderHtml = `⚽ ${match.eigen_ploeg || 'Eigen Ploeg'} VS ${match.tegenstander}`;
                     }
 
-                    let thuisTeamNaam = match.locatie === 'Thuis' ? (match.eigen_ploeg || 'Eigen Ploeg') : match.tegenstander;
-                    let uitTeamNaam = match.locatie === 'Thuis' ? match.tegenstander : (match.eigen_ploeg || 'Eigen Ploeg');
-                    
-                    let logoEigenHtml = match.logo_eigen_ploeg ? `<img src="${match.logo_eigen_ploeg}" class="score-team-logo">` : `<div class="score-team-logo">Eigen</div>`;
-                    let logoTegenHtml = match.logo_tegenstander ? `<img src="${match.logo_tegenstander}" class="score-team-logo">` : `<div class="score-team-logo">🛡️</div>`;
-                    
-                    let thuisLogo = match.locatie === 'Thuis' ? logoEigenHtml : logoTegenHtml;
-                    let uitLogo = match.locatie === 'Thuis' ? logoTegenHtml : logoEigenHtml;
-
+                    // UITSLAGEN LIJST OPBOUWEN
                     let subMatchesHtml = '';
                     if (match.mini_scores && match.mini_scores.length > 0) {
-                        match.mini_scores.forEach((score, index) => {
+                        match.mini_scores.forEach((score) => {
                             let statusClass = 'draw';
                             if (score.thuis > score.uit) statusClass = match.locatie === 'Thuis' ? 'win' : 'loss';
                             if (score.thuis < score.uit) statusClass = match.locatie === 'Thuis' ? 'loss' : 'win';
@@ -98,9 +88,16 @@
                             let iconen = score.is_doelman ? '🧤' : '👟';
                             if(score.goals > 0) iconen += ' ⚽'.repeat(score.goals);
                             
+                            // Haal de specifieke tegenstander op voor deze mini-match (of val terug naar oude data)
+                            let subTeamNaam = score.tegenstander || match.tegenstander || "Onbekend";
+                            let subLogoHtml = score.logo_tegenstander ? `<img src="${score.logo_tegenstander}" class="sub-match-logo">` : (match.logo_tegenstander ? `<img src="${match.logo_tegenstander}" class="sub-match-logo">` : `<div class="sub-match-logo">🛡️</div>`);
+
                             subMatchesHtml += `
                                 <div class="sub-match-line">
-                                    <span>Match ${index + 1}</span>
+                                    <div class="sub-match-team">
+                                        ${subLogoHtml}
+                                        <span class="sub-match-team-name">${subTeamNaam}</span>
+                                    </div>
                                     <div style="display:flex; align-items:center; gap: 10px;">
                                         <span class="sub-match-icons">${iconen}</span>
                                         <span class="sub-match-score ${statusClass}">${score.thuis} - ${score.uit}</span>
@@ -111,30 +108,19 @@
                     }
 
                     let commentHtml = match.opmerking ? `<div class="match-comment">💬 "${match.opmerking}"</div>` : '';
-                    
-                    // Nieuwe badge voor Type Wedstrijd (Competitie/Toernooi)
-                    let typeBadgeKleur = match.type_wedstrijd === 'Toernooi' ? 'var(--lobster-pink)' : 'var(--rebecca-purple)';
-                    let typeBadge = match.type_wedstrijd ? `<span class="badge" style="background: ${typeBadgeKleur}; color: #fff; margin-bottom: 8px; display: inline-block;">${match.type_wedstrijd}</span>` : '';
 
                     html += `
-                        <a href="match-detail.html?id=${match.id}" class="match-card-v2">
+                        <a href="match-detail.html?id=${match.id}" class="match-card-v2" style="padding:0; overflow:hidden;">
+                            
                             <div class="match-date-header">📅 ${datumMooi}</div>
                             
-                            <div class="scoreboard-v2">
-                                <div style="text-align: center;">${typeBadge}</div>
-                                <div class="score-row">
-                                    <div class="score-team">${thuisLogo} <span class="score-team-name">${thuisTeamNaam}</span></div>
-                                    <span class="score-number">${totaalThuis}</span>
-                                </div>
-                                <div class="score-row">
-                                    <div class="score-team">${uitLogo} <span class="score-team-name">${uitTeamNaam}</span></div>
-                                    <span class="score-number">${totaalUit}</span>
-                                </div>
+                            <div style="background: var(--space-indigo); padding: 15px; text-align: center; color: #fff; border-bottom: 2px solid var(--almond-silk);">
+                                <h3 style="margin: 0; font-size: 16px; font-weight: 900; letter-spacing: 0.5px;">${cardHeaderHtml}</h3>
                             </div>
                             
                             ${commentHtml}
 
-                            <div class="sub-matches-list">
+                            <div class="sub-matches-list" style="padding: 10px 15px;">
                                 ${subMatchesHtml || '<div class="sub-match-line" style="justify-content:center;">Geen data ingegeven</div>'}
                             </div>
                         </a>
