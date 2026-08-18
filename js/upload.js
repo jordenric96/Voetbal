@@ -10,7 +10,6 @@ window.checkPin = async function() {
         document.getElementById('pin-screen').style.display = "none";
         document.getElementById('form-screen').style.display = "block";
         document.getElementById('datum').valueAsDate = new Date();
-        document.getElementById('tegenstander').placeholder = "Ploegen laden... ⏳";
         
         await haalPloegenOp();
 
@@ -22,11 +21,8 @@ window.checkPin = async function() {
             const opgeslagenPloeg = localStorage.getItem('laatsteEigenPloeg');
             const opgeslagenLogo = localStorage.getItem('laatsteEigenLogo');
             
-            if (opgeslagenPloeg) {
-                document.getElementById('eigen_ploeg').value = opgeslagenPloeg;
-            } else {
-                document.getElementById('eigen_ploeg').value = STANDAARD_EIGEN_PLOEG;
-            }
+            if (opgeslagenPloeg) { document.getElementById('eigen_ploeg').value = opgeslagenPloeg; } 
+            else { document.getElementById('eigen_ploeg').value = STANDAARD_EIGEN_PLOEG; }
 
             if (opgeslagenLogo) {
                 bestaandEigenLogo = opgeslagenLogo;
@@ -35,6 +31,7 @@ window.checkPin = async function() {
             }
             
             addScoreRow();
+            toggleWedstrijdType();
         }
     } else {
         const pinError = document.getElementById('pin-error');
@@ -43,18 +40,41 @@ window.checkPin = async function() {
     }
 };
 
-window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, assists = 0) {
+window.toggleWedstrijdType = function() {
+    const type = document.getElementById('type_wedstrijd').value;
+    const isToernooi = (type === 'Toernooi');
+    
+    document.getElementById('label-tegenstander').innerText = isToernooi ? 'Naam Toernooi (bv. Tornooi Galmaarden)' : 'Tegenstander';
+    document.getElementById('tegenstander').placeholder = isToernooi ? 'Typ toernooinaam...' : 'Typ om te zoeken in ploegen...';
+    document.getElementById('global-logo-tegenstander-container').style.display = isToernooi ? 'none' : 'block';
+    
+    // Toon of verberg de individuele tegenstander-velden in de sub-scores
+    document.querySelectorAll('.row-tegenstander-container').forEach(el => {
+        el.style.display = isToernooi ? 'block' : 'none';
+    });
+};
+
+window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, assists = 0, rowTegenstander = '', rowLogo = '') {
     const wrapper = document.getElementById('mini-scores-wrapper');
     const row = document.createElement('div');
     row.className = 'score-row-item';
     row.style.width = "100%"; 
     row.style.boxSizing = "border-box";
     
+    const isToernooi = document.getElementById('type_wedstrijd') && document.getElementById('type_wedstrijd').value === 'Toernooi';
+    const displayStyle = isToernooi ? 'block' : 'none';
+
     row.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--almond-silk); width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--almond-silk); width: 100%;">
             <label style="font-size: 13px; font-weight: 900; color: var(--space-indigo); text-transform: uppercase; letter-spacing: 1px;">Wedstrijd</label>
             <button type="button" class="remove-score-btn" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; cursor: pointer; padding: 0;" onclick="this.closest('.score-row-item').remove()">✖</button>
         </div>
+
+        <div class="row-tegenstander-container" style="display: ${displayStyle}; margin-bottom: 15px; position: relative;">
+            <label style="font-size: 10px; font-weight: 900; color: var(--rebecca-purple); display: block; margin-bottom: 6px; text-transform: uppercase;">Tegenstander (Ploeg)</label>
+            <input type="text" class="row-tegenstander-input" placeholder="Typ om te zoeken..." value="${rowTegenstander}" data-logo="${rowLogo}" autocomplete="off" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid var(--almond-silk); box-sizing: border-box; font-weight: bold; font-size: 14px;">
+        </div>
+
         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%;">
             <div style="flex: 1; text-align: center;">
                 <label style="font-size: 10px; font-weight: 900; color: var(--rebecca-purple); display: block; margin-bottom: 6px; text-transform: uppercase;">Thuis</label>
@@ -66,6 +86,7 @@ window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, 
                 <input type="number" class="mini-score-uit" min="0" value="${uit}" required style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); text-align: center; font-size: 18px; font-weight: 900; color: var(--space-indigo); box-sizing: border-box;">
             </div>
         </div>
+
         <div style="background: #fff; padding: 15px; border-radius: 12px; border: 1px solid var(--almond-silk); width: 100%; box-sizing: border-box;">
             <label style="font-size: 13px; font-weight: 900; display: flex; align-items: center; cursor: pointer; color: var(--space-indigo); margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee;">
                 <input type="checkbox" class="mini-score-doelman" ${doelman ? 'checked' : ''} style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--rebecca-purple);"> 
@@ -84,7 +105,42 @@ window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, 
         </div>
     `;
     wrapper.appendChild(row);
+
+    // Koppel de autocomplete aan het nieuwe input veld in deze rij!
+    const rowInput = row.querySelector('.row-tegenstander-input');
+    setupRowAutocomplete(rowInput);
 };
+
+// Autocomplete speciaal voor de velden BINNENIN een Toernooi-match
+function setupRowAutocomplete(input) {
+    let lijst = document.createElement('div'); 
+    lijst.className = 'autocomplete-items';
+    input.parentNode.appendChild(lijst);
+    
+    input.addEventListener('input', function() {
+        const val = this.value.toLowerCase().trim();
+        lijst.innerHTML = ''; 
+        this.dataset.logo = ''; // Reset logo als ze zelf typen
+        if (!val) { lijst.style.display = 'none'; return; }
+        
+        const matches = bekendeTegenstanders.filter(p => p.naam.toLowerCase().includes(val));
+        if (matches.length > 0) {
+            lijst.style.display = 'block';
+            matches.forEach(p => {
+                const div = document.createElement('div'); div.className = 'autocomplete-item';
+                div.innerHTML = `${p.logo ? `<img src="${p.logo}" class="autocomplete-logo">` : `🛡️`} ${p.naam}`;
+                div.addEventListener('mousedown', function(e) {
+                    e.preventDefault(); 
+                    input.value = p.naam; 
+                    input.dataset.logo = p.logo || '';
+                    lijst.style.display = 'none'; 
+                });
+                lijst.appendChild(div);
+            });
+        } else { lijst.style.display = 'none'; }
+    });
+    input.addEventListener('blur', () => { setTimeout(() => lijst.style.display = 'none', 200); });
+}
 
 async function laadWedstrijdVoorBewerken(id) {
     try {
@@ -103,10 +159,12 @@ async function laadWedstrijdVoorBewerken(id) {
             document.getElementById('match_format').value = data.match_format || '2v2';
             if (data.opmerking) document.getElementById('opmerking').value = data.opmerking;
             
+            toggleWedstrijdType();
+
             const wrapper = document.getElementById('mini-scores-wrapper');
             wrapper.innerHTML = ''; 
             if (data.mini_scores && data.mini_scores.length > 0) {
-                data.mini_scores.forEach(s => addScoreRow(s.thuis, s.uit, s.is_doelman, s.goals, s.assists));
+                data.mini_scores.forEach(s => addScoreRow(s.thuis, s.uit, s.is_doelman, s.goals, s.assists, s.tegenstander, s.logo_tegenstander));
             } else {
                 addScoreRow(data.score_thuis || 0, data.score_uit || 0, data.is_doelman, data.doelpunten_speler, data.assists);
             }
@@ -127,39 +185,27 @@ async function laadWedstrijdVoorBewerken(id) {
 
 async function haalPloegenOp() {
     const uniekePloegenMap = new Map();
-    
-    // 1. Probeer de voorgedefinieerde ploegen op te halen
     try {
         const { data: ploegenData } = await supabaseClient.from('ploegen').select('naam, logo_url');
-        if (ploegenData) {
-            ploegenData.forEach(p => {
-                const naam = p.naam.trim().toLowerCase();
-                uniekePloegenMap.set(naam, { naam: p.naam.trim(), logo: p.logo_url });
-            });
-        }
-    } catch (err) { console.warn("Kon ploegen-tabel niet inladen."); }
-
-    // 2. Probeer oude tegenstanders uit eerdere wedstrijden op te halen
+        if (ploegenData) ploegenData.forEach(p => uniekePloegenMap.set(p.naam.trim().toLowerCase(), { naam: p.naam.trim(), logo: p.logo_url }));
+    } catch (err) {}
     try {
         const { data: matchData } = await supabaseClient.from('wedstrijden').select('tegenstander, logo_tegenstander');
         if (matchData) {
             matchData.forEach(m => {
                 if (!m.tegenstander) return;
                 const naam = m.tegenstander.trim().toLowerCase();
-                if (!uniekePloegenMap.has(naam)) {
-                    uniekePloegenMap.set(naam, { naam: m.tegenstander.trim(), logo: m.logo_tegenstander });
-                } else if (!uniekePloegenMap.get(naam).logo && m.logo_tegenstander) {
-                    uniekePloegenMap.get(naam).logo = m.logo_tegenstander;
-                }
+                if (!uniekePloegenMap.has(naam)) uniekePloegenMap.set(naam, { naam: m.tegenstander.trim(), logo: m.logo_tegenstander });
+                else if (!uniekePloegenMap.get(naam).logo && m.logo_tegenstander) uniekePloegenMap.get(naam).logo = m.logo_tegenstander;
             });
         }
-    } catch (err) { console.warn("Kon oude wedstrijden niet inladen."); }
+    } catch (err) {}
     
-    // 3. Vul de lijst in het formulier
     bekendeTegenstanders = Array.from(uniekePloegenMap.values());
     document.getElementById('tegenstander').placeholder = `Typ om te zoeken in ${bekendeTegenstanders.length} ploeg(en)...`;
 }
 
+// Autocomplete voor het HOOFDVELD (gebruikt bij competitie of als toernooinaam)
 function setupAutocomplete() {
     const input = document.getElementById('tegenstander');
     if (!input) return;
@@ -180,7 +226,7 @@ function setupAutocomplete() {
             lijst.style.display = 'block';
             matches.forEach(p => {
                 const div = document.createElement('div'); div.className = 'autocomplete-item';
-                div.innerHTML = `${p.logo ? `<img src="${p.logo}" class="autocomplete-logo">` : `<div class="autocomplete-logo">🛡️</div>`} ${p.naam}`;
+                div.innerHTML = `${p.logo ? `<img src="${p.logo}" class="autocomplete-logo">` : `🛡️`} ${p.naam}`;
                 div.addEventListener('mousedown', function(e) {
                     e.preventDefault(); input.value = p.naam; 
                     if (p.logo) { geselecteerdBestaandLogo = p.logo; if (logoStatus) logoStatus.style.display = 'block'; }
@@ -190,7 +236,7 @@ function setupAutocomplete() {
             });
         } else { lijst.style.display = 'none'; }
     });
-    document.addEventListener('click', function (e) { if (e.target !== input && e.target !== lijst) lijst.style.display = 'none'; });
+    input.addEventListener('blur', () => { setTimeout(() => lijst.style.display = 'none', 200); });
     if (fileInput) fileInput.addEventListener('change', function() { geselecteerdBestaandLogo = null; if (logoStatus) logoStatus.style.display = 'none'; });
     
     const eigenFileInput = document.getElementById('logo_eigen_ploeg');
@@ -240,19 +286,17 @@ window.saveMatch = async function() {
     });
 
     if (validatieFout) {
-        alert(validatieFout);
-        submitBtn.innerText = "Opslaan";
-        submitBtn.disabled = false;
-        return; 
+        alert(validatieFout); submitBtn.innerText = "Opslaan"; submitBtn.disabled = false; return; 
     }
 
     try {
+        const isToernooi = document.getElementById('type_wedstrijd').value === 'Toernooi';
         const logoBestandTegenstander = document.getElementById('logo_tegenstander').files[0];
         const logoBestandEigen = document.getElementById('logo_eigen_ploeg').files[0];
         const fotoBestanden = document.getElementById('fotos').files;
         
         let logoTegenUrl = geselecteerdBestaandLogo; 
-        if (logoBestandTegenstander) { submitBtn.innerText = "Logo tegen uploaden..."; logoTegenUrl = await uploadBestandNaarSupabase(logoBestandTegenstander, 'logos'); }
+        if (!isToernooi && logoBestandTegenstander) { submitBtn.innerText = "Logo tegen uploaden..."; logoTegenUrl = await uploadBestandNaarSupabase(logoBestandTegenstander, 'logos'); }
         
         let logoEigenUrl = bestaandEigenLogo;
         if (logoBestandEigen) { submitBtn.innerText = "Eigen logo uploaden..."; logoEigenUrl = await uploadBestandNaarSupabase(logoBestandEigen, 'logos'); }
@@ -270,17 +314,31 @@ window.saveMatch = async function() {
 
         submitBtn.innerText = "Gegevens opslaan...";
         let miniScoresArray = [];
-        let totaalThuis = 0, totaalUit = 0, totaalGoals = 0, totaalAssists = 0;
         let wasDoelmanOoit = false;
         
+        // De globale tegenstander (voor competitie)
+        const globalTegenstander = document.getElementById('tegenstander').value;
+
         scoreRows.forEach(row => {
             const t = parseInt(row.querySelector('.mini-score-thuis').value) || 0;
             const u = parseInt(row.querySelector('.mini-score-uit').value) || 0;
             const isD = row.querySelector('.mini-score-doelman').checked;
             const g = parseInt(row.querySelector('.mini-score-goals').value) || 0;
             const a = parseInt(row.querySelector('.mini-score-assists').value) || 0;
-            miniScoresArray.push({ thuis: t, uit: u, is_doelman: isD, goals: g, assists: a });
-            totaalThuis += t; totaalUit += u; totaalGoals += g; totaalAssists += a;
+            
+            // Als het een toernooi is, lees het specifieke veld uit die rij uit, anders de globale!
+            let subNaam = globalTegenstander;
+            let subLogo = logoTegenUrl;
+            
+            if (isToernooi) {
+                const subInput = row.querySelector('.row-tegenstander-input');
+                if(subInput) {
+                    subNaam = subInput.value || "Onbekend";
+                    subLogo = subInput.dataset.logo || null;
+                }
+            }
+
+            miniScoresArray.push({ thuis: t, uit: u, is_doelman: isD, goals: g, assists: a, tegenstander: subNaam, logo_tegenstander: subLogo });
             if(isD) wasDoelmanOoit = true;
         });
 
@@ -295,7 +353,7 @@ window.saveMatch = async function() {
             speler: spelerVal,
             datum: datumVal,
             seizoen: berekenSeizoen(datumVal),
-            tegenstander: document.getElementById('tegenstander').value,
+            tegenstander: globalTegenstander, // Globale naam
             locatie: speelLocatie,
             status: "Meegedaan",
             opmerking: opmerkingVeld ? opmerkingVeld.value : null,
@@ -308,10 +366,10 @@ window.saveMatch = async function() {
             
             mini_scores: miniScoresArray,
             is_doelman: wasDoelmanOoit,
-            score_thuis: totaalThuis,
-            score_uit: totaalUit,
-            doelpunten_speler: totaalGoals,
-            assists: totaalAssists,
+            score_thuis: 0, // Geen totaalscore meer
+            score_uit: 0,
+            doelpunten_speler: 0,
+            assists: 0,
             logo_tegenstander: logoTegenUrl,
             fotos: fotoUrls
         };
@@ -320,9 +378,7 @@ window.saveMatch = async function() {
         if (error) throw error;
 
         localStorage.setItem('laatsteEigenPloeg', ingevuldeEigenPloeg);
-        if (logoEigenUrl) {
-            localStorage.setItem('laatsteEigenLogo', logoEigenUrl);
-        }
+        if (logoEigenUrl) localStorage.setItem('laatsteEigenLogo', logoEigenUrl);
 
         alert(editId ? "Match succesvol bijgewerkt!" : "Match succesvol opgeslagen!");
         window.location.href = "index.html";
