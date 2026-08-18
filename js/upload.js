@@ -19,16 +19,10 @@ window.checkPin = async function() {
             await laadWedstrijdVoorBewerken(editId);
         } else {
             const opgeslagenPloeg = localStorage.getItem('laatsteEigenPloeg');
-            const opgeslagenLogo = localStorage.getItem('laatsteEigenLogo');
+            bestaandEigenLogo = localStorage.getItem('laatsteEigenLogo');
             
             if (opgeslagenPloeg) { document.getElementById('eigen_ploeg').value = opgeslagenPloeg; } 
             else { document.getElementById('eigen_ploeg').value = STANDAARD_EIGEN_PLOEG; }
-
-            if (opgeslagenLogo) {
-                bestaandEigenLogo = opgeslagenLogo;
-                const eigenLogoStatus = document.getElementById('logo-eigen-gevonden-status');
-                if (eigenLogoStatus) eigenLogoStatus.style.display = 'block';
-            }
             
             addScoreRow();
             toggleWedstrijdType();
@@ -40,18 +34,43 @@ window.checkPin = async function() {
     }
 };
 
+window.checkTegenstanderLogo = function() {
+    const container = document.getElementById('global-logo-tegenstander-container');
+    if(!container) return;
+
+    const type = document.getElementById('type_wedstrijd').value;
+    if (type === 'Toernooi') {
+        container.style.display = 'none';
+        return;
+    }
+
+    const inputVal = document.getElementById('tegenstander').value.toLowerCase().trim();
+    const match = bekendeTegenstanders.find(p => p.naam.toLowerCase() === inputVal);
+    
+    if (match && match.logo) {
+        container.style.display = 'none'; // Logo is al gekend! Verbergen!
+        geselecteerdBestaandLogo = match.logo;
+    } else if (inputVal !== "") {
+        container.style.display = 'block'; // Onbekende ploeg: Toon upload veld
+        geselecteerdBestaandLogo = null;
+    } else {
+        container.style.display = 'none'; // Veld is leeg
+        geselecteerdBestaandLogo = null;
+    }
+};
+
 window.toggleWedstrijdType = function() {
     const type = document.getElementById('type_wedstrijd').value;
     const isToernooi = (type === 'Toernooi');
     
     document.getElementById('label-tegenstander').innerText = isToernooi ? 'Naam Toernooi (bv. Tornooi Galmaarden)' : 'Tegenstander';
     document.getElementById('tegenstander').placeholder = isToernooi ? 'Typ toernooinaam...' : 'Typ om te zoeken in ploegen...';
-    document.getElementById('global-logo-tegenstander-container').style.display = isToernooi ? 'none' : 'block';
     
-    // Toon of verberg de individuele tegenstander-velden in de sub-scores
     document.querySelectorAll('.row-tegenstander-container').forEach(el => {
         el.style.display = isToernooi ? 'block' : 'none';
     });
+
+    checkTegenstanderLogo();
 };
 
 window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, assists = 0, rowTegenstander = '', rowLogo = '') {
@@ -106,12 +125,10 @@ window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, 
     `;
     wrapper.appendChild(row);
 
-    // Koppel de autocomplete aan het nieuwe input veld in deze rij!
     const rowInput = row.querySelector('.row-tegenstander-input');
     setupRowAutocomplete(rowInput);
 };
 
-// Autocomplete speciaal voor de velden BINNENIN een Toernooi-match
 function setupRowAutocomplete(input) {
     let lijst = document.createElement('div'); 
     lijst.className = 'autocomplete-items';
@@ -120,7 +137,7 @@ function setupRowAutocomplete(input) {
     input.addEventListener('input', function() {
         const val = this.value.toLowerCase().trim();
         lijst.innerHTML = ''; 
-        this.dataset.logo = ''; // Reset logo als ze zelf typen
+        this.dataset.logo = ''; 
         if (!val) { lijst.style.display = 'none'; return; }
         
         const matches = bekendeTegenstanders.filter(p => p.naam.toLowerCase().includes(val));
@@ -170,12 +187,10 @@ async function laadWedstrijdVoorBewerken(id) {
             }
 
             geselecteerdBestaandLogo = data.logo_tegenstander; 
-            if (data.logo_eigen_ploeg) {
-                bestaandEigenLogo = data.logo_eigen_ploeg;
-                const eigenLogoStatus = document.getElementById('logo-eigen-gevonden-status');
-                if (eigenLogoStatus) eigenLogoStatus.style.display = 'block';
-            }
-
+            bestaandEigenLogo = data.logo_eigen_ploeg || null;
+            
+            checkTegenstanderLogo(); // Bepaal direct of we de logo uploader tonen
+            
             bestaandeFotos = data.fotos || [];
             document.getElementById('matchForm').dataset.editId = data.id;
             document.querySelector('.submit-btn').innerText = "Wijzigingen Opslaan";
@@ -205,7 +220,6 @@ async function haalPloegenOp() {
     document.getElementById('tegenstander').placeholder = `Typ om te zoeken in ${bekendeTegenstanders.length} ploeg(en)...`;
 }
 
-// Autocomplete voor het HOOFDVELD (gebruikt bij competitie of als toernooinaam)
 function setupAutocomplete() {
     const input = document.getElementById('tegenstander');
     if (!input) return;
@@ -215,11 +229,10 @@ function setupAutocomplete() {
         input.parentNode.style.position = 'relative'; input.parentNode.insertBefore(lijst, input.nextSibling);
     }
     const fileInput = document.getElementById('logo_tegenstander');
-    const logoStatus = document.getElementById('logo-gevonden-status');
     
     input.addEventListener('input', function() {
         const val = this.value.toLowerCase().trim();
-        lijst.innerHTML = ''; geselecteerdBestaandLogo = null; if (logoStatus) logoStatus.style.display = 'none';
+        lijst.innerHTML = ''; geselecteerdBestaandLogo = null;
         if (!val) { lijst.style.display = 'none'; return; }
         const matches = bekendeTegenstanders.filter(p => p.naam.toLowerCase().includes(val));
         if (matches.length > 0) {
@@ -228,20 +241,18 @@ function setupAutocomplete() {
                 const div = document.createElement('div'); div.className = 'autocomplete-item';
                 div.innerHTML = `${p.logo ? `<img src="${p.logo}" class="autocomplete-logo">` : `🛡️`} ${p.naam}`;
                 div.addEventListener('mousedown', function(e) {
-                    e.preventDefault(); input.value = p.naam; 
-                    if (p.logo) { geselecteerdBestaandLogo = p.logo; if (logoStatus) logoStatus.style.display = 'block'; }
+                    e.preventDefault(); 
+                    input.value = p.naam; 
+                    if (p.logo) { geselecteerdBestaandLogo = p.logo; }
                     lijst.style.display = 'none'; 
+                    checkTegenstanderLogo(); // <--- DE MAGIE GEBEURT HIER
                 });
                 lijst.appendChild(div);
             });
         } else { lijst.style.display = 'none'; }
     });
     input.addEventListener('blur', () => { setTimeout(() => lijst.style.display = 'none', 200); });
-    if (fileInput) fileInput.addEventListener('change', function() { geselecteerdBestaandLogo = null; if (logoStatus) logoStatus.style.display = 'none'; });
-    
-    const eigenFileInput = document.getElementById('logo_eigen_ploeg');
-    const eigenLogoStatus = document.getElementById('logo-eigen-gevonden-status');
-    if (eigenFileInput) eigenFileInput.addEventListener('change', function() { bestaandEigenLogo = null; if(eigenLogoStatus) eigenLogoStatus.style.display = 'none'; });
+    if (fileInput) fileInput.addEventListener('change', function() { geselecteerdBestaandLogo = null; });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -291,15 +302,13 @@ window.saveMatch = async function() {
 
     try {
         const isToernooi = document.getElementById('type_wedstrijd').value === 'Toernooi';
-        const logoBestandTegenstander = document.getElementById('logo_tegenstander').files[0];
-        const logoBestandEigen = document.getElementById('logo_eigen_ploeg').files[0];
+        const logoBestandTegenstander = document.getElementById('logo_tegenstander') ? document.getElementById('logo_tegenstander').files[0] : null;
         const fotoBestanden = document.getElementById('fotos').files;
         
         let logoTegenUrl = geselecteerdBestaandLogo; 
         if (!isToernooi && logoBestandTegenstander) { submitBtn.innerText = "Logo tegen uploaden..."; logoTegenUrl = await uploadBestandNaarSupabase(logoBestandTegenstander, 'logos'); }
         
-        let logoEigenUrl = bestaandEigenLogo;
-        if (logoBestandEigen) { submitBtn.innerText = "Eigen logo uploaden..."; logoEigenUrl = await uploadBestandNaarSupabase(logoBestandEigen, 'logos'); }
+        let logoEigenUrl = bestaandEigenLogo; // Komt nu exclusief uit memory of database, niet meer uit file input op dit formulier
 
         let fotoUrls = bestaandeFotos; 
         if (fotoBestanden.length > 0) {
@@ -316,7 +325,6 @@ window.saveMatch = async function() {
         let miniScoresArray = [];
         let wasDoelmanOoit = false;
         
-        // De globale tegenstander (voor competitie)
         const globalTegenstander = document.getElementById('tegenstander').value;
 
         scoreRows.forEach(row => {
@@ -326,7 +334,6 @@ window.saveMatch = async function() {
             const g = parseInt(row.querySelector('.mini-score-goals').value) || 0;
             const a = parseInt(row.querySelector('.mini-score-assists').value) || 0;
             
-            // Als het een toernooi is, lees het specifieke veld uit die rij uit, anders de globale!
             let subNaam = globalTegenstander;
             let subLogo = logoTegenUrl;
             
@@ -353,7 +360,7 @@ window.saveMatch = async function() {
             speler: spelerVal,
             datum: datumVal,
             seizoen: berekenSeizoen(datumVal),
-            tegenstander: globalTegenstander, // Globale naam
+            tegenstander: globalTegenstander, 
             locatie: speelLocatie,
             status: "Meegedaan",
             opmerking: opmerkingVeld ? opmerkingVeld.value : null,
@@ -366,7 +373,7 @@ window.saveMatch = async function() {
             
             mini_scores: miniScoresArray,
             is_doelman: wasDoelmanOoit,
-            score_thuis: 0, // Geen totaalscore meer
+            score_thuis: 0, 
             score_uit: 0,
             doelpunten_speler: 0,
             assists: 0,
@@ -378,6 +385,7 @@ window.saveMatch = async function() {
         if (error) throw error;
 
         localStorage.setItem('laatsteEigenPloeg', ingevuldeEigenPloeg);
+        // We slaan het logo alleen op in localStorage als we hem initieel hebben gezet via de Ploegen pagina / database
         if (logoEigenUrl) localStorage.setItem('laatsteEigenLogo', logoEigenUrl);
 
         alert(editId ? "Match succesvol bijgewerkt!" : "Match succesvol opgeslagen!");
