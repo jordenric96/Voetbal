@@ -6,6 +6,7 @@ async function laadStats(speler) {
     container.style.display = 'none';
 
     try {
+        // Haal alle wedstrijden op van deze speler
         const { data, error } = await supabaseClient
             .from('wedstrijden')
             .select('*')
@@ -13,38 +14,20 @@ async function laadStats(speler) {
 
         if (error) throw error;
 
-        // 1. Variabelen voor Algemeen & Afwezig
-        let teamMatchdays = 0;
-        let absentMatchdays = 0;
-        let absentWins = 0;
-
-        // 2. Variabelen voor Veldspeler
+        // Variabelen voor Veldspeler
         let veldMatches = 0;
         let veldWins = 0;
         let veldGoals = 0;
         let veldAssists = 0;
 
-        // 3. Variabelen voor Doelman
+        // Variabelen voor Doelman
         let keeperMatches = 0;
         let keeperWins = 0;
         let cleanSheets = 0;
         let goalsAgainst = 0;
 
-        // 4. Data analyseren
+        // Data analyseren per mini-match
         data.forEach(m => {
-            teamMatchdays++;
-
-            // ALS HIJ AFWEZIG WAS
-            if (m.status === 'Afwezig') {
-                absentMatchdays++;
-                // Check of de ploeg toen gewonnen heeft (oude methode)
-                const isWin = (m.locatie === 'Thuis' && m.score_thuis > m.score_uit) || 
-                              (m.locatie === 'Uit' && m.score_uit > m.score_thuis);
-                if (isWin) absentWins++;
-                return; // Stop met deze match en ga naar de volgende
-            }
-
-            // ALS HIJ MEE SPEELDE (Mini-matches uitlezen)
             if (m.mini_scores && m.mini_scores.length > 0) {
                 m.mini_scores.forEach(score => {
                     const isThuis = m.locatie === 'Thuis';
@@ -59,6 +42,10 @@ async function laadStats(speler) {
                         if (isWin) keeperWins++;
                         if (tegenScore === 0) cleanSheets++; // De nul gehouden!
                         goalsAgainst += tegenScore;
+                        
+                        // Zelfs als keeper kan je scoren/assists geven
+                        veldGoals += (score.goals || 0);
+                        veldAssists += (score.assists || 0);
                     } else {
                         // VELDSPELER STATS
                         veldMatches++;
@@ -67,99 +54,116 @@ async function laadStats(speler) {
                         veldAssists += (score.assists || 0);
                     }
                 });
-            } else {
-                // Fallback voor hele oude wedstrijden zonder mini-scores
-                const isThuis = m.locatie === 'Thuis';
-                const eigenScore = isThuis ? m.score_thuis : m.score_uit;
-                const tegenScore = isThuis ? m.score_uit : m.score_thuis;
-                const isWin = eigenScore > tegenScore;
-
-                if (m.is_doelman) {
-                    keeperMatches++;
-                    if (isWin) keeperWins++;
-                    if (tegenScore === 0) cleanSheets++;
-                    goalsAgainst += tegenScore;
-                } else {
-                    veldMatches++;
-                    if (isWin) veldWins++;
-                    veldGoals += (m.doelpunten_speler || 0);
-                    veldAssists += (m.assists || 0);
-                }
             }
         });
 
         loader.style.display = 'none';
 
-        if (teamMatchdays === 0) {
-            loader.innerText = `Nog geen geregistreerde gegevens voor ${speler}.`;
+        let totaalMiniMatches = veldMatches + keeperMatches;
+
+        if (totaalMiniMatches === 0) {
+            loader.innerHTML = `<div class="empty-state-noe"><h2>Geen stats</h2><p style="color: var(--rebecca-purple); font-weight:700;">Nog geen gespeelde wedstrijden voor ${speler}.</p></div>`;
             loader.style.display = 'block';
             return;
         }
 
-        // 5. Wiskunde & Gemiddeldes toepassen
+        // Wiskunde toepassen
         const winPercVeld = veldMatches > 0 ? Math.round((veldWins / veldMatches) * 100) : 0;
         const gemGoalsVeld = veldMatches > 0 ? (veldGoals / veldMatches).toFixed(1) : 0;
         
         const winPercKeeper = keeperMatches > 0 ? Math.round((keeperWins / keeperMatches) * 100) : 0;
         const gemTegenGoals = keeperMatches > 0 ? (goalsAgainst / keeperMatches).toFixed(1) : 0;
         
-        const winPercZonder = absentMatchdays > 0 ? Math.round((absentWins / absentMatchdays) * 100) : 0;
-        const totaalMiniMatches = veldMatches + keeperMatches;
-        const totaalMiniWins = veldWins + keeperWins;
-        const winPercTotaal = totaalMiniMatches > 0 ? Math.round((totaalMiniWins / totaalMiniMatches) * 100) : 0;
+        const winPercTotaal = Math.round(((veldWins + keeperWins) / totaalMiniMatches) * 100);
 
-        // 6. Prachtige HTML opbouwen met Grid-systemen
-        const gridStyle = 'display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 30px;';
-        const titleStyle = 'color: var(--space-indigo); margin: 10px 0 15px; font-weight: 900; border-bottom: 2px solid var(--almond-silk); padding-bottom: 5px;';
+        // Styling variabelen
+        const gridStyle = 'display: grid; grid-template-columns: 1fr 1fr; gap: 12px;';
+        const titleStyle = 'color: var(--space-indigo); font-size: 18px; margin: 0 0 15px; font-weight: 900; display: flex; align-items: center; gap: 8px; border-bottom: 2px dashed var(--almond-silk); padding-bottom: 10px;';
+        const cardStyle = 'background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 25px; box-shadow: var(--card-shadow); border: 1px solid var(--almond-silk);';
+        const boxStyle = 'background: var(--bg-color); padding: 15px; border-radius: 12px; text-align: center;';
 
         let html = '';
 
-        // --- SECTIE 1: VELDSPELER ---
+        // --- 1. HERO SECTIE (Algemeen Seizoen) ---
+        html += `
+            <div style="background: var(--space-indigo); padding: 30px 20px; border-radius: 16px; margin-bottom: 25px; color: #fff; text-align: center; box-shadow: 0 10px 20px rgba(23, 23, 56, 0.15); position: relative; overflow: hidden;">
+                <h2 style="margin: 0 0 5px 0; font-size: 22px; font-weight: 900; position: relative; z-index: 2;">Seizoen Overzicht</h2>
+                <p style="margin: 0 0 25px 0; font-size: 12px; color: var(--almond-silk); position: relative; z-index: 2; text-transform: uppercase; letter-spacing: 1px;">Totale Inbreng</p>
+                
+                <div style="display: flex; justify-content: space-around; align-items: flex-end; position: relative; z-index: 2;">
+                    <div style="flex: 1;">
+                        <span style="font-size: 36px; font-weight: 900; color: var(--soft-cyan); display: block; line-height: 1;">${veldGoals}</span>
+                        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800;">Goals</span>
+                    </div>
+                    <div style="flex: 1; padding-bottom: 5px; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1);">
+                        <span style="font-size: 22px; font-weight: 900; color: #fff; display: block; line-height: 1; margin-bottom: 4px;">${totaalMiniMatches}</span>
+                        <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--almond-silk); font-weight: 800;">Matchen</span>
+                    </div>
+                    <div style="flex: 1;">
+                        <span style="font-size: 36px; font-weight: 900; color: var(--lobster-pink); display: block; line-height: 1;">${veldAssists}</span>
+                        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800;">Assists</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // --- 2. SECTIE VELDSPELER ---
         if (veldMatches > 0) {
             html += `
-                <h3 style="${titleStyle}">👟 Als Veldspeler</h3>
-                <div style="${gridStyle}">
-                    <div class="stat-box gold"><span class="stat-value">${veldGoals}</span><span class="stat-label">Goals</span></div>
-                    <div class="stat-box gold"><span class="stat-value">${veldAssists}</span><span class="stat-label">Assists</span></div>
-                    
-                    <div class="stat-box"><span class="stat-value">${winPercVeld}%</span><span class="stat-label">Winst</span><p style="font-size:9px; color:var(--rebecca-purple); opacity:0.6; font-weight:900; margin-top:4px;">(${veldWins}/${veldMatches} gew)</p></div>
-                    <div class="stat-box"><span class="stat-value">${gemGoalsVeld}</span><span class="stat-label">Gem. Goals/Match</span></div>
+                <div style="${cardStyle}">
+                    <h3 style="${titleStyle}">👟 Als Veldspeler</h3>
+                    <div style="${gridStyle}">
+                        <div style="${boxStyle}">
+                            <span style="font-size: 22px; font-weight: 900; color: var(--space-indigo); display: block;">${winPercVeld}%</span>
+                            <span style="font-size: 11px; font-weight: 900; color: var(--rebecca-purple); text-transform: uppercase;">Winst</span>
+                            <p style="font-size:9px; color:var(--space-indigo); opacity:0.6; margin: 4px 0 0 0; font-weight: bold;">(${veldWins} van de ${veldMatches})</p>
+                        </div>
+                        <div style="${boxStyle}">
+                            <span style="font-size: 22px; font-weight: 900; color: var(--space-indigo); display: block;">${gemGoalsVeld}</span>
+                            <span style="font-size: 11px; font-weight: 900; color: var(--rebecca-purple); text-transform: uppercase;">Goals/Match</span>
+                        </div>
+                    </div>
                 </div>
             `;
         }
 
-        // --- SECTIE 2: DOELMAN ---
+        // --- 3. SECTIE DOELMAN ---
         if (keeperMatches > 0) {
             html += `
-                <h3 style="${titleStyle}">🧤 Als Doelman</h3>
-                <div style="${gridStyle}">
-                    <div class="stat-box" style="background: var(--soft-cyan); border:none; color: var(--space-indigo);"><span class="stat-value">${cleanSheets}</span><span class="stat-label">Clean Sheets (De Nul!)</span></div>
-                    <div class="stat-box dark"><span class="stat-value">${goalsAgainst}</span><span class="stat-label">Tegengoals</span></div>
-                    
-                    <div class="stat-box"><span class="stat-value">${winPercKeeper}%</span><span class="stat-label">Winst</span><p style="font-size:9px; color:var(--rebecca-purple); opacity:0.6; font-weight:900; margin-top:4px;">(${keeperWins}/${keeperMatches} gew)</p></div>
-                    <div class="stat-box"><span class="stat-value">${gemTegenGoals}</span><span class="stat-label">Gem. Tegen/Match</span></div>
+                <div style="${cardStyle}">
+                    <h3 style="${titleStyle}">🧤 Als Doelman</h3>
+                    <div style="${gridStyle}; margin-bottom: 12px;">
+                        <div style="${boxStyle} background: var(--soft-cyan); color: var(--space-indigo);">
+                            <span style="font-size: 22px; font-weight: 900; display: block;">${cleanSheets}</span>
+                            <span style="font-size: 11px; font-weight: 900; text-transform: uppercase;">Clean Sheets</span>
+                        </div>
+                        <div style="${boxStyle} background: var(--space-indigo); color: #fff;">
+                            <span style="font-size: 22px; font-weight: 900; display: block;">${goalsAgainst}</span>
+                            <span style="font-size: 11px; font-weight: 900; color: var(--almond-silk); text-transform: uppercase;">Tegengoals</span>
+                        </div>
+                    </div>
+                    <div style="${gridStyle}">
+                        <div style="${boxStyle}">
+                            <span style="font-size: 22px; font-weight: 900; color: var(--space-indigo); display: block;">${winPercKeeper}%</span>
+                            <span style="font-size: 11px; font-weight: 900; color: var(--rebecca-purple); text-transform: uppercase;">Winst</span>
+                            <p style="font-size:9px; color:var(--space-indigo); opacity:0.6; margin: 4px 0 0 0; font-weight: bold;">(${keeperWins} van de ${keeperMatches})</p>
+                        </div>
+                        <div style="${boxStyle}">
+                            <span style="font-size: 22px; font-weight: 900; color: var(--space-indigo); display: block;">${gemTegenGoals}</span>
+                            <span style="font-size: 11px; font-weight: 900; color: var(--rebecca-purple); text-transform: uppercase;">Tegen/Match</span>
+                        </div>
+                    </div>
                 </div>
             `;
         }
 
-        // --- SECTIE 3: ALGEMENE IMPACT ---
+        // --- 4. SECTIE ALGEMENE IMPACT ---
         html += `
-            <h3 style="${titleStyle}">📊 Algemene Impact</h3>
-            <div style="${gridStyle}">
-                <div class="stat-box" style="grid-column: 1 / -1; border-bottom-color: var(--rebecca-purple);">
-                    <span class="stat-value">${winPercTotaal}%</span>
-                    <span class="stat-label">Totaal Winstpercentage (Met ${speler})</span>
-                </div>
-                
-                <div class="stat-box dark">
-                    <span class="stat-value">${winPercZonder}%</span>
-                    <span class="stat-label">Winst ZONDER ${speler}</span>
-                    <p style="font-size:9px; color:var(--almond-silk); opacity:0.7; font-weight:900; margin-top:4px;">(${absentWins}/${absentMatchdays} gew)</p>
-                </div>
-                
-                <div class="stat-box" style="background: #fff; border: 1px solid var(--almond-silk);">
-                    <span class="stat-value" style="font-size: 20px;">${totaalMiniMatches}</span>
-                    <span class="stat-label">Gespeelde Uitslagen</span>
+            <div style="${cardStyle} border-color: var(--rebecca-purple); padding: 0; overflow: hidden;">
+                <div style="background: var(--rebecca-purple); color: #fff; padding: 25px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 900; margin-bottom: 5px; color: var(--almond-silk);">Totale Winst</span>
+                    <span style="font-size: 42px; font-weight: 900; color: var(--soft-cyan); line-height: 1; margin-bottom: 10px;">${winPercTotaal}%</span>
+                    <span style="font-size: 11px; font-weight: 800; opacity: 0.9;">Over ${totaalMiniMatches} gespeelde mini-wedstrijden</span>
                 </div>
             </div>
         `;
