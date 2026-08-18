@@ -442,3 +442,134 @@ header a.active { color: var(--soft-cyan); opacity: 1; font-weight: 900;}
     font-size: 10px; font-weight: bold; color: var(--space-indigo); text-align: center; line-height: 1.1;
 }
 .sub-match-team-name { font-size: 14px; font-weight: 900; color: var(--space-indigo); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;}
+
+/* =========================================
+   1. TABS (LOU & NOÉ) - iOS Segmented Control Stijl
+   ========================================= */
+.tabs {
+    display: flex;
+    background: #e9e9f0; /* Zacht grijze achtergrond */
+    border-radius: 14px;
+    padding: 4px;
+    margin: 0 20px 25px 20px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #8a8a9e;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.tab-btn.active {
+    background: #ffffff;
+    color: var(--space-indigo);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* =========================================
+   2. MATCH CARDS & HEADERS - Naadloos design
+   ========================================= */
+.match-card-v2 {
+    display: flex; flex-direction: column;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(23, 23, 56, 0.08);
+    border-radius: 20px; 
+    margin-bottom: 25px;
+    text-decoration: none; 
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden; /* Zorgt dat de hoekjes perfect rond blijven */
+    border: 1px solid rgba(23, 23, 56, 0.05);
+}
+.match-card-v2:active { 
+    transform: scale(0.98); 
+    box-shadow: 0 4px 15px rgba(23, 23, 56, 0.05);
+}
+
+.match-date-header {
+    width: 100%; 
+    background: var(--rebecca-purple); 
+    color: #fff;
+    padding: 12px 15px; 
+    font-size: 12px; 
+    font-weight: 900; 
+    text-align: center;
+    letter-spacing: 2px; 
+    text-transform: uppercase;
+}
+
+/* De opmerking ("Eerste tornooi van Lou") strakker maken */
+.match-comment {
+    font-size: 13px; 
+    font-style: italic; 
+    padding: 12px 20px; 
+    background: #f8f8fb; 
+    color: var(--space-indigo); 
+    border-bottom: 1px solid rgba(23, 23, 56, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* =========================================
+   3. SUB-MATCHES - Geen stippellijnen meer, wel zachte lijnen
+   ========================================= */
+.sub-match-line {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 0; 
+    border-bottom: 1px solid #f0f0f5; /* Zachte volle lijn ipv dashed */
+}
+.sub-match-line:last-child { 
+    border-bottom: none; 
+}
+
+/* =========================================
+   4. SCORE BADGES - Moderne gekleurde achtergronden
+   ========================================= */
+.sub-match-score { 
+    padding: 6px 12px; 
+    border-radius: 8px; 
+    font-weight: 900;
+    font-size: 14px;
+    text-align: center;
+    min-width: 45px;
+}
+.sub-match-score.win { 
+    background: #e6f9ec; /* Zacht groen */
+    color: #1e874b;      /* Donker groen */
+}
+.sub-match-score.loss { 
+    background: #feeef0; /* Zacht rood */
+    color: #d92d40;      /* Donker rood */
+}
+.sub-match-score.draw { 
+    background: #f0f0f5; /* Zacht grijs/blauw */
+    color: var(--space-indigo); 
+}
+
+/* =========================================
+   5. FLOATING ACTION BUTTON (+ Match) - Mooiere schaduw
+   ========================================= */
+.fab-btn {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: linear-gradient(135deg, var(--lobster-pink), #e84a5f);
+    color: #fff;
+    padding: 16px 28px;
+    border-radius: 30px;
+    font-size: 16px;
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: 0 10px 25px rgba(229, 90, 108, 0.4);
+    z-index: 1000;
+    transition: transform 0.2s;
+}
+.fab-btn:active {
+    transform: scale(0.95);
+}
