@@ -12,9 +12,10 @@ async function laadStats(speler) {
         let veldMatches = 0; let veldWins = 0; let veldGoals = 0; let veldAssists = 0;
         let keeperMatches = 0; let keeperWins = 0; let cleanSheets = 0; let goalsAgainst = 0; let keeperGoals = 0; 
         let teamGoalsTotale = 0; let totaalWins = 0; let totaalDraws = 0; let totaalLosses = 0;
+        let vormLijst = []; 
 
         data.forEach(m => {
-            if (m.mini_scores) {
+            if (m.mini_scores && m.mini_scores.length > 0) {
                 m.mini_scores.forEach(score => {
                     const isThuis = m.locatie === 'Thuis';
                     const eigenScore = isThuis ? score.thuis : score.uit;
@@ -25,14 +26,23 @@ async function laadStats(speler) {
                     const isDraw = eigenScore === tegenScore;
                     const isLoss = eigenScore < tegenScore;
 
-                    if (isWin) totaalWins++; if (isDraw) totaalDraws++; if (isLoss) totaalLosses++;
+                    if (isWin) totaalWins++;
+                    if (isDraw) totaalDraws++;
+                    if (isLoss) totaalLosses++;
+
+                    vormLijst.push(isWin ? 'W' : (isDraw ? 'D' : 'L'));
 
                     if (score.is_doelman) {
-                        keeperMatches++; if (isWin) keeperWins++; if (tegenScore === 0) cleanSheets++; 
-                        goalsAgainst += tegenScore; keeperGoals += (score.goals || 0);
+                        keeperMatches++;
+                        if (isWin) keeperWins++;
+                        if (tegenScore === 0) cleanSheets++; 
+                        goalsAgainst += tegenScore;
+                        keeperGoals += (score.goals || 0);
                     } else {
-                        veldMatches++; if (isWin) veldWins++;
-                        veldGoals += (score.goals || 0); veldAssists += (score.assists || 0);
+                        veldMatches++;
+                        if (isWin) veldWins++;
+                        veldGoals += (score.goals || 0);
+                        veldAssists += (score.assists || 0);
                     }
                 });
             }
@@ -40,104 +50,126 @@ async function laadStats(speler) {
 
         loader.style.display = 'none';
         let totaalMiniMatches = veldMatches + keeperMatches;
+
         if (totaalMiniMatches === 0) {
             container.innerHTML = `<div class="empty-state">Nog geen stats voor ${speler}.</div>`;
-            container.style.display = 'block'; return;
+            container.style.display = 'block';
+            return;
         }
 
-        const winPercTotaal = Math.round((totaalWins / totaalMiniMatches) * 100);
-        const totaalGoals = veldGoals + keeperGoals;
+        const winPercVeld = veldMatches > 0 ? Math.round((veldWins / veldMatches) * 100) : 0;
+        const gemGoalsVeld = veldMatches > 0 ? (veldGoals / veldMatches).toFixed(1) : 0;
+        const winPercKeeper = keeperMatches > 0 ? Math.round((keeperWins / keeperMatches) * 100) : 0;
+        const gemTegenGoals = keeperMatches > 0 ? (goalsAgainst / keeperMatches).toFixed(1) : 0;
+        
+        const totaalInbreng = veldGoals + veldAssists + keeperGoals;
+        const teambelangPerc = teamGoalsTotale > 0 ? Math.round((totaalInbreng / teamGoalsTotale) * 100) : 0;
 
-        // Visual Graph Logic (Max goals is 20 for a full bar, adjusts dynamically)
-        const goalBar = Math.min((totaalGoals / 20) * 100, 100);
-        const assistBar = Math.min((veldAssists / 15) * 100, 100);
-        const winBar = winPercTotaal;
+        const laatste5 = vormLijst.slice(0, 5).reverse();
+        let vormHtml = '';
+        laatste5.forEach(result => {
+            if (result === 'W') vormHtml += `<span style="background: #ecfdf5; color:#059669; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; font-size:10px; font-weight:800; margin-right:6px;">W</span>`;
+            else if (result === 'D') vormHtml += `<span style="background: #f1f5f9; color:#64748b; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; font-size:10px; font-weight:800; margin-right:6px;">G</span>`;
+            else vormHtml += `<span style="background: #fef2f2; color:#dc2626; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; font-size:10px; font-weight:800; margin-right:6px;">V</span>`;
+        });
+        if(laatste5.length === 0) vormHtml = `<span style="font-size:12px; color:#9ca3af;">Geen data</span>`;
 
-        let html = `
-            <div class="card" style="padding: 24px 20px;">
-                <h2 style="font-size: 18px; font-weight: 800; margin: 0 0 20px 0; color: var(--primary);">Seizoen Prestaties</h2>
-                
-                <!-- Goals Bar -->
-                <div style="margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <span style="font-size: 13px; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Doelpunten</span>
-                        <span style="font-size: 14px; font-weight: 800;">${totaalGoals}</span>
-                    </div>
-                    <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${goalBar}%; height: 100%; background: var(--brand); border-radius: 4px;"></div>
-                    </div>
+        // Styling componenten
+        const cardStyle = "background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);";
+        const titleStyle = "font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 15px 0;";
+        const statBoxStyle = "background: #f8fafc; padding: 15px; border-radius: 12px;";
+
+        let html = '';
+
+        // TOTAAL DOELPUNTEN GRAFIEK
+        const totaleGoalsNum = veldGoals + keeperGoals;
+        const goalBarW = Math.min((totaleGoalsNum / 30) * 100, 100); // 30 is max voor de grafiek
+
+        html += `
+            <div style="${cardStyle}">
+                <h3 style="${titleStyle}">Seizoen Productiviteit</h3>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                    <span style="font-size: 36px; font-weight: 800; color: #111827; line-height: 1;">${totaleGoalsNum}</span>
+                    <span style="font-size: 12px; font-weight: 700; color: #64748b; padding-bottom: 4px;">Goals</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: #f1f5f9; border-radius: 4px; margin-bottom: 20px; overflow: hidden;">
+                    <div style="width: ${goalBarW}%; height: 100%; background: #111827; border-radius: 4px; transition: width 1s ease;"></div>
                 </div>
 
-                <!-- Assists Bar -->
-                <div style="margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <span style="font-size: 13px; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Assists</span>
-                        <span style="font-size: 14px; font-weight: 800;">${veldAssists}</span>
-                    </div>
-                    <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${assistBar}%; height: 100%; background: #38bdf8; border-radius: 4px;"></div>
-                    </div>
-                </div>
-
-                <!-- Winst Bar -->
-                <div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                        <span style="font-size: 13px; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Win Percentage</span>
-                        <span style="font-size: 14px; font-weight: 800;">${winPercTotaal}%</span>
-                    </div>
-                    <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${winBar}%; height: 100%; background: var(--accent-win); border-radius: 4px;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Team Balans Kaart -->
-            <div class="card" style="display: flex; justify-content: space-between; text-align: center; padding: 20px;">
-                <div style="flex: 1;">
-                    <span style="display: block; font-size: 24px; font-weight: 800; color: var(--accent-win);">${totaalWins}</span>
-                    <span style="font-size: 10px; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Winst</span>
-                </div>
-                <div style="width: 1px; background: #e2e8f0;"></div>
-                <div style="flex: 1;">
-                    <span style="display: block; font-size: 24px; font-weight: 800; color: var(--accent-draw);">${totaalDraws}</span>
-                    <span style="font-size: 10px; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Gelijk</span>
-                </div>
-                <div style="width: 1px; background: #e2e8f0;"></div>
-                <div style="flex: 1;">
-                    <span style="display: block; font-size: 24px; font-weight: 800; color: var(--accent-loss);">${totaalLosses}</span>
-                    <span style="font-size: 10px; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Verlies</span>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                    <span style="font-size: 24px; font-weight: 800; color: #4b5563; line-height: 1;">${veldAssists}</span>
+                    <span style="font-size: 12px; font-weight: 700; color: #64748b;">Assists</span>
                 </div>
             </div>
         `;
 
-        if (keeperMatches > 0) {
+        // VORM & TEAMBELANG
+        html += `
+            <div style="${cardStyle}">
+                <h3 style="${titleStyle}">Vorm & Impact</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center;">
+                        ${vormHtml}
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="display: block; font-size: 20px; font-weight: 800; color: #111827;">${teambelangPerc}%</span>
+                        <span style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase;">Teambelang</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // VELDSPELER
+        if (veldMatches > 0) {
             html += `
-                <div class="card" style="padding: 24px 20px;">
-                    <h2 style="font-size: 16px; font-weight: 800; margin: 0 0 15px 0; color: var(--primary);">Keeper Statistieken</h2>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #f1f5f9;">
-                            <span style="display: block; font-size: 24px; font-weight: 800;">${cleanSheets}</span>
-                            <span style="font-size: 11px; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Clean Sheets</span>
+                <div style="${cardStyle}">
+                    <h3 style="${titleStyle}">Veldspeler</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="${statBoxStyle}">
+                            <span style="font-size: 22px; font-weight: 800; color: #111827; display: block;">${winPercVeld}%</span>
+                            <span style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Winst</span>
                         </div>
-                        <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #f1f5f9;">
-                            <span style="display: block; font-size: 24px; font-weight: 800;">${goalsAgainst}</span>
-                            <span style="font-size: 11px; font-weight: 700; color: var(--secondary); text-transform: uppercase;">Tegengoals</span>
+                        <div style="${statBoxStyle}">
+                            <span style="font-size: 22px; font-weight: 800; color: #111827; display: block;">${gemGoalsVeld}</span>
+                            <span style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Goals/Match</span>
                         </div>
                     </div>
                 </div>
             `;
         }
 
+        // DOELMAN
+        if (keeperMatches > 0) {
+            html += `
+                <div style="${cardStyle}">
+                    <h3 style="${titleStyle}">Doelman</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                        <div style="${statBoxStyle}">
+                            <span style="font-size: 22px; font-weight: 800; color: #111827; display: block;">${cleanSheets}</span>
+                            <span style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Clean Sheets</span>
+                        </div>
+                        <div style="${statBoxStyle}">
+                            <span style="font-size: 22px; font-weight: 800; color: #111827; display: block;">${goalsAgainst}</span>
+                            <span style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Tegengoals</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
         container.innerHTML = html;
         container.style.display = 'block';
+
     } catch (err) {
-        loader.innerText = "Fout bij ophalen."; loader.style.display = 'block';
+        loader.innerText = "Fout bij ophalen.";
+        loader.style.display = 'block';
     }
 }
 
 window.wisselSpeler = function(evt, speler) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    evt.currentTarget.classList.add('active'); laadStats(speler);
+    evt.currentTarget.classList.add('active');
+    laadStats(speler);
 };
 
 document.addEventListener('DOMContentLoaded', () => laadStats('Lou'));
