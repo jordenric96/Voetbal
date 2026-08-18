@@ -3,134 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Match Details</title>
+    <title>Match Detail</title>
     <link rel="stylesheet" href="css/style.css">
     <meta name="theme-color" content="#171738">
 </head>
 <body>
     <header>
-        <h1>Match Details</h1>
+        <h1>Wedstrijd Details</h1>
         <nav>
             <a href="index.html">← Terug</a>
         </nav>
     </header>
 
-    <main style="padding: 20px;" id="detail-content">
-        <p class="empty-state">Wedstrijdgegevens laden... ⏳</p>
+    <main id="detail-container" style="padding: 20px; padding-bottom: 100px;">
+        <p class="empty-state">Gegevens laden... ⏳</p>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
 
     <script>
-        let huidigeMatch = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const matchId = urlParams.get('id');
+        let actueleMatch = null;
 
-        window.deelViaWhatsApp = function() {
-            if (!huidigeMatch) return;
-            let tekst = `⚽ *Wedstrijd update ${huidigeMatch.speler}!*\n\n`;
-            tekst += `Tegenstander: *${huidigeMatch.tegenstander}*\n`;
-            tekst += `Uitslag: *${huidigeMatch.score_thuis} - ${huidigeMatch.score_uit}*\n\n`;
-            if (huidigeMatch.status === 'Afwezig') {
-                tekst += `${huidigeMatch.speler} was afwezig (${huidigeMatch.reden_afwezig}).\n\n`;
-            } else {
-                const goals = huidigeMatch.doelpunten_speler || 0;
-                const assists = huidigeMatch.assists || 0;
-                if (goals > 0 || assists > 0) {
-                    tekst += `📊 *Stats ${huidigeMatch.speler}:*\n`;
-                    if (goals > 0) tekst += `- ${goals} Doelpunt(en) 🎯\n`;
-                    if (assists > 0) tekst += `- ${assists} Assist(s) 👟\n`;
-                    tekst += `\n`;
-                } else {
-                    tekst += `Goed gewerkt op het veld! 💪\n\n`;
-                }
-            }
-            tekst += `Bekijk foto's en details in de app:\n${window.location.href}`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(tekst)}`, '_blank');
-        };
-
-        window.bewerkMatch = function(id) {
-            window.location.href = `add-match.html?edit=${id}`;
-        };
-
-        window.verwijderMatch = async function(id) {
-            const pin = prompt("Voer de pincode in om te verwijderen:");
-            if (pin === "0204") {
-                if (confirm("Weet je zeker dat je deze wedstrijd wilt wissen? Dit is definitief.")) {
-                    await supabaseClient.from('wedstrijden').delete().eq('id', id);
-                    alert("Wedstrijd succesvol verwijderd!");
-                    window.location.href = "index.html";
-                }
-            } else if (pin !== null) {
-                alert("Foutieve pincode.");
-            }
-        };
-
-        async function laadMatchDetails() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const matchId = urlParams.get('id');
-            const contentDiv = document.getElementById('detail-content');
-
-            if (!matchId) return;
-
+        async function laadMatchDetail() {
+            const container = document.getElementById('detail-container');
+            
             try {
                 const { data: match, error } = await supabaseClient.from('wedstrijden').select('*').eq('id', matchId).single();
-                if (error) throw error;
-                huidigeMatch = match;
+                if (error || !match) throw error;
+                
+                actueleMatch = match;
 
                 const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                const isToernooi = match.type_wedstrijd === 'Toernooi';
                 
-                let galerijHtml = '<p class="empty-state">Geen foto\'s toegevoegd.</p>';
-                if (match.fotos && match.fotos.length > 0) {
-                    galerijHtml = '<div class="photo-gallery">';
-                    match.fotos.forEach(url => galerijHtml += `<a href="${url}" target="_blank"><img src="${url}"></a>`);
-                    galerijHtml += '</div>';
+                // 1. TITEL BEPALEN
+                let titelHtml = isToernooi ? `🏆 ${match.tegenstander}` : `⚽ ${match.eigen_ploeg || 'Eigen Ploeg'} VS ${match.tegenstander}`;
+
+                // 2. TOTALEN BEREKENEN
+                let totaalGoals = 0;
+                let totaalAssists = 0;
+                let wasKeeper = false;
+
+                if (match.mini_scores && match.mini_scores.length > 0) {
+                    match.mini_scores.forEach(s => {
+                        totaalGoals += (s.goals || 0);
+                        totaalAssists += (s.assists || 0);
+                        if (s.is_doelman) wasKeeper = true;
+                    });
                 }
 
-                const kaartenHtml = (match.kaarten && (match.kaarten.geel > 0 || match.kaarten.rood > 0)) 
-                    ? `<p><strong>Kaarten:</strong> ${match.kaarten.geel} Geel, ${match.kaarten.rood} Rood</p>` : ``;
-
-                contentDiv.innerHTML = `
-                    <div class="detail-header">
-                        <h2>${match.tegenstander}</h2>
-                        <p>${datumMooi} • ${match.type_wedstrijd}</p>
+                // 3. HEADER & STATS OPBOUWEN
+                let html = `
+                    <!-- Grote Header -->
+                    <div style="background: var(--space-indigo); color: #fff; padding: 25px 20px; border-radius: 16px; text-align: center; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(23, 23, 56, 0.15);">
+                        <span style="font-size: 12px; font-weight: 900; letter-spacing: 2px; color: var(--soft-cyan); text-transform: uppercase;">${match.type_wedstrijd || 'Competitie'}</span>
+                        <h2 style="margin: 10px 0; font-size: 24px; font-weight: 900;">${titelHtml}</h2>
+                        <p style="margin: 0; font-size: 13px; color: var(--almond-silk);">${datumMooi} • ${match.categorie}</p>
                     </div>
 
-                    <div class="scoreboard">
-                        <div class="score-block"><span>Thuis</span><strong>${match.score_thuis}</strong></div>
-                        <div class="score-divider">-</div>
-                        <div class="score-block"><span>Uit</span><strong>${match.score_uit}</strong></div>
+                    <!-- Persoonlijke Stats Samenvatting -->
+                    <div style="background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 25px; box-shadow: var(--card-shadow); border: 1px solid var(--almond-silk);">
+                        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: var(--space-indigo); display: flex; align-items: center; justify-content: space-between;">
+                            Statistieken ${match.speler}
+                            ${wasKeeper ? '<span style="font-size: 12px; background: var(--rebecca-purple); color: #fff; padding: 4px 8px; border-radius: 6px;">🧤 Keeper gespeeld</span>' : ''}
+                        </h3>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div style="background: var(--bg-color); padding: 15px; border-radius: 12px; text-align: center;">
+                                <span style="font-size: 24px; display: block; margin-bottom: 5px;">⚽</span>
+                                <span style="font-size: 20px; font-weight: 900; color: var(--space-indigo);">${totaalGoals}</span>
+                                <span style="display: block; font-size: 11px; font-weight: 900; color: var(--rebecca-purple); text-transform: uppercase;">Goals</span>
+                            </div>
+                            <div style="background: var(--bg-color); padding: 15px; border-radius: 12px; text-align: center;">
+                                <span style="font-size: 24px; display: block; margin-bottom: 5px;">👟</span>
+                                <span style="font-size: 20px; font-weight: 900; color: var(--space-indigo);">${totaalAssists}</span>
+                                <span style="display: block; font-size: 11px; font-weight: 900; color: var(--rebecca-purple); text-transform: uppercase;">Assists</span>
+                            </div>
+                        </div>
                     </div>
-
-                    <div class="stats-card">
-                        <h3 style="margin-bottom: 10px; color: var(--space-indigo);">Statistieken ${match.speler}</h3>
-                        ${match.status === 'Afwezig' ? `<p style="color: var(--lobster-pink); font-weight:bold;">Afwezig: ${match.reden_afwezig}</p>` : `<p><strong>Doelpunten:</strong> ${match.doelpunten_speler} &nbsp;|&nbsp; <strong>Assists:</strong> ${match.assists || 0}</p>`}
-                        <p><strong>Locatie:</strong> ${match.locatie}</p>
-                        ${kaartenHtml}
-                    </div>
-
-                    <button class="wa-share-btn" onclick="deelViaWhatsApp()" style="width: 100%; padding: 14px; border:none; color: white; font-weight: bold; cursor:pointer; margin-bottom: 25px;">
-                        <span>📱</span> Deel via WhatsApp
-                    </button>
-
-                    <!-- NIEUW: BEWERK EN VERWIJDER KNOPPEN -->
-                    <div style="display: flex; gap: 12px; margin-bottom: 30px;">
-                        <button onclick="bewerkMatch('${match.id}')" style="flex: 1; background: var(--rebecca-purple); color: #fff; padding: 14px; border: none; border-radius: 14px; font-weight: 900; box-shadow: 0 6px 16px rgba(89,60,143,0.3); cursor:pointer;">
-                            ✏️ Bewerk
-                        </button>
-                        <button onclick="verwijderMatch('${match.id}')" style="flex: 1; background: var(--lobster-pink); color: #fff; padding: 14px; border: none; border-radius: 14px; font-weight: 900; box-shadow: 0 6px 16px rgba(219,84,97,0.3); cursor:pointer;">
-                            🗑️ Wis
-                        </button>
-                    </div>
-
-                    <h3 style="margin-bottom: 15px; color: var(--space-indigo);">Wedstrijdfoto's</h3>
-                    ${galerijHtml}
                 `;
+
+                if (match.opmerking) {
+                    html += `
+                        <div style="background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid var(--lobster-pink);">
+                            <p style="margin: 0; font-size: 14px; color: var(--space-indigo); font-style: italic;">💬 "${match.opmerking}"</p>
+                        </div>
+                    `;
+                }
+
+                // 4. SUB-MATCHES OPBOUWEN
+                if (match.mini_scores && match.mini_scores.length > 0) {
+                    html += `<h3 style="font-size: 16px; color: var(--space-indigo); margin-bottom: 15px;">De Uitslagen</h3>`;
+                    
+                    match.mini_scores.forEach((score, index) => {
+                        let statusClass = 'draw';
+                        if (score.thuis > score.uit) statusClass = match.locatie === 'Thuis' ? 'win' : 'loss';
+                        if (score.thuis < score.uit) statusClass = match.locatie === 'Thuis' ? 'loss' : 'win';
+
+                        let subTeamNaam = score.tegenstander || match.tegenstander || "Onbekend";
+                        let subLogoHtml = score.logo_tegenstander ? `<img src="${score.logo_tegenstander}" style="width: 30px; height: 30px; border-radius: 6px; object-fit: cover;">` : (match.logo_tegenstander ? `<img src="${match.logo_tegenstander}" style="width: 30px; height: 30px; border-radius: 6px; object-fit: cover;">` : `<div style="width: 30px; height: 30px; border-radius: 6px; background: var(--almond-silk); display:flex; align-items:center; justify-content:center; font-size:12px;">🛡️</div>`);
+
+                        html += `
+                            <div style="background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+                                
+                                <!-- Ploeg vs Ploeg & Score -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--almond-silk); padding-bottom: 15px; margin-bottom: 15px;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        ${subLogoHtml}
+                                        <span style="font-weight: 900; color: var(--space-indigo); font-size: 15px;">${subTeamNaam}</span>
+                                    </div>
+                                    <div class="sub-match-score ${statusClass}" style="font-size: 18px; padding: 6px 12px;">
+                                        ${score.thuis} - ${score.uit}
+                                    </div>
+                                </div>
+
+                                <!-- Persoonlijke inbreng in DEZE match -->
+                                <div style="display: flex; justify-content: space-around; font-size: 13px; font-weight: 800; color: var(--rebecca-purple);">
+                                    <span style="${score.is_doelman ? 'color: var(--space-indigo);' : 'opacity: 0.3;'}">🧤 Keeper</span>
+                                    <span style="${score.goals > 0 ? 'color: var(--space-indigo);' : 'opacity: 0.3;'}">⚽ ${score.goals} Goals</span>
+                                    <span style="${score.assists > 0 ? 'color: var(--space-indigo);' : 'opacity: 0.3;'}">👟 ${score.assists} Assists</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // 5. ACTIEKNOPPEN (WhatsApp, Bewerk, Wis)
+                html += `
+                    <div style="margin-top: 30px; margin-bottom: 30px;">
+                        <button onclick="deelViaWhatsApp()" style="width: 100%; background: #25D366; color: #fff; border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: 900; margin-bottom: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">📱 Deel via WhatsApp</button>
+                        
+                        <div style="display: flex; gap: 12px;">
+                            <button onclick="bewerkMatch()" style="flex: 1; background: var(--rebecca-purple); color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; cursor: pointer;">✏️ Bewerk</button>
+                            <button onclick="verwijderMatch()" style="flex: 1; background: var(--lobster-pink); color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; cursor: pointer;">🗑️ Wis</button>
+                        </div>
+                    </div>
+                `;
+
+                // 6. FOTO'S
+                if (match.fotos && match.fotos.length > 0) {
+                    html += `
+                        <h3 style="font-size: 16px; color: var(--space-indigo); margin-bottom: 15px;">Wedstrijdfoto's</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    `;
+                    match.fotos.forEach(fotoUrl => {
+                        html += `<img src="${fotoUrl}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">`;
+                    });
+                    html += `</div>`;
+                }
+
+                container.innerHTML = html;
+
             } catch (err) {
-                contentDiv.innerHTML = '<p class="empty-state">Fout bij het laden.</p>';
+                console.error("Fout:", err);
+                container.innerHTML = '<p class="empty-state">Wedstrijd niet gevonden of fout bij inladen.</p>';
             }
         }
 
-        document.addEventListener('DOMContentLoaded', laadMatchDetails);
+        window.bewerkMatch = function() {
+            const pin = prompt("Voer de pincode in om te bewerken (0204):");
+            if (pin === "0204") {
+                window.location.href = `add-match.html?edit=${matchId}`;
+            } else if (pin !== null) {
+                alert("Foutieve code.");
+            }
+        };
+
+        window.verwijderMatch = async function() {
+            const pin = prompt("Voer de pincode in om definitief te wissen (0204):");
+            if (pin === "0204") {
+                if(confirm("Weet je zeker dat je deze dag wil wissen? Dit kan niet ongedaan gemaakt worden.")) {
+                    await supabaseClient.from('wedstrijden').delete().eq('id', matchId);
+                    window.location.href = "index.html";
+                }
+            } else if (pin !== null) {
+                alert("Foutieve code.");
+            }
+        };
+
+        window.deelViaWhatsApp = function() {
+            if (!actueleMatch) return;
+            
+            let totGoals = 0; let totAssists = 0;
+            if (actueleMatch.mini_scores) {
+                actueleMatch.mini_scores.forEach(s => { totGoals += (s.goals||0); totAssists += (s.assists||0); });
+            }
+
+            const titel = actueleMatch.type_wedstrijd === 'Toernooi' ? `🏆 Toernooi ${actueleMatch.tegenstander}` : `⚽ ${actueleMatch.eigen_ploeg} VS ${actueleMatch.tegenstander}`;
+            
+            let tekst = `*Voetbal Update: ${actueleMatch.speler}*\n`;
+            tekst += `${titel}\n\n`;
+            
+            tekst += `*Persoonlijke Stats:*\n`;
+            tekst += `⚽ Goals: ${totGoals}\n`;
+            tekst += `👟 Assists: ${totAssists}\n\n`;
+            
+            if (actueleMatch.mini_scores && actueleMatch.mini_scores.length > 0) {
+                tekst += `*Uitslagen:*\n`;
+                actueleMatch.mini_scores.forEach((s, index) => {
+                    let subTeam = s.tegenstander || actueleMatch.tegenstander || 'Onbekend';
+                    tekst += `Match ${index + 1}: ${s.thuis} - ${s.uit} (vs ${subTeam})\n`;
+                });
+            }
+
+            if (actueleMatch.opmerking) {
+                tekst += `\n💬 "${actueleMatch.opmerking}"\n`;
+            }
+
+            tekst += `\nBekijk alle foto's en details in de app!`;
+            
+            const url = `https://wa.me/?text=${encodeURIComponent(tekst)}`;
+            window.open(url, '_blank');
+        };
+
+        document.addEventListener('DOMContentLoaded', laadMatchDetail);
     </script>
 </body>
 </html>
