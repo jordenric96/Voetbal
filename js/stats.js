@@ -1,4 +1,3 @@
-// HET KLEUREN BREIN VOOR STATS
 const badgeColors = {
     'U6': { bg: '#fef08a', text: '#713f12' }, 
     'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
@@ -18,22 +17,13 @@ const badgeColors = {
     'Standaard': { bg: '#f3f4f6', text: '#4b5563' } 
 };
 
-// FILTER STATE
 let actieveSpeler = 'Lou';
 let filterCategorie = null;
 let filterType = null;
 let alleMatchenDB = [];
 
-function toggleFilter() {
-    document.getElementById('filter-panel').classList.toggle('open');
-}
-
-function resetFilters() {
-    filterCategorie = null; filterType = null;
-    document.getElementById('filter-panel').classList.remove('open');
-    renderStats(); buildFilterUI();
-}
-
+function toggleFilter() { document.getElementById('filter-panel').classList.toggle('open'); }
+function resetFilters() { filterCategorie = null; filterType = null; document.getElementById('filter-panel').classList.remove('open'); renderStats(); buildFilterUI(); }
 function setFilter(soort, waarde) {
     if (soort === 'cat') filterCategorie = (filterCategorie === waarde) ? null : waarde;
     if (soort === 'type') filterType = (filterType === waarde) ? null : waarde;
@@ -47,7 +37,7 @@ function buildFilterUI() {
     
     catContainer.innerHTML = ''; typeContainer.innerHTML = '';
 
-    const leeftijden = ['U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13'];
+    const leeftijden = ['U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17'];
     const types = ['Competitie', 'Toernooi', 'Vriendschappelijk'];
 
     leeftijden.forEach(cat => {
@@ -73,29 +63,20 @@ async function laadStats(speler) {
     actieveSpeler = speler;
     const loader = document.getElementById('loading-msg');
     const container = document.getElementById('stats-container');
-    
-    loader.style.display = 'block';
-    container.style.display = 'none';
+    loader.style.display = 'block'; container.style.display = 'none';
 
     try {
         const { data, error } = await supabaseClient.from('wedstrijden').select('*').eq('speler', speler).order('datum', { ascending: false });
         if (error) throw error;
-        
         alleMatchenDB = data;
-        buildFilterUI();
-        renderStats();
-
-    } catch (err) {
-        loader.innerText = "Fout bij ophalen.";
-        loader.style.display = 'block';
-    }
+        buildFilterUI(); renderStats();
+    } catch (err) { loader.innerText = "Fout bij ophalen."; loader.style.display = 'block'; }
 }
 
 function renderStats() {
     const loader = document.getElementById('loading-msg');
     const container = document.getElementById('stats-container');
 
-    // Toepassen van de filters op de data!
     let data = alleMatchenDB;
     if (filterCategorie) data = data.filter(m => m.categorie === filterCategorie);
     if (filterType) data = data.filter(m => m.type_wedstrijd === filterType);
@@ -144,8 +125,7 @@ function renderStats() {
 
     if (totaalMiniMatches === 0) {
         container.innerHTML = `<div class="empty-state">Geen statistieken gevonden voor deze filter.</div>`;
-        container.style.display = 'block';
-        return;
+        container.style.display = 'block'; return;
     }
 
     const winPercVeld = veldMatches > 0 ? Math.round((veldWins / veldMatches) * 100) : 0;
