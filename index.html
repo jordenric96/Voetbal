@@ -50,7 +50,7 @@
     <script src="js/database.js"></script>
 
     <script>
-        // HET KLEUREN BREIN (Inclusief Thuis/Uit badges en tot U17)
+        // UITGEBREID KLEUREN BREIN
         const badgeColors = {
             'U6': { bg: '#fef08a', text: '#713f12' }, 
             'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
@@ -62,8 +62,11 @@
             'U13': { bg: '#99f6e4', text: '#0f766e' }, 
             'U14': { bg: '#bbf7d0', text: '#14532d' }, 
             'U15': { bg: '#d9f99d', text: '#3f6212' }, 
-            'U16': { bg: '#fef08a', text: '#713f12' }, 
-            'U17': { bg: '#fed7aa', text: '#7c2d12' }, 
+            'U16': { bg: '#fde68a', text: '#92400e' }, 
+            'U17': { bg: '#fcd34d', text: '#92400e' }, 
+            'Beloften': { bg: '#e2e8f0', text: '#1e293b' },
+            'Eerste Ploeg': { bg: '#111827', text: '#f9fafb' },
+            'Veteranen': { bg: '#9ca3af', text: '#111827' },
             'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 
             'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 
             'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 
@@ -72,10 +75,11 @@
             'Standaard': { bg: '#f3f4f6', text: '#4b5563' }
         };
 
+        // ONBREEKBARE INLINE STYLES VOOR TAGS (zodat het nooit meer stuk gaat zoals op de screenshot)
         function getBadgeHtml(waarde) {
             if (!waarde) return '';
             const style = badgeColors[waarde] || badgeColors['Standaard'];
-            return `<span class="card-badge" style="background: ${style.bg}; color: ${style.text}; border-color: ${style.bg};">${waarde}</span>`;
+            return `<span style="display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px; background-color: ${style.bg}; color: ${style.text}; border: 1px solid ${style.bg}; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${waarde}</span>`;
         }
 
         let actieveSpeler = 'Lou';
@@ -96,16 +100,21 @@
             const typeContainer = document.getElementById('filter-chips-type');
             catContainer.innerHTML = ''; typeContainer.innerHTML = '';
 
-            const leeftijden = ['U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17'];
-            const types = ['Competitie', 'Toernooi', 'Vriendschappelijk'];
+            // DYNAMISCH: Haal enkel categorieën/types op die voorkomen in de DB voor deze speler
+            const actieveCategorieen = [...new Set(alleMatchenDB.map(m => m.categorie).filter(Boolean))].sort((a, b) => {
+                const numA = parseInt(a.replace('U', '')) || 999;
+                const numB = parseInt(b.replace('U', '')) || 999;
+                return numA - numB;
+            });
+            const actieveTypes = [...new Set(alleMatchenDB.map(m => m.type_wedstrijd).filter(Boolean))].sort();
 
-            leeftijden.forEach(cat => {
+            actieveCategorieen.forEach(cat => {
                 const style = badgeColors[cat] || badgeColors['Standaard'];
                 const isActive = filterCategorie === cat ? 'active' : '';
                 catContainer.innerHTML += `<div class="filter-chip ${isActive}" onclick="setFilter('cat', '${cat}')" style="background: ${style.bg}; color: ${style.text}; border-color: ${isActive ? style.text : 'transparent'};">${cat}</div>`;
             });
 
-            types.forEach(type => {
+            actieveTypes.forEach(type => {
                 const style = badgeColors[type] || badgeColors['Standaard'];
                 const isActive = filterType === type ? 'active' : '';
                 typeContainer.innerHTML += `<div class="filter-chip ${isActive}" onclick="setFilter('type', '${type}')" style="background: ${style.bg}; color: ${style.text}; border-color: ${isActive ? style.text : 'transparent'};">${type}</div>`;
@@ -173,13 +182,12 @@
 
             tonenMatchen.forEach(match => {
                 const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' }).toUpperCase();
-                const isToernooi = match.type_wedstrijd === 'Toernooi';
                 
-                // Hier voegen we Thuis/Uit toe aan de badges!
+                // Hier zorgen we dat de tags perfect uitlijnen in een mooie flex-box
                 let badges = `
                     ${getBadgeHtml(match.categorie)}
                     ${getBadgeHtml(match.type_wedstrijd)}
-                    ${!isToernooi ? getBadgeHtml(match.locatie) : ''}
+                    ${getBadgeHtml(match.locatie)}
                 `;
 
                 let subMatchesHtml = '';
@@ -209,11 +217,13 @@
                     });
                 }
 
+                const isToernooi = match.type_wedstrijd === 'Toernooi';
+
                 html += `
                     <a href="match-detail.html?id=${match.id}" class="match-card-v2">
-                        <div class="card-meta-row">
-                            <span style="font-size: 10px; font-weight: 700; color: #9ca3af; letter-spacing: 0.5px;">${datumMooi}</span>
-                            <div style="display: flex; gap: 6px;">${badges}</div>
+                        <div class="card-meta-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <span style="font-size: 10px; font-weight: 800; color: #9ca3af; letter-spacing: 0.5px;">${datumMooi}</span>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">${badges}</div>
                         </div>
                         
                         <h3 style="margin: 0 0 16px 0; font-size: 19px; font-weight: 800; color: #111827; letter-spacing: -0.2px;">
