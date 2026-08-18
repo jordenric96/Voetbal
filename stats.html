@@ -21,12 +21,30 @@
         <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
     </div>
 
+    <!-- FILTER BALK -->
+    <div class="filter-bar">
+        <span style="font-size: 12px; font-weight: 700; color: #9ca3af;">Filter statistieken</span>
+        <div class="filter-toggle" onclick="toggleFilter()">
+            <span id="filter-indicator">Alle</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        
+        <div id="filter-panel" class="filter-panel">
+            <div class="filter-section-title">Leeftijd / Categorie</div>
+            <div id="filter-chips-leeftijd" class="filter-chips-container"></div>
+            
+            <div class="filter-section-title">Type Wedstrijd</div>
+            <div id="filter-chips-type" class="filter-chips-container"></div>
+            
+            <button onclick="resetFilters()" style="width: 100%; padding: 12px; border-radius: 8px; background: #f3f4f6; border: none; color: #4b5563; font-weight: 700; cursor: pointer;">Filters Wissen</button>
+        </div>
+    </div>
+
     <main style="padding: 0 20px 100px 20px;">
         <p id="loading-msg" class="empty-state">Statistieken berekenen... ⏳</p>
         <div id="stats-container" style="display: none;"></div>
     </main>
 
-    <!-- Zorg dat deze scripts helemaal hier onderaan staan! -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
     <script src="js/stats.js"></script>
