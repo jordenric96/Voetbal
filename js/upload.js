@@ -19,7 +19,6 @@ window.checkPin = async function() {
         if (editId) {
             await laadWedstrijdVoorBewerken(editId);
         } else {
-            // NIEUWE MATCH: Haal het geheugen van de telefoon op!
             const opgeslagenPloeg = localStorage.getItem('laatsteEigenPloeg');
             const opgeslagenLogo = localStorage.getItem('laatsteEigenLogo');
             
@@ -52,13 +51,10 @@ window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, 
     row.style.boxSizing = "border-box";
     
     row.innerHTML = `
-        <!-- HEADER MET VERWIJDER KNOP -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--almond-silk); width: 100%;">
             <label style="font-size: 13px; font-weight: 900; color: var(--space-indigo); text-transform: uppercase; letter-spacing: 1px;">Wedstrijd</label>
             <button type="button" class="remove-score-btn" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; cursor: pointer; padding: 0;" onclick="this.closest('.score-row-item').remove()">✖</button>
         </div>
-
-        <!-- SCORE INPUTS (GROOT EN DUIDELIJK) -->
         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%;">
             <div style="flex: 1; text-align: center;">
                 <label style="font-size: 10px; font-weight: 900; color: var(--rebecca-purple); display: block; margin-bottom: 6px; text-transform: uppercase;">Thuis</label>
@@ -70,21 +66,16 @@ window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, 
                 <input type="number" class="mini-score-uit" min="0" value="${uit}" required style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); text-align: center; font-size: 18px; font-weight: 900; color: var(--space-indigo); box-sizing: border-box;">
             </div>
         </div>
-
-        <!-- STATISTIEKEN VELD (KEEPER, GOALS, ASSISTS) -->
         <div style="background: #fff; padding: 15px; border-radius: 12px; border: 1px solid var(--almond-silk); width: 100%; box-sizing: border-box;">
-            
             <label style="font-size: 13px; font-weight: 900; display: flex; align-items: center; cursor: pointer; color: var(--space-indigo); margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #eee;">
                 <input type="checkbox" class="mini-score-doelman" ${doelman ? 'checked' : ''} style="margin-right: 12px; width: 20px; height: 20px; accent-color: var(--rebecca-purple);"> 
                 🧤 Speelde als Doelman
             </label>
-            
             <div style="display: flex; justify-content: space-around; align-items: center;">
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
                     <span style="font-size: 12px; font-weight: 900; color: var(--rebecca-purple);">⚽ Goals</span>
                     <input type="number" class="mini-score-goals" min="0" value="${goals}" style="width: 65px; padding: 10px; border-radius: 8px; border: 2px solid #eee; text-align: center; font-weight: 900; font-size: 16px; color: var(--space-indigo);">
                 </div>
-                
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
                     <span style="font-size: 12px; font-weight: 900; color: var(--rebecca-purple);">👟 Assists</span>
                     <input type="number" class="mini-score-assists" min="0" value="${assists}" style="width: 65px; padding: 10px; border-radius: 8px; border: 2px solid #eee; text-align: center; font-weight: 900; font-size: 16px; color: var(--space-indigo);">
@@ -104,6 +95,7 @@ async function laadWedstrijdVoorBewerken(id) {
             document.querySelector('header h1').innerText = "✏️ Match Bewerken";
             document.getElementById('speler').value = data.speler;
             document.getElementById('datum').value = data.datum;
+            document.getElementById('type_wedstrijd').value = data.type_wedstrijd || 'Competitie';
             document.getElementById('tegenstander').value = data.tegenstander;
             document.getElementById('locatie').value = data.locatie;
             document.getElementById('eigen_ploeg').value = data.eigen_ploeg || STANDAARD_EIGEN_PLOEG;
@@ -120,7 +112,6 @@ async function laadWedstrijdVoorBewerken(id) {
             }
 
             geselecteerdBestaandLogo = data.logo_tegenstander; 
-            
             if (data.logo_eigen_ploeg) {
                 bestaandEigenLogo = data.logo_eigen_ploeg;
                 const eigenLogoStatus = document.getElementById('logo-eigen-gevonden-status');
@@ -136,18 +127,35 @@ async function laadWedstrijdVoorBewerken(id) {
 
 async function haalPloegenOp() {
     try {
-        const { data } = await supabaseClient.from('wedstrijden').select('tegenstander, logo_tegenstander');
+        // Haal zowel de voorgedefinieerde ploegen op, als de historische uit de wedstrijden!
+        const { data: ploegenData } = await supabaseClient.from('ploegen').select('naam, logo_url');
+        const { data: matchData } = await supabaseClient.from('wedstrijden').select('tegenstander, logo_tegenstander');
+        
         const uniekePloegenMap = new Map();
-        if (data) {
-            data.forEach(m => {
-                if (!m.tegenstander) return;
-                const naam = m.tegenstander.trim().toLowerCase();
-                if (!uniekePloegenMap.has(naam)) uniekePloegenMap.set(naam, { naam: m.tegenstander.trim(), logo: m.logo_tegenstander });
-                else if (!uniekePloegenMap.get(naam).logo && m.logo_tegenstander) uniekePloegenMap.get(naam).logo = m.logo_tegenstander;
+        
+        // Eerst de voorgedefinieerde ploegen toevoegen (hebben prioriteit op logo's)
+        if (ploegenData) {
+            ploegenData.forEach(p => {
+                const naam = p.naam.trim().toLowerCase();
+                uniekePloegenMap.set(naam, { naam: p.naam.trim(), logo: p.logo_url });
             });
         }
+
+        // Dan de oude wedstrijden erbij voegen (als ze nog niet bestaan)
+        if (matchData) {
+            matchData.forEach(m => {
+                if (!m.tegenstander) return;
+                const naam = m.tegenstander.trim().toLowerCase();
+                if (!uniekePloegenMap.has(naam)) {
+                    uniekePloegenMap.set(naam, { naam: m.tegenstander.trim(), logo: m.logo_tegenstander });
+                } else if (!uniekePloegenMap.get(naam).logo && m.logo_tegenstander) {
+                    uniekePloegenMap.get(naam).logo = m.logo_tegenstander;
+                }
+            });
+        }
+        
         bekendeTegenstanders = Array.from(uniekePloegenMap.values());
-        document.getElementById('tegenstander').placeholder = `Typ om te zoeken in ${bekendeTegenstanders.length} bekende ploeg(en)...`;
+        document.getElementById('tegenstander').placeholder = `Typ om te zoeken in ${bekendeTegenstanders.length} ploeg(en)...`;
     } catch (err) {}
 }
 
@@ -184,7 +192,6 @@ function setupAutocomplete() {
     document.addEventListener('click', function (e) { if (e.target !== input && e.target !== lijst) lijst.style.display = 'none'; });
     if (fileInput) fileInput.addEventListener('change', function() { geselecteerdBestaandLogo = null; if (logoStatus) logoStatus.style.display = 'none'; });
     
-    // Verberg het 'gevonden' vinkje als de gebruiker toch handmatig een nieuw logo uploadt
     const eigenFileInput = document.getElementById('logo_eigen_ploeg');
     const eigenLogoStatus = document.getElementById('logo-eigen-gevonden-status');
     if (eigenFileInput) eigenFileInput.addEventListener('change', function() { bestaandEigenLogo = null; if(eigenLogoStatus) eigenLogoStatus.style.display = 'none'; });
@@ -216,7 +223,6 @@ window.saveMatch = async function() {
     submitBtn.innerText = "Bezig met valideren... ⏳"; 
     submitBtn.disabled = true;
 
-    // 1. BEVEILIGING: VALIDATIE VAN DE DOELPUNTEN
     const scoreRows = document.querySelectorAll('.score-row-item');
     const speelLocatie = document.getElementById('locatie').value;
     let validatieFout = null;
@@ -226,9 +232,7 @@ window.saveMatch = async function() {
         const u = parseInt(row.querySelector('.mini-score-uit').value) || 0;
         const g = parseInt(row.querySelector('.mini-score-goals').value) || 0;
         
-        // Welke score is van de eigen ploeg?
         const eigenScore = (speelLocatie === 'Thuis') ? t : u;
-
         if (g > eigenScore) {
             validatieFout = `Fout in Match ${index + 1}: Je speler kan geen ${g} goals maken als de eigen ploeg er maar ${eigenScore} scoort!`;
         }
@@ -238,10 +242,9 @@ window.saveMatch = async function() {
         alert(validatieFout);
         submitBtn.innerText = "Opslaan";
         submitBtn.disabled = false;
-        return; // STOP DE UPLOAD
+        return; 
     }
 
-    // 2. DOORGAAN MET UPLOADEN ALS ALLES KLOPT
     try {
         const logoBestandTegenstander = document.getElementById('logo_tegenstander').files[0];
         const logoBestandEigen = document.getElementById('logo_eigen_ploeg').files[0];
@@ -284,7 +287,6 @@ window.saveMatch = async function() {
         const spelerVal = document.getElementById('speler').value;
         const editId = document.getElementById('matchForm').dataset.editId;
         const ingevuldeEigenPloeg = document.getElementById('eigen_ploeg').value;
-        
         let opmerkingVeld = document.getElementById('opmerking');
         
         const matchData = {
@@ -297,6 +299,7 @@ window.saveMatch = async function() {
             status: "Meegedaan",
             opmerking: opmerkingVeld ? opmerkingVeld.value : null,
             
+            type_wedstrijd: document.getElementById('type_wedstrijd').value,
             eigen_ploeg: ingevuldeEigenPloeg,
             logo_eigen_ploeg: logoEigenUrl,
             categorie: document.getElementById('categorie').value,
@@ -315,7 +318,6 @@ window.saveMatch = async function() {
         const { error } = await supabaseClient.from('wedstrijden').upsert([matchData]);
         if (error) throw error;
 
-        // 3. ONTHOUD DE EIGEN PLOEG VOOR DE VOLGENDE KEER!
         localStorage.setItem('laatsteEigenPloeg', ingevuldeEigenPloeg);
         if (logoEigenUrl) {
             localStorage.setItem('laatsteEigenLogo', logoEigenUrl);
