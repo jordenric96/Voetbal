@@ -48,13 +48,13 @@ window.checkTegenstanderLogo = function() {
     const match = bekendeTegenstanders.find(p => p.naam.toLowerCase() === inputVal);
     
     if (match && match.logo) {
-        container.style.display = 'none'; // Logo is al gekend! Verbergen!
+        container.style.display = 'none'; 
         geselecteerdBestaandLogo = match.logo;
     } else if (inputVal !== "") {
-        container.style.display = 'block'; // Onbekende ploeg: Toon upload veld
+        container.style.display = 'block'; 
         geselecteerdBestaandLogo = null;
     } else {
-        container.style.display = 'none'; // Veld is leeg
+        container.style.display = 'none'; 
         geselecteerdBestaandLogo = null;
     }
 };
@@ -73,7 +73,8 @@ window.toggleWedstrijdType = function() {
     checkTegenstanderLogo();
 };
 
-window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, assists = 0, rowTegenstander = '', rowLogo = '') {
+// NIEUW: We gebruiken nu 'eigen' en 'tegen' als argumenten, ipv 'thuis' en 'uit'
+window.addScoreRow = function(eigen = '', tegen = '', doelman = false, goals = 0, assists = 0, rowTegenstander = '', rowLogo = '') {
     const wrapper = document.getElementById('mini-scores-wrapper');
     const row = document.createElement('div');
     row.className = 'score-row-item';
@@ -95,14 +96,16 @@ window.addScoreRow = function(thuis = '', uit = '', doelman = false, goals = 0, 
         </div>
 
         <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%;">
+            <!-- EIGEN PLOEG SCORE -->
             <div style="flex: 1; text-align: center;">
-                <label style="font-size: 10px; font-weight: 900; color: var(--rebecca-purple); display: block; margin-bottom: 6px; text-transform: uppercase;">Thuis</label>
-                <input type="number" class="mini-score-thuis" min="0" value="${thuis}" required style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); text-align: center; font-size: 18px; font-weight: 900; color: var(--space-indigo); box-sizing: border-box;">
+                <label style="font-size: 10px; font-weight: 900; color: var(--soft-cyan); background: var(--space-indigo); padding: 4px 8px; border-radius: 6px; display: inline-block; margin-bottom: 6px; text-transform: uppercase;">Eigen Ploeg</label>
+                <input type="number" class="mini-score-eigen" min="0" value="${eigen}" required style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); text-align: center; font-size: 18px; font-weight: 900; color: var(--space-indigo); box-sizing: border-box;">
             </div>
             <div style="font-weight: 900; color: var(--space-indigo); font-size: 24px; margin-top: 15px;">-</div>
+            <!-- TEGENSTANDER SCORE -->
             <div style="flex: 1; text-align: center;">
-                <label style="font-size: 10px; font-weight: 900; color: var(--rebecca-purple); display: block; margin-bottom: 6px; text-transform: uppercase;">Uit</label>
-                <input type="number" class="mini-score-uit" min="0" value="${uit}" required style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); text-align: center; font-size: 18px; font-weight: 900; color: var(--space-indigo); box-sizing: border-box;">
+                <label style="font-size: 10px; font-weight: 900; color: var(--lobster-pink); background: var(--bg-color); padding: 4px 8px; border-radius: 6px; display: inline-block; margin-bottom: 6px; text-transform: uppercase;">Tegenstander</label>
+                <input type="number" class="mini-score-tegen" min="0" value="${tegen}" required style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); text-align: center; font-size: 18px; font-weight: 900; color: var(--space-indigo); box-sizing: border-box;">
             </div>
         </div>
 
@@ -180,16 +183,26 @@ async function laadWedstrijdVoorBewerken(id) {
 
             const wrapper = document.getElementById('mini-scores-wrapper');
             wrapper.innerHTML = ''; 
+            
+            const isThuisGlobal = data.locatie === 'Thuis';
+
             if (data.mini_scores && data.mini_scores.length > 0) {
-                data.mini_scores.forEach(s => addScoreRow(s.thuis, s.uit, s.is_doelman, s.goals, s.assists, s.tegenstander, s.logo_tegenstander));
+                data.mini_scores.forEach(s => {
+                    // Zet de database thuis/uit score slim om naar eigen/tegen voor de UI
+                    const eigen = isThuisGlobal ? s.thuis : s.uit;
+                    const tegen = isThuisGlobal ? s.uit : s.thuis;
+                    addScoreRow(eigen, tegen, s.is_doelman, s.goals, s.assists, s.tegenstander, s.logo_tegenstander);
+                });
             } else {
-                addScoreRow(data.score_thuis || 0, data.score_uit || 0, data.is_doelman, data.doelpunten_speler, data.assists);
+                const eigen = isThuisGlobal ? (data.score_thuis || 0) : (data.score_uit || 0);
+                const tegen = isThuisGlobal ? (data.score_uit || 0) : (data.score_thuis || 0);
+                addScoreRow(eigen, tegen, data.is_doelman, data.doelpunten_speler, data.assists);
             }
 
             geselecteerdBestaandLogo = data.logo_tegenstander; 
             bestaandEigenLogo = data.logo_eigen_ploeg || null;
             
-            checkTegenstanderLogo(); // Bepaal direct of we de logo uploader tonen
+            checkTegenstanderLogo(); 
             
             bestaandeFotos = data.fotos || [];
             document.getElementById('matchForm').dataset.editId = data.id;
@@ -245,7 +258,7 @@ function setupAutocomplete() {
                     input.value = p.naam; 
                     if (p.logo) { geselecteerdBestaandLogo = p.logo; }
                     lijst.style.display = 'none'; 
-                    checkTegenstanderLogo(); // <--- DE MAGIE GEBEURT HIER
+                    checkTegenstanderLogo();
                 });
                 lijst.appendChild(div);
             });
@@ -286,11 +299,10 @@ window.saveMatch = async function() {
     let validatieFout = null;
 
     scoreRows.forEach((row, index) => {
-        const t = parseInt(row.querySelector('.mini-score-thuis').value) || 0;
-        const u = parseInt(row.querySelector('.mini-score-uit').value) || 0;
+        // Lees nu de eigen en tegen score uit!
+        const eigenScore = parseInt(row.querySelector('.mini-score-eigen').value) || 0;
         const g = parseInt(row.querySelector('.mini-score-goals').value) || 0;
         
-        const eigenScore = (speelLocatie === 'Thuis') ? t : u;
         if (g > eigenScore) {
             validatieFout = `Fout in Match ${index + 1}: Je speler kan geen ${g} goals maken als de eigen ploeg er maar ${eigenScore} scoort!`;
         }
@@ -308,7 +320,7 @@ window.saveMatch = async function() {
         let logoTegenUrl = geselecteerdBestaandLogo; 
         if (!isToernooi && logoBestandTegenstander) { submitBtn.innerText = "Logo tegen uploaden..."; logoTegenUrl = await uploadBestandNaarSupabase(logoBestandTegenstander, 'logos'); }
         
-        let logoEigenUrl = bestaandEigenLogo; // Komt nu exclusief uit memory of database, niet meer uit file input op dit formulier
+        let logoEigenUrl = bestaandEigenLogo; 
 
         let fotoUrls = bestaandeFotos; 
         if (fotoBestanden.length > 0) {
@@ -328,12 +340,16 @@ window.saveMatch = async function() {
         const globalTegenstander = document.getElementById('tegenstander').value;
 
         scoreRows.forEach(row => {
-            const t = parseInt(row.querySelector('.mini-score-thuis').value) || 0;
-            const u = parseInt(row.querySelector('.mini-score-uit').value) || 0;
+            const eigenScore = parseInt(row.querySelector('.mini-score-eigen').value) || 0;
+            const tegenScore = parseInt(row.querySelector('.mini-score-tegen').value) || 0;
             const isD = row.querySelector('.mini-score-doelman').checked;
             const g = parseInt(row.querySelector('.mini-score-goals').value) || 0;
             const a = parseInt(row.querySelector('.mini-score-assists').value) || 0;
             
+            // Vertaal 'eigen' en 'tegen' terug naar 'thuis' en 'uit' voor de database
+            const t = (speelLocatie === 'Thuis') ? eigenScore : tegenScore;
+            const u = (speelLocatie === 'Thuis') ? tegenScore : eigenScore;
+
             let subNaam = globalTegenstander;
             let subLogo = logoTegenUrl;
             
@@ -385,7 +401,6 @@ window.saveMatch = async function() {
         if (error) throw error;
 
         localStorage.setItem('laatsteEigenPloeg', ingevuldeEigenPloeg);
-        // We slaan het logo alleen op in localStorage als we hem initieel hebben gezet via de Ploegen pagina / database
         if (logoEigenUrl) localStorage.setItem('laatsteEigenLogo', logoEigenUrl);
 
         alert(editId ? "Match succesvol bijgewerkt!" : "Match succesvol opgeslagen!");
