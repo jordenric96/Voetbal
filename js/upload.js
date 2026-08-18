@@ -73,7 +73,7 @@ window.toggleWedstrijdType = function() {
     checkTegenstanderLogo();
 };
 
-window.addScoreRow = function(eigen = '', tegen = '', doelman = false, goals = 0, assists = 0, rowTegenstander = '', rowLogo = '') {
+window.addScoreRow = function(eigen = '', tegen = '', doelman = false, goals = 0, assists = 0, rowTegenstander = '', rowLogo = '', minuten = '', geel = 0, rood = 0) {
     const wrapper = document.getElementById('mini-scores-wrapper');
     const row = document.createElement('div');
     row.className = 'score-row-item';
@@ -86,7 +86,7 @@ window.addScoreRow = function(eigen = '', tegen = '', doelman = false, goals = 0
         <div style="background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-                <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Uitslag</span>
+                <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Uitslag & Details</span>
                 <button type="button" onclick="this.closest('.score-row-item').remove()" style="background: #fef2f2; color: #dc2626; border: none; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.2s;">✕</button>
             </div>
 
@@ -108,18 +108,38 @@ window.addScoreRow = function(eigen = '', tegen = '', doelman = false, goals = 0
             </div>
 
             <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #f1f5f9;">
-                <label style="display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
-                    <input type="checkbox" class="mini-score-doelman" ${doelman ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: #111827; cursor: pointer;"> 
-                    Speelde als Keeper
-                </label>
-                <div style="display: flex; gap: 15px;">
-                    <div style="flex: 1;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+                    <label style="display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer;">
+                        <input type="checkbox" class="mini-score-doelman" ${doelman ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: #111827; cursor: pointer;"> 
+                        Speelde als Keeper
+                    </label>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Minuten</label>
+                        <input type="number" class="mini-score-minuten" min="0" placeholder="0" value="${minuten}" style="width: 60px; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; font-size: 14px; background: #fff;">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div>
                         <label style="font-size: 10px; font-weight: 700; color: #64748b; display: block; margin-bottom: 6px; text-transform: uppercase;">Goals</label>
                         <input type="number" class="mini-score-goals" min="0" value="${goals}" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; font-size: 16px; background: #fff;">
                     </div>
-                    <div style="flex: 1;">
+                    <div>
                         <label style="font-size: 10px; font-weight: 700; color: #64748b; display: block; margin-bottom: 6px; text-transform: uppercase;">Assists</label>
                         <input type="number" class="mini-score-assists" min="0" value="${assists}" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; font-weight: 700; font-size: 16px; background: #fff;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="font-size: 10px; font-weight: 700; color: #ca8a04; display: block; margin-bottom: 6px; text-transform: uppercase;">Geel 🟨</label>
+                        <input type="number" class="mini-score-geel" min="0" value="${geel}" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #fef08a; text-align: center; font-weight: 700; font-size: 16px; background: #fefce8; color: #854d0e;">
+                    </div>
+                    <div>
+                        <label style="font-size: 10px; font-weight: 700; color: #dc2626; display: block; margin-bottom: 6px; text-transform: uppercase;">Rood 🟥</label>
+                        <input type="number" class="mini-score-rood" min="0" value="${rood}" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #fecaca; text-align: center; font-weight: 700; font-size: 16px; background: #fef2f2; color: #991b1b;">
                     </div>
                 </div>
             </div>
@@ -190,7 +210,8 @@ async function laadWedstrijdVoorBewerken(id) {
                 data.mini_scores.forEach(s => {
                     const eigen = isThuisGlobal ? s.thuis : s.uit;
                     const tegen = isThuisGlobal ? s.uit : s.thuis;
-                    addScoreRow(eigen, tegen, s.is_doelman, s.goals, s.assists, s.tegenstander, s.logo_tegenstander);
+                    // Geef ook minuten en kaarten mee!
+                    addScoreRow(eigen, tegen, s.is_doelman, s.goals, s.assists, s.tegenstander, s.logo_tegenstander, s.minuten || '', s.geel || 0, s.rood || 0);
                 });
             } else {
                 const eigen = isThuisGlobal ? (data.score_thuis || 0) : (data.score_uit || 0);
@@ -341,6 +362,12 @@ window.saveMatch = async function() {
             const g = parseInt(row.querySelector('.mini-score-goals').value) || 0;
             const a = parseInt(row.querySelector('.mini-score-assists').value) || 0;
             
+            // Nieuwe velden ophalen
+            const minStr = row.querySelector('.mini-score-minuten').value;
+            const min = minStr !== '' ? parseInt(minStr) : null;
+            const geel = parseInt(row.querySelector('.mini-score-geel').value) || 0;
+            const rood = parseInt(row.querySelector('.mini-score-rood').value) || 0;
+            
             const t = (speelLocatie === 'Thuis') ? eigenScore : tegenScore;
             const u = (speelLocatie === 'Thuis') ? tegenScore : eigenScore;
 
@@ -355,7 +382,12 @@ window.saveMatch = async function() {
                 }
             }
 
-            miniScoresArray.push({ thuis: t, uit: u, is_doelman: isD, goals: g, assists: a, tegenstander: subNaam, logo_tegenstander: subLogo });
+            miniScoresArray.push({ 
+                thuis: t, uit: u, 
+                is_doelman: isD, goals: g, assists: a, 
+                tegenstander: subNaam, logo_tegenstander: subLogo,
+                minuten: min, geel: geel, rood: rood // Nieuw opgeslagen in array!
+            });
             if(isD) wasDoelmanOoit = true;
         });
 
