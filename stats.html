@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Statistieken</title>
     <link rel="stylesheet" href="css/style.css">
-    <meta name="theme-color" content="#f8fafc">
+    <meta name="theme-color" content="#f1f5f9">
 </head>
 <body>
     <header>
         <h1>Statistieken</h1>
         <nav>
-            <a href="index.html">Home</a>
-            <a href="stats.html" class="active">Stats</a>
+            <a href="index.html">Overzicht</a>
+            <a href="ploegen.html">Ploegen</a>
         </nav>
     </header>
 
@@ -21,14 +21,14 @@
         <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
     </div>
 
-    <main style="padding: 0 20px 100px;">
+    <main style="padding: 0 20px 100px 20px;">
         <p id="loading-msg" class="empty-state">Statistieken berekenen... ⏳</p>
         <div id="stats-container" style="display: none;"></div>
     </main>
 
+    <!-- Zorg dat deze scripts helemaal hier onderaan staan! -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
-    <!-- Dit is cruciaal voor de stats om te werken! -->
-    <script src="js/stats.js"></script> 
+    <script src="js/stats.js"></script>
 </body>
 </html>
