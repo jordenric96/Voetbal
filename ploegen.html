@@ -3,112 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ploegen Beheren</title>
+    <title>Ploegen</title>
     <link rel="stylesheet" href="css/style.css">
-    <meta name="theme-color" content="#171738">
-
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f1f5f9">
 </head>
 <body>
     <header>
-        <h1>Ploegen 🛡️</h1>
+        <h1>Ploegen</h1>
         <nav>
-            <a href="index.html">← Terug</a>
+            <a href="index.html">Overzicht</a>
+            <a href="stats.html">Stats</a>
         </nav>
     </header>
 
-    <main style="padding: 20px; padding-bottom: 100px;">
-        
-        <div style="background: #fff; padding: 20px; border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 30px;">
-            <h2 style="color: var(--space-indigo); font-size: 16px; margin-bottom: 15px;">+ Nieuwe Ploeg Voordefiniëren</h2>
-            <input type="text" id="nieuwe-ploeg-naam" placeholder="Naam van de club..." style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--almond-silk); margin-bottom: 15px; font-weight: bold;">
-            <input type="file" id="nieuwe-ploeg-logo" accept="image/png, image/jpeg" style="margin-bottom: 15px;">
-            <button onclick="slaPloegOp()" id="save-btn" style="width: 100%; padding: 12px; background: var(--rebecca-purple); color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer;">Ploeg Opslaan</button>
+    <!-- ZOEKBALK (Live Search) -->
+    <div style="padding: 0 20px 20px 20px;">
+        <div style="position: relative;">
+            <!-- Zoek Icoontje (Vergrootglas) -->
+            <svg style="position: absolute; left: 16px; top: 16px; color: #94a3b8; width: 18px; height: 18px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" id="searchInput" onkeyup="filterPloegen()" placeholder="Zoek een ploeg..." autocomplete="off" style="width: 100%; padding: 14px 14px 14px 44px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; font-weight: 500; color: var(--space-indigo); box-shadow: 0 2px 5px rgba(0,0,0,0.02); outline: none; box-sizing: border-box;">
         </div>
+    </div>
 
-        <h2 style="color: var(--space-indigo); font-size: 16px; margin-bottom: 15px;">Opgeslagen Ploegen</h2>
-        <div id="ploegen-lijst">
-            <p class="empty-state">Ploegen laden... ⏳</p>
-        </div>
-
+    <main id="ploegen-lijst" style="padding: 0 20px 100px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px;">
+        <p class="empty-state">Ploegen laden...</p>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
 
     <script>
+        let allePloegenHTML = []; // We slaan de HTML elementen hierin op voor het zoeken
+
         async function laadPloegen() {
-            const lijst = document.getElementById('ploegen-lijst');
-            const { data, error } = await supabaseClient.from('ploegen').select('*').order('naam', { ascending: true });
-            
-            if (error) {
-                lijst.innerHTML = `<p class="empty-state">Fout: ${error.message}</p>`;
-                return;
-            }
-
-            if (data.length === 0) {
-                lijst.innerHTML = '<p class="empty-state" style="font-size: 12px;">Je hebt nog geen ploegen voorgedefinieerd.</p>';
-                return;
-            }
-
-            let html = '';
-            data.forEach(ploeg => {
-                const logoHtml = ploeg.logo_url ? `<img src="${ploeg.logo_url}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">` : `<div style="width: 40px; height: 40px; border-radius: 8px; background: var(--almond-silk); display: flex; align-items:center; justify-content:center; font-size: 16px;">🛡️</div>`;
-                html += `
-                    <div style="display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 12px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            ${logoHtml}
-                            <strong style="color: var(--space-indigo);">${ploeg.naam}</strong>
-                        </div>
-                        <button onclick="verwijderPloeg('${ploeg.id}')" style="background: var(--lobster-pink); color: #fff; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">Wis</button>
-                    </div>
-                `;
-            });
-            lijst.innerHTML = html;
-        }
-
-        window.slaPloegOp = async function() {
-            const naam = document.getElementById('nieuwe-ploeg-naam').value.trim();
-            const logoBestand = document.getElementById('nieuwe-ploeg-logo').files[0];
-            const btn = document.getElementById('save-btn');
-
-            if (!naam) { alert("Vul een ploegnaam in!"); return; }
-
-            btn.innerText = "Bezig met opslaan... ⏳";
-            btn.disabled = true;
-
+            const container = document.getElementById('ploegen-lijst');
             try {
-                let logoUrl = null;
-                if (logoBestand) {
-                    const bestandsNaam = `logos/${Date.now()}-${logoBestand.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-                    const { error: uploadError } = await supabaseClient.storage.from('media').upload(bestandsNaam, logoBestand);
-                    if (uploadError) throw uploadError;
-                    const { data } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
-                    logoUrl = data.publicUrl;
+                // 1. Haal de 'officiële' ploegen op uit de ploegen tabel
+                const { data: formelePloegen, error: err1 } = await supabaseClient.from('ploegen').select('naam, logo_url');
+                
+                // 2. Haal alle wedstrijden op om tegenstanders te vinden
+                const { data: matches, error: err2 } = await supabaseClient.from('wedstrijden').select('tegenstander, logo_tegenstander, mini_scores');
+                
+                if (err1 || err2) throw new Error("Fout bij laden ploegen");
+
+                const uniekePloegen = new Map();
+
+                if (formelePloegen) {
+                    formelePloegen.forEach(p => {
+                        uniekePloegen.set(p.naam.trim().toLowerCase(), { naam: p.naam.trim(), logo: p.logo_url });
+                    });
                 }
 
-                const { error: insertError } = await supabaseClient.from('ploegen').insert([{ naam: naam, logo_url: logoUrl }]);
-                if (insertError) throw insertError;
-                
-                document.getElementById('nieuwe-ploeg-naam').value = '';
-                document.getElementById('nieuwe-ploeg-logo').value = '';
-                laadPloegen();
-            } catch (err) {
-                alert("Fout bij opslaan: " + err.message);
-            }
-            btn.innerText = "Ploeg Opslaan";
-            btn.disabled = false;
-        };
+                if (matches) {
+                    matches.forEach(m => {
+                        if (m.tegenstander) {
+                            const naam = m.tegenstander.trim().toLowerCase();
+                            if (!uniekePloegen.has(naam)) {
+                                uniekePloegen.set(naam, { naam: m.tegenstander.trim(), logo: m.logo_tegenstander });
+                            } else if (!uniekePloegen.get(naam).logo && m.logo_tegenstander) {
+                                uniekePloegen.get(naam).logo = m.logo_tegenstander;
+                            }
+                        }
+                        
+                        if (m.mini_scores) {
+                            m.mini_scores.forEach(s => {
+                                if (s.tegenstander) {
+                                    const sNaam = s.tegenstander.trim().toLowerCase();
+                                    if (!uniekePloegen.has(sNaam)) {
+                                        uniekePloegen.set(sNaam, { naam: s.tegenstander.trim(), logo: s.logo_tegenstander });
+                                    } else if (!uniekePloegen.get(sNaam).logo && s.logo_tegenstander) {
+                                        uniekePloegen.get(sNaam).logo = s.logo_tegenstander;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
 
-        window.verwijderPloeg = async function(id) {
-            const pin = prompt("Voer de pincode in om te verwijderen (0204):");
-            if (pin === "0204") {
-                await supabaseClient.from('ploegen').delete().eq('id', id);
-                laadPloegen();
-            } else if (pin !== null) {
-                alert("Foutieve code.");
+                const ploegenLijstData = Array.from(uniekePloegen.values());
+                
+                // Sorteer alfabetisch
+                ploegenLijstData.sort((a, b) => a.naam.localeCompare(b.naam));
+
+                container.innerHTML = '';
+                allePloegenHTML = []; // Leegmaken voor de zoekfunctie
+
+                if (ploegenLijstData.length === 0) {
+                    container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Nog geen ploegen bekend.</p>';
+                    return;
+                }
+
+                ploegenLijstData.forEach(p => {
+                    const logoHtml = p.logo 
+                        ? `<img src="${p.logo}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 1px solid #e5e7eb; margin-bottom: 8px;">` 
+                        : `<div style="width: 50px; height: 50px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid #e5e7eb; margin-bottom: 8px;">🛡️</div>`;
+
+                    // We maken er echte DOM elementen van, zodat we ze makkelijk kunnen verbergen met JS
+                    const item = document.createElement('div');
+                    item.className = 'ploeg-item';
+                    item.dataset.naam = p.naam.toLowerCase(); // Sla de naam op in kleine letters voor snel zoeken
+                    item.style = "background: #fff; padding: 15px 10px; border-radius: 16px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border: 1px solid #e5e7eb; display: flex; flex-direction: column; align-items: center; justify-content: center;";
+                    
+                    item.innerHTML = `
+                        ${logoHtml}
+                        <span style="font-size: 12px; font-weight: 700; color: #111827; line-height: 1.2;">${p.naam}</span>
+                    `;
+                    
+                    container.appendChild(item);
+                    allePloegenHTML.push(item);
+                });
+
+            } catch (err) {
+                container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Fout bij laden.</p>';
+            }
+        }
+
+        // DE LIVE SEARCH FUNCTIE
+        function filterPloegen() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase().trim();
+            const container = document.getElementById('ploegen-lijst');
+            let zichtbaar = 0;
+
+            allePloegenHTML.forEach(item => {
+                const ploegNaam = item.dataset.naam;
+                if (ploegNaam.includes(filter)) {
+                    item.style.display = "flex";
+                    zichtbaar++;
+                } else {
+                    item.style.display = "none";
+                }
+            });
+
+            // Als er geen resultaten zijn, toon dan een melding
+            const bestaandeMelding = document.getElementById('no-results-msg');
+            if (zichtbaar === 0) {
+                if (!bestaandeMelding) {
+                    const msg = document.createElement('p');
+                    msg.id = 'no-results-msg';
+                    msg.className = 'empty-state';
+                    msg.style.gridColumn = '1 / -1';
+                    msg.innerText = `Geen ploeg gevonden met "${input.value}"`;
+                    container.appendChild(msg);
+                } else {
+                    bestaandeMelding.innerText = `Geen ploeg gevonden met "${input.value}"`;
+                    bestaandeMelding.style.display = 'block';
+                }
+            } else if (bestaandeMelding) {
+                bestaandeMelding.style.display = 'none';
             }
         }
 
