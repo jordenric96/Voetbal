@@ -1,3 +1,4 @@
+// UITGEBREID KLEUREN BREIN VOOR STATS
 const badgeColors = {
     'U6': { bg: '#fef08a', text: '#713f12' }, 
     'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
@@ -9,8 +10,11 @@ const badgeColors = {
     'U13': { bg: '#99f6e4', text: '#0f766e' }, 
     'U14': { bg: '#bbf7d0', text: '#14532d' }, 
     'U15': { bg: '#d9f99d', text: '#3f6212' }, 
-    'U16': { bg: '#fef08a', text: '#713f12' }, 
-    'U17': { bg: '#fed7aa', text: '#7c2d12' }, 
+    'U16': { bg: '#fde68a', text: '#92400e' }, 
+    'U17': { bg: '#fcd34d', text: '#92400e' }, 
+    'Beloften': { bg: '#e2e8f0', text: '#1e293b' },
+    'Eerste Ploeg': { bg: '#111827', text: '#f9fafb' },
+    'Veteranen': { bg: '#9ca3af', text: '#111827' },
     'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 
     'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 
     'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 
@@ -37,16 +41,21 @@ function buildFilterUI() {
     
     catContainer.innerHTML = ''; typeContainer.innerHTML = '';
 
-    const leeftijden = ['U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17'];
-    const types = ['Competitie', 'Toernooi', 'Vriendschappelijk'];
+    // DYNAMISCH LADEN VAN Categorieën uit de Database
+    const actieveCategorieen = [...new Set(alleMatchenDB.map(m => m.categorie).filter(Boolean))].sort((a, b) => {
+        const numA = parseInt(a.replace('U', '')) || 999;
+        const numB = parseInt(b.replace('U', '')) || 999;
+        return numA - numB;
+    });
+    const actieveTypes = [...new Set(alleMatchenDB.map(m => m.type_wedstrijd).filter(Boolean))].sort();
 
-    leeftijden.forEach(cat => {
+    actieveCategorieen.forEach(cat => {
         const style = badgeColors[cat] || badgeColors['Standaard'];
         const isActive = filterCategorie === cat ? 'active' : '';
         catContainer.innerHTML += `<div class="filter-chip ${isActive}" onclick="setFilter('cat', '${cat}')" style="background: ${style.bg}; color: ${style.text}; border-color: ${isActive ? style.text : 'transparent'};">${cat}</div>`;
     });
 
-    types.forEach(type => {
+    actieveTypes.forEach(type => {
         const style = badgeColors[type] || badgeColors['Standaard'];
         const isActive = filterType === type ? 'active' : '';
         typeContainer.innerHTML += `<div class="filter-chip ${isActive}" onclick="setFilter('type', '${type}')" style="background: ${style.bg}; color: ${style.text}; border-color: ${isActive ? style.text : 'transparent'};">${type}</div>`;
@@ -150,7 +159,6 @@ function renderStats() {
     const statBoxStyle = "background: #f8fafc; padding: 15px; border-radius: 12px;";
 
     let html = '';
-
     const totaleGoalsNum = veldGoals + keeperGoals;
     const goalBarW = Math.min((totaleGoalsNum / 30) * 100, 100); 
 
