@@ -25,7 +25,6 @@
         const matchId = urlParams.get('id');
         let actueleMatch = null;
 
-        // Hetzelfde kleurenbrein als op de index en stats pagina
         const badgeColors = {
             'U6': { bg: '#fef08a', text: '#713f12' }, 
             'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
@@ -68,8 +67,7 @@
                 const isToernooi = match.type_wedstrijd === 'Toernooi';
                 let titelHtml = isToernooi ? `${match.tegenstander}` : `${match.eigen_ploeg || 'Eigen Ploeg'} vs ${match.tegenstander}`;
 
-                // Totals berekenen over de mini-matches
-                let totaalGoals = 0; let totaalAssists = 0; let wasKeeper = false;
+                let totaalGoals = 0; let totaalAssists = 0;
                 let totaalGeel = 0; let totaalRood = 0; let totaalMinuten = 0;
                 
                 if (match.mini_scores && match.mini_scores.length > 0) {
@@ -79,11 +77,9 @@
                         totaalGeel += (s.geel || 0);
                         totaalRood += (s.rood || 0);
                         totaalMinuten += (s.minuten || 0);
-                        if (s.is_doelman) wasKeeper = true;
                     });
                 }
 
-                // Genereer de gekleurde tags voor de detailpagina
                 let badges = `
                     ${getBadgeHtml(match.categorie)}
                     ${getBadgeHtml(match.type_wedstrijd)}
@@ -99,7 +95,7 @@
                     </div>
                 `;
 
-                // 2. TOTAAL STATS (Productiviteit)
+                // 2. TOTAAL STATS (Productiviteit - zonder keeper badge)
                 html += `
                     <div style="background: #fff; border-radius: 16px; padding: 20px; display: flex; justify-content: space-around; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                         <div style="flex: 1;">
@@ -111,15 +107,10 @@
                             <span style="display: block; font-size: 28px; font-weight: 800; color: #111827;">${totaalAssists}</span>
                             <span style="display: block; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 4px;">Assists</span>
                         </div>
-                        ${wasKeeper ? `
-                        <div style="width: 1px; background: #e2e8f0;"></div>
-                        <div style="flex: 1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-                            <span style="background:#111827; color:#fff; font-size:10px; font-weight:800; padding:6px 10px; border-radius:6px; text-transform:uppercase;">Keeper</span>
-                        </div>` : ''}
                     </div>
                 `;
 
-                // 3. TOTAAL STATS (Kaarten & Minuten, indien aanwezig)
+                // 3. TOTAAL STATS (Kaarten & Minuten)
                 if (totaalMinuten > 0 || totaalGeel > 0 || totaalRood > 0) {
                     html += `
                         <div style="display: flex; gap: 10px; margin-bottom: 24px;">
@@ -139,11 +130,11 @@
                     `;
                 }
 
-                // 4. DE UITSLAGEN (De fout met het grote logo zat hier)
+                // 4. DE UITSLAGEN
                 if (match.mini_scores && match.mini_scores.length > 0) {
                     html += `<h3 style="font-size: 16px; font-weight: 800; color: #111827; margin-bottom: 15px;">Wedstrijden</h3>`;
                     
-                    match.mini_scores.forEach((score, index) => {
+                    match.mini_scores.forEach((score) => {
                         let statusClass = 'draw';
                         if (score.thuis > score.uit) statusClass = match.locatie === 'Thuis' ? 'win' : 'loss';
                         if (score.thuis < score.uit) statusClass = match.locatie === 'Thuis' ? 'loss' : 'win';
@@ -152,13 +143,10 @@
                         let colorStatus = statusClass === 'win' ? '#059669' : (statusClass === 'loss' ? '#dc2626' : '#4b5563');
 
                         let subTeamNaam = score.tegenstander || match.tegenstander || "Onbekend";
-                        
-                        // FIX VOOR LOGO: Harde width/height/object-fit in de inline style
                         let subLogoHtml = score.logo_tegenstander 
                             ? `<img src="${score.logo_tegenstander}" style="width: 28px; height: 28px; min-width: 28px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e7eb;">` 
                             : (match.logo_tegenstander ? `<img src="${match.logo_tegenstander}" style="width: 28px; height: 28px; min-width: 28px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e7eb;">` : `<div style="width: 28px; height: 28px; min-width: 28px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 1px solid #e5e7eb; font-size: 12px;">🛡️</div>`);
 
-                        // Gedetailleerde info per matchje
                         let spelerDetails = [];
                         if(score.minuten > 0) spelerDetails.push(`${score.minuten}' Gsp.`);
                         if(score.goals > 0) spelerDetails.push(`<b>${score.goals}</b> Goal${score.goals>1?'s':''}`);
@@ -171,7 +159,6 @@
 
                         html += `
                             <div style="background: #fff; padding: 16px 20px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border: 1px solid #f1f5f9;">
-                                <!-- Top: Tegenstander & Score -->
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f8fafc; padding-bottom: 12px; margin-bottom: 12px;">
                                     <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
                                         ${subLogoHtml}
@@ -181,7 +168,6 @@
                                         ${score.thuis} - ${score.uit}
                                     </div>
                                 </div>
-                                <!-- Bottom: Persoonlijke prestatie in deze specifieke match -->
                                 <div style="font-size: 12px; font-weight: 500; color: #64748b; line-height: 1.4;">
                                     ${detailsStr}
                                 </div>
