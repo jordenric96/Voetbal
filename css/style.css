@@ -1,11 +1,9 @@
 :root {
-    /* Premium Kleurenpalet (iOS Style) */
-    --space-indigo: #111827;   /* Diep zwart/blauw voor titels */
-    --rebecca-purple: #4b5563; /* Subtiel grijs voor subtitels */
-    --lobster-pink: #111827;   /* Knoppen worden strak donker */
-    --soft-cyan: #f9fafb;      /* Lichte achtergronden */
-    --almond-silk: #e5e7eb;    /* Zachte randen/borders */
-    --bg-color: #f1f5f9;       /* Hoofd achtergrondkleur van de app (Zeer lichtgrijs) */
+    --space-indigo: #111827;   
+    --rebecca-purple: #4b5563; 
+    --soft-cyan: #f9fafb;      
+    --almond-silk: #e5e7eb;    
+    --bg-color: #f1f5f9;       
 }
 
 body {
@@ -16,7 +14,6 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* Premium Header */
 header {
     padding: 40px 20px 20px;
     display: flex; justify-content: space-between; align-items: center;
@@ -29,24 +26,20 @@ header nav a {
 }
 header nav a.active { color: var(--space-indigo); }
 
-/* Premium Tabs (Segmented Control) */
 .tabs {
-    display: flex; margin: 0 20px 24px; border-bottom: 1px solid #e5e7eb;
+    display: flex; margin: 0 20px 15px; border-bottom: 1px solid #e5e7eb;
 }
 .tab-btn {
     flex: 1; background: transparent; border: none; padding: 12px 0;
     font-size: 15px; font-weight: 600; color: #9ca3af; 
     border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer;
 }
-.tab-btn.active {
-    color: var(--space-indigo); border-bottom-color: var(--space-indigo);
-}
+.tab-btn.active { color: var(--space-indigo); border-bottom-color: var(--space-indigo); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
 .empty-state { text-align: center; color: #6b7280; font-size: 14px; font-weight: 500; margin-top: 40px; }
 
-/* Zwevende + Knop (FAB) */
 .fab-btn {
     position: fixed; bottom: 30px; right: 20px;
     background: var(--space-indigo); color: #fff;
@@ -56,46 +49,47 @@ header nav a.active { color: var(--space-indigo); }
     display: flex; align-items: center; gap: 8px; z-index: 1000;
 }
 
-/* Kaarten (Cards) - Zwevend iOS Design */
 .match-card-v2 {
     display: flex; flex-direction: column;
-    background: #ffffff;
-    border-radius: 16px; 
-    margin-bottom: 20px;
-    text-decoration: none; 
-    transition: all 0.2s ease;
-    border: none;
+    background: #ffffff; border-radius: 16px; margin-bottom: 20px;
+    text-decoration: none; transition: all 0.2s ease; border: none;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     padding: 20px;
 }
-.match-card-v2:active {
-    transform: scale(0.98);
-}
+.match-card-v2:active { transform: scale(0.98); }
 
-.card-meta-row {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+.card-meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+
+/* Filter UI Premium Styles */
+.filter-bar {
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 0 20px; margin-bottom: 20px; position: relative;
 }
-.card-badge {
-    font-size: 9px; font-weight: 800; padding: 4px 8px; border-radius: 6px; 
-    text-transform: uppercase; letter-spacing: 0.5px;
-    border: 1px solid #e5e7eb; color: #6b7280;
+.filter-toggle {
+    display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; 
+    color: #4b5563; cursor: pointer; background: #fff; padding: 6px 12px; 
+    border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border: 1px solid #e5e7eb;
 }
+.filter-panel {
+    display: none; position: absolute; top: 40px; right: 20px; width: calc(100% - 40px);
+    background: #ffffff; border-radius: 16px; padding: 20px; z-index: 100;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; box-sizing: border-box;
+}
+.filter-panel.open { display: block; }
+.filter-section-title { font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
+.filter-chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.filter-chip {
+    font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s ease; opacity: 0.5; border: 2px solid transparent;
+}
+.filter-chip.active { opacity: 1; transform: scale(1.05); }
 
 /* Formulieren styling */
 .form-group { margin-bottom: 20px; }
 label { display: block; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-input, select, textarea { 
-    width: 100%; padding: 14px; background: #fff; 
-    border: 1px solid #e5e7eb; border-radius: 12px; 
-    font-size: 15px; font-weight: 500; color: var(--space-indigo); box-sizing: border-box; outline: none; 
-}
+input, select, textarea { width: 100%; padding: 14px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; font-weight: 500; color: var(--space-indigo); box-sizing: border-box; outline: none; }
 input:focus, select:focus { border-color: var(--space-indigo); }
-.submit-btn { 
-    width: 100%; background: var(--space-indigo); color: #fff; 
-    border: none; padding: 16px; border-radius: 12px; 
-    font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;
-}
-
+.submit-btn { width: 100%; background: var(--space-indigo); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
 .pin-container { background: #fff; padding: 30px; border-radius: 20px; text-align: center; margin: 50px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
 .pin-input { font-size: 24px; text-align: center; letter-spacing: 10px; margin-bottom: 20px; }
 .autocomplete-items { position: absolute; background: #fff; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 99; overflow: hidden; margin-top: 5px; }
