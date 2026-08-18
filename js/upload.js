@@ -126,22 +126,22 @@ async function laadWedstrijdVoorBewerken(id) {
 }
 
 async function haalPloegenOp() {
+    const uniekePloegenMap = new Map();
+    
+    // 1. Probeer de voorgedefinieerde ploegen op te halen
     try {
-        // Haal zowel de voorgedefinieerde ploegen op, als de historische uit de wedstrijden!
         const { data: ploegenData } = await supabaseClient.from('ploegen').select('naam, logo_url');
-        const { data: matchData } = await supabaseClient.from('wedstrijden').select('tegenstander, logo_tegenstander');
-        
-        const uniekePloegenMap = new Map();
-        
-        // Eerst de voorgedefinieerde ploegen toevoegen (hebben prioriteit op logo's)
         if (ploegenData) {
             ploegenData.forEach(p => {
                 const naam = p.naam.trim().toLowerCase();
                 uniekePloegenMap.set(naam, { naam: p.naam.trim(), logo: p.logo_url });
             });
         }
+    } catch (err) { console.warn("Kon ploegen-tabel niet inladen."); }
 
-        // Dan de oude wedstrijden erbij voegen (als ze nog niet bestaan)
+    // 2. Probeer oude tegenstanders uit eerdere wedstrijden op te halen
+    try {
+        const { data: matchData } = await supabaseClient.from('wedstrijden').select('tegenstander, logo_tegenstander');
         if (matchData) {
             matchData.forEach(m => {
                 if (!m.tegenstander) return;
@@ -153,10 +153,11 @@ async function haalPloegenOp() {
                 }
             });
         }
-        
-        bekendeTegenstanders = Array.from(uniekePloegenMap.values());
-        document.getElementById('tegenstander').placeholder = `Typ om te zoeken in ${bekendeTegenstanders.length} ploeg(en)...`;
-    } catch (err) {}
+    } catch (err) { console.warn("Kon oude wedstrijden niet inladen."); }
+    
+    // 3. Vul de lijst in het formulier
+    bekendeTegenstanders = Array.from(uniekePloegenMap.values());
+    document.getElementById('tegenstander').placeholder = `Typ om te zoeken in ${bekendeTegenstanders.length} ploeg(en)...`;
 }
 
 function setupAutocomplete() {
