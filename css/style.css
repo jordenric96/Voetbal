@@ -1,80 +1,93 @@
 :root {
-    /* Premium Kleurenpalet (iOS Style) */
-    --space-indigo: #111827;   /* Diep zwart/blauw voor titels */
-    --rebecca-purple: #4b5563; /* Subtiel grijs voor subtitels */
-    --lobster-pink: #111827;   /* Knoppen worden strak donker */
-    --soft-cyan: #f9fafb;      /* Lichte achtergronden */
-    --almond-silk: #e5e7eb;    /* Zachte randen/borders */
-    --bg-color: #f3f4f6;       /* Hoofd achtergrondkleur van de app */
+    /* Premium Slate & Indigo Palet */
+    --bg-color: #f8fafc;         /* Slate 50 (Zeer lichte achtergrond) */
+    --surface: #ffffff;          /* Wit voor kaarten */
+    --primary: #0f172a;          /* Slate 900 (Zeer diep blauw-grijs voor titels) */
+    --secondary: #64748b;        /* Slate 500 (Subtiele tekst) */
+    --brand: #4f46e5;            /* Indigo 600 (Kleur voor knoppen/accenten) */
+    --accent-win: #059669;       /* Emerald 600 */
+    --bg-win: #d1fae5;           /* Emerald 100 */
+    --accent-loss: #e11d48;      /* Rose 600 */
+    --bg-loss: #ffe4e6;          /* Rose 100 */
+    --accent-draw: #475569;      /* Slate 600 */
+    --bg-draw: #f1f5f9;          /* Slate 100 */
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025);
 }
+
+* { box-sizing: border-box; }
 
 body {
     background-color: var(--bg-color);
-    color: var(--space-indigo);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     margin: 0; padding: 0;
     -webkit-font-smoothing: antialiased;
 }
 
 /* Premium Header */
 header {
-    padding: 40px 20px 20px;
+    padding: 30px 20px 20px;
     display: flex; justify-content: space-between; align-items: center;
 }
 header h1 {
-    font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.5px;
+    font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: var(--primary);
 }
 header nav a {
-    color: #9ca3af; font-size: 15px; font-weight: 600; text-decoration: none; margin-left: 15px; transition: color 0.2s;
+    color: var(--secondary); font-size: 14px; font-weight: 600; text-decoration: none; margin-left: 15px;
 }
-header nav a.active { color: var(--space-indigo); }
+header nav a.active { color: var(--brand); }
 
-/* Premium Tabs (Segmented Control) */
+/* Premium Tabs */
 .tabs {
-    display: flex; margin: 0 20px 24px; border-bottom: 1px solid #e5e7eb;
+    display: flex; background: #e2e8f0; border-radius: 12px; padding: 4px; margin: 0 20px 20px;
 }
 .tab-btn {
-    flex: 1; background: transparent; border: none; padding: 12px 0;
-    font-size: 15px; font-weight: 600; color: #9ca3af; 
-    border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer;
+    flex: 1; padding: 10px 0; background: transparent; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 700; color: var(--secondary); cursor: pointer; transition: 0.2s;
 }
-.tab-btn.active {
-    color: var(--space-indigo); border-bottom-color: var(--space-indigo);
-}
+.tab-btn.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-.empty-state { text-align: center; color: #6b7280; font-size: 14px; font-weight: 500; margin-top: 40px; }
+/* Kaarten & Lijsten */
+.card {
+    background: var(--surface); border-radius: 16px; margin-bottom: 20px;
+    box-shadow: var(--card-shadow); border: 1px solid #f1f5f9; overflow: hidden;
+    text-decoration: none; display: block; color: inherit;
+}
+.empty-state { text-align: center; color: var(--secondary); font-size: 14px; font-weight: 500; margin-top: 40px; }
 
-/* Zwevende + Knop */
+/* Zwevende Knop */
 .fab-btn {
     position: fixed; bottom: 30px; right: 20px;
-    background: var(--space-indigo); color: #fff;
+    background: var(--brand); color: #fff;
     padding: 16px 28px; border-radius: 99px;
     font-size: 16px; font-weight: 700; text-decoration: none;
-    box-shadow: 0 10px 25px rgba(17, 24, 39, 0.2);
-    display: flex; align-items: center; gap: 8px; z-index: 1000;
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4); z-index: 1000;
 }
 
-/* Formulieren styling behouden maar strakker maken */
+/* Knoppen & Formulieren */
+.btn-primary { width: 100%; background: var(--brand); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.btn-secondary { width: 100%; background: #f1f5f9; color: var(--primary); border: 1px solid #e2e8f0; padding: 16px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.btn-danger { width: 100%; background: var(--bg-loss); color: var(--accent-loss); border: 1px solid #fecdd3; padding: 16px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+/* Uitslagen Layout (Zorgt dat tekst niet overlapt met score) */
+.sub-match-line {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 20px; border-bottom: 1px solid #f1f5f9;
+}
+.sub-match-line:last-child { border-bottom: none; }
+.sub-match-team {
+    display: flex; align-items: center; gap: 12px; flex: 1; overflow: hidden;
+}
+.sub-match-logo { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
+.sub-match-name { font-size: 14px; font-weight: 600; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub-match-score { font-size: 14px; font-weight: 700; padding: 6px 12px; border-radius: 8px; flex-shrink: 0; margin-left: 10px; }
+
+/* Beveiliging formulieren (behoud bestaande formulier styling) */
 .form-group { margin-bottom: 20px; }
-label { display: block; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-input, select, textarea { 
-    width: 100%; padding: 14px; background: #fff; 
-    border: 1px solid #e5e7eb; border-radius: 12px; 
-    font-size: 15px; font-weight: 500; color: var(--space-indigo); box-sizing: border-box; outline: none; 
-}
-input:focus, select:focus { border-color: var(--space-indigo); }
-.submit-btn { 
-    width: 100%; background: var(--space-indigo); color: #fff; 
-    border: none; padding: 16px; border-radius: 12px; 
-    font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px;
-}
-
-.pin-container { background: #fff; padding: 30px; border-radius: 20px; text-align: center; margin: 50px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
-.pin-input { font-size: 24px; text-align: center; letter-spacing: 10px; margin-bottom: 20px; }
-
-.autocomplete-items { position: absolute; background: #fff; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 99; overflow: hidden; margin-top: 5px; }
-.autocomplete-item { padding: 12px 15px; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
-.autocomplete-logo { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
-.logo-status { font-size: 12px; font-weight: bold; color: #059669; margin-top: 8px; display: none; }
+label { display: block; font-size: 11px; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+input, select, textarea { width: 100%; padding: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 15px; font-weight: 500; color: var(--primary); outline: none; }
+.autocomplete-items { position: absolute; background: #fff; width: 100%; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 99; margin-top: 5px; }
+.autocomplete-item { padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+.logo-status { font-size: 12px; font-weight: bold; color: var(--accent-win); margin-top: 8px; display: none; }
