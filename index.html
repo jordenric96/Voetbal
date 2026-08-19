@@ -5,20 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Voetbal App</title>
     
-    <!-- PWA Installatie Fix: Koppel manifest en Apple Touch Icon -->
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.svg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#f1f5f9">
+    <meta name="theme-color" content="#f8fafc">
     
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header>
         <h1>Overzicht</h1>
-        <!-- Scrollbare nav bar met de nieuwe menu items -->
-       
+        <nav>
             <a href="index.html" class="active">Overzicht</a>
             <a href="stats.html">Stats</a>
             <a href="ploegen.html">Ploegen</a>
@@ -57,21 +55,18 @@
 
     <a href="add-match.html" class="fab-btn">+ Match</a>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
 
     <script>
-        // PWA Service Worker Registratie (Verplicht voor installatie!)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => {
-                    console.log('SW registratie overgeslagen/mislukt (geen sw.js bestand)', err);
+                    console.log('SW registratie overgeslagen/mislukt', err);
                 });
             });
         }
 
-        // UITGEBREID KLEUREN BREIN (Inclusief Thuis/Uit badges en tot U17/Eerste ploeg)
         const badgeColors = {
             'U6': { bg: '#fef08a', text: '#713f12' }, 
             'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
@@ -86,8 +81,8 @@
             'U16': { bg: '#fde68a', text: '#92400e' }, 
             'U17': { bg: '#fcd34d', text: '#92400e' }, 
             'Beloften': { bg: '#e2e8f0', text: '#1e293b' },
-            'Eerste Ploeg': { bg: '#111827', text: '#f9fafb' },
-            'Veteranen': { bg: '#9ca3af', text: '#111827' },
+            'Eerste Ploeg': { bg: '#1e293b', text: '#f9fafb' },
+            'Veteranen': { bg: '#9ca3af', text: '#1e293b' },
             'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 
             'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 
             'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 
@@ -96,7 +91,6 @@
             'Standaard': { bg: '#f3f4f6', text: '#4b5563' }
         };
 
-        // ONBREEKBARE INLINE STYLES VOOR TAGS
         function getBadgeHtml(waarde) {
             if (!waarde) return '';
             const style = badgeColors[waarde] || badgeColors['Standaard'];
@@ -121,7 +115,6 @@
             const typeContainer = document.getElementById('filter-chips-type');
             catContainer.innerHTML = ''; typeContainer.innerHTML = '';
 
-            // DYNAMISCH: Haal enkel categorieën/types op die voorkomen in de DB voor deze speler
             const actieveCategorieen = [...new Set(alleMatchenDB.map(m => m.categorie).filter(Boolean))].sort((a, b) => {
                 const numA = parseInt(a.replace('U', '')) || 999;
                 const numB = parseInt(b.replace('U', '')) || 999;
@@ -183,19 +176,19 @@
             let html = `
                 <div style="background: #ffffff; border-radius: 16px; padding: 20px 10px; display: flex; justify-content: space-between; text-align: center; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
                     <div style="flex: 1; border-right: 1px solid #f1f5f9;">
-                        <span style="display: block; font-size: 20px; font-weight: 800; color: #111827;">${gespeeldSpeler}</span>
+                        <span style="display: block; font-size: 20px; font-weight: 800; color: #1e293b;">${gespeeldSpeler}</span>
                         <span style="display: block; font-size: 9px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px;">Speler</span>
                     </div>
                     <div style="flex: 1; border-right: 1px solid #f1f5f9;">
-                        <span style="display: block; font-size: 20px; font-weight: 800; color: #111827;">${gespeeldDoelman}</span>
+                        <span style="display: block; font-size: 20px; font-weight: 800; color: #1e293b;">${gespeeldDoelman}</span>
                         <span style="display: block; font-size: 9px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px;">Keeper</span>
                     </div>
                     <div style="flex: 1; border-right: 1px solid #f1f5f9;">
-                        <span style="display: block; font-size: 20px; font-weight: 800; color: #111827;">${goals}</span>
+                        <span style="display: block; font-size: 20px; font-weight: 800; color: #1e293b;">${goals}</span>
                         <span style="display: block; font-size: 9px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px;">Goals</span>
                     </div>
                     <div style="flex: 1;">
-                        <span style="display: block; font-size: 20px; font-weight: 800; color: #111827;">${assists}</span>
+                        <span style="display: block; font-size: 20px; font-weight: 800; color: #1e293b;">${assists}</span>
                         <span style="display: block; font-size: 9px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px;">Assists</span>
                     </div>
                 </div>
@@ -205,7 +198,6 @@
                 const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' }).toUpperCase();
                 const isToernooi = match.type_wedstrijd === 'Toernooi';
                 
-                // Tags toevoegen
                 let badges = `
                     ${getBadgeHtml(match.categorie)}
                     ${getBadgeHtml(match.type_wedstrijd)}
@@ -229,7 +221,7 @@
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f9fafb;">
                                 <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
                                     ${subLogoHtml}
-                                    <span style="font-size: 14px; font-weight: 600; color: #374151; white-space: normal; word-break: break-word;">${subTeamNaam}</span>
+                                    <span style="font-size: 14px; font-weight: 600; color: #1e293b; white-space: normal; word-break: break-word;">${subTeamNaam}</span>
                                 </div>
                                 <div style="font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 6px; background: ${bgStatus}; color: ${colorStatus};">
                                     ${score.thuis} - ${score.uit}
@@ -246,7 +238,7 @@
                             <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">${badges}</div>
                         </div>
                         
-                        <h3 style="margin: 0 0 16px 0; font-size: 19px; font-weight: 800; color: #111827; letter-spacing: -0.2px;">
+                        <h3 style="margin: 0 0 16px 0; font-size: 19px; font-weight: 800; color: #1e293b; letter-spacing: -0.2px;">
                             ${isToernooi ? match.tegenstander : (match.eigen_ploeg + ' vs ' + match.tegenstander)}
                         </h3>
 
@@ -262,6 +254,14 @@
         window.wisselSpeler = function(evt, speler) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             evt.currentTarget.classList.add('active');
+            
+            // DYNAMISCH THEMA: Verander kleur mee met speler!
+            if (speler === 'Lou') {
+                document.documentElement.style.setProperty('--brand-color', '#F34213'); // Lou Vurig Rood/Oranje
+            } else {
+                document.documentElement.style.setProperty('--brand-color', '#ef476f'); // Noé Zacht Rood/Roze
+            }
+            
             laadWedstrijden(speler);
         };
         
