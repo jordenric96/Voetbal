@@ -60,26 +60,38 @@
         </div>
     </div>
 
-    <!-- VERNIEUWDE LIGHTBOX MET SLIDER FUNCTIES -->
-    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.3s ease;">
+    <!-- VERNIEUWDE LIGHTBOX MET WIJZIG/WIS KNOPPEN -->
+    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
         
-        <!-- Header van de Lightbox met Teller en Sluitknop -->
-        <div style="position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 25px 20px; box-sizing: border-box; z-index: 10000;">
-            <span id="lb-counter" style="color: #94a3b8; font-size: 14px; font-weight: 800; letter-spacing: 0.5px;"></span>
-            <button onclick="closeLightbox()" style="background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+        <!-- Top Bar -->
+        <div style="position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); box-sizing: border-box; z-index: 10000; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);">
+            <span id="lb-counter" style="color: #fff; font-size: 15px; font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 1px 4px rgba(0,0,0,0.8);"></span>
+            
+            <div style="display: flex; gap: 10px;">
+                <!-- Bewerk knop (alleen voor extra foto's) -->
+                <button id="lb-edit-btn" onclick="bewerkHuidigeFoto()" style="background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">✏️</button>
+                
+                <!-- Verwijder knop -->
+                <button onclick="verwijderHuidigeFoto()" style="background: rgba(220, 38, 38, 0.8); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">🗑️</button>
+                
+                <!-- Sluit knop -->
+                <button onclick="closeLightbox()" style="background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">✕</button>
+            </div>
         </div>
 
-        <!-- Navigatie Pijlen -->
         <button id="lb-prev" onclick="prevImage(event)" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); color: #fff; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; z-index: 10000; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">&#10094;</button>
-        
         <button id="lb-next" onclick="nextImage(event)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); color: #fff; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; z-index: 10000; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">&#10095;</button>
 
-        <img id="lb-img" src="" style="max-width: 100%; max-height: 60vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; transition: opacity 0.2s ease;">
+        <img id="lb-img" src="" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.2s ease;">
         
-        <div style="margin-top: 25px; text-align: center; width: 100%; padding: 0 20px; box-sizing: border-box;">
-            <p id="lb-title" style="color: #fff; font-weight: 800; font-size: 16px; margin: 0 0 6px 0;"></p>
-            <p id="lb-date" style="color: #94a3b8; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 20px 0;"></p>
-            <a id="lb-link" href="#" style="background: #ffffff; color: #1e293b; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: 800; text-decoration: none; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">Naar Match details &rarr;</a>
+        <!-- Bottom Info Bar -->
+        <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 20px 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); box-sizing: border-box; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 60%, transparent 100%); display: flex; flex-direction: column; align-items: flex-start; z-index: 10000;">
+            <div id="lb-tags" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;"></div>
+            <p id="lb-title" style="color: #fff; font-weight: 800; font-size: 18px; margin: 0 0 6px 0; text-shadow: 0 1px 4px rgba(0,0,0,0.8); text-align: left;"></p>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <p id="lb-date" style="color: #cbd5e1; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;"></p>
+                <a id="lb-link" href="#" style="background: rgba(255,255,255,0.2); color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; text-decoration: none; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);">Match Details &rarr;</a>
+            </div>
         </div>
     </div>
 
@@ -89,8 +101,39 @@
 
     <script>
         let huidigeSpeler = 'Lou';
-        let alleFotosGlobal = []; // We slaan alle foto's globaal op voor de swiper
-        let currentLbIndex = 0;   // Houdt bij welke foto momenteel open staat
+        let alleFotosGlobal = []; 
+        let currentLbIndex = 0;   
+
+        const badgeColors = {
+            'U6': { bg: '#fef08a', text: '#713f12' }, 
+            'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
+            'U8': { bg: '#fecaca', text: '#7f1d1d' }, 
+            'U9': { bg: '#fbcfe8', text: '#831843' }, 
+            'U10': { bg: '#e9d5ff', text: '#581c87' }, 
+            'U11': { bg: '#c7d2fe', text: '#312e81' }, 
+            'U12': { bg: '#bae6fd', text: '#0c4a6e' }, 
+            'U13': { bg: '#99f6e4', text: '#0f766e' }, 
+            'U14': { bg: '#bbf7d0', text: '#14532d' }, 
+            'U15': { bg: '#d9f99d', text: '#3f6212' }, 
+            'U16': { bg: '#fde68a', text: '#92400e' }, 
+            'U17': { bg: '#fcd34d', text: '#92400e' }, 
+            'Beloften': { bg: '#e2e8f0', text: '#1e293b' },
+            'Eerste Ploeg': { bg: '#1e293b', text: '#f9fafb' },
+            'Veteranen': { bg: '#9ca3af', text: '#1e293b' },
+            'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 
+            'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 
+            'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 
+            'Thuis': { bg: '#e0e7ff', text: '#3730a3' }, 
+            'Uit': { bg: '#ffedd5', text: '#9a3412' }, 
+            'Extra': { bg: '#334155', text: '#f8fafc' }, 
+            'Standaard': { bg: '#f3f4f6', text: '#4b5563' }
+        };
+
+        function getBadgeHtml(waarde) {
+            if (!waarde) return '';
+            const style = badgeColors[waarde] || badgeColors['Standaard'];
+            return `<span style="display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; padding: 4px 8px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; background-color: ${style.bg}; color: ${style.text}; border: 1px solid ${style.bg};">${waarde}</span>`;
+        }
 
         async function laadFotos(speler) {
             huidigeSpeler = speler;
@@ -99,7 +142,7 @@
 
             try {
                 const [matchRes, extraRes] = await Promise.all([
-                    supabaseClient.from('wedstrijden').select('id, datum, tegenstander, type_wedstrijd, eigen_ploeg, fotos').eq('speler', speler),
+                    supabaseClient.from('wedstrijden').select('*').eq('speler', speler),
                     supabaseClient.from('extra_fotos').select('*').eq('speler', speler)
                 ]);
 
@@ -113,20 +156,40 @@
                         const isToernooi = match.type_wedstrijd === 'Toernooi';
                         const subtitel = isToernooi ? `🏆 ${match.tegenstander}` : `⚽ vs ${match.tegenstander}`;
                         
+                        let tagsHtml = getBadgeHtml(match.categorie) + getBadgeHtml(match.type_wedstrijd);
+                        if (!isToernooi && match.locatie) tagsHtml += getBadgeHtml(match.locatie);
+
                         match.fotos.forEach(fotoUrl => {
-                            alleFotos.push({ url: fotoUrl, datumRuw: new Date(match.datum), titel: subtitel, matchId: match.id, type: 'match' });
+                            alleFotos.push({ 
+                                url: fotoUrl, 
+                                datumRuw: new Date(match.datum), 
+                                titel: subtitel, 
+                                matchId: match.id, 
+                                type: 'match',
+                                tags: tagsHtml 
+                            });
                         });
                     }
                 });
 
                 extraRes.data.forEach(foto => {
                     const subtitel = foto.opmerking ? `📷 ${foto.opmerking}` : `📷 Training / Extra`;
-                    alleFotos.push({ url: foto.url, datumRuw: new Date(foto.datum), titel: subtitel, matchId: null, type: 'extra' });
+                    let tagsHtml = getBadgeHtml('Extra');
+                    
+                    alleFotos.push({ 
+                        url: foto.url, 
+                        datumRuw: new Date(foto.datum), 
+                        titel: subtitel, 
+                        matchId: null, 
+                        recordId: foto.id, // ID toegevoegd voor wijzigen/wissen
+                        type: 'extra',
+                        tags: tagsHtml,
+                        ruweOpmerking: foto.opmerking || ''
+                    });
                 });
 
-                // Sorteer van nieuw naar oud
                 alleFotos.sort((a, b) => b.datumRuw - a.datumRuw);
-                alleFotosGlobal = alleFotos; // Opslaan voor de lightbox
+                alleFotosGlobal = alleFotos;
 
                 if (alleFotos.length === 0) {
                     container.innerHTML = '<p class="empty-state">Er zijn nog geen foto\'s geüpload voor deze speler.</p>';
@@ -144,7 +207,6 @@
                         geclusterdeFotos[groupKey] = { datum: datumVoluit, titel: foto.titel, fotos: [] };
                         orderOfKeys.push(groupKey);
                     }
-                    // Voeg de absolute index toe zodat de klik precies weet welke foto opent
                     geclusterdeFotos[groupKey].fotos.push({ ...foto, globalIndex: index });
                 });
 
@@ -194,7 +256,7 @@
             const lb = document.getElementById('lightbox');
             lb.style.display = 'flex';
             setTimeout(() => { lb.style.opacity = '1'; }, 10);
-            document.body.style.overflow = 'hidden'; // Stop achtergrond scrollen
+            document.body.style.overflow = 'hidden'; 
         };
 
         window.updateLightboxUI = function() {
@@ -203,15 +265,16 @@
             const datumMooi = foto.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
             
             const imgEl = document.getElementById('lb-img');
-            imgEl.style.opacity = '0'; // Zachte fade out voor wissel
+            imgEl.style.opacity = '0'; 
             setTimeout(() => {
                 imgEl.src = foto.url;
-                imgEl.style.opacity = '1'; // Zachte fade in voor nieuwe foto
+                imgEl.style.opacity = '1'; 
             }, 150);
 
             document.getElementById('lb-title').innerText = foto.titel;
             document.getElementById('lb-date').innerText = datumMooi;
-            document.getElementById('lb-counter').innerText = `Foto ${currentLbIndex + 1} van ${alleFotosGlobal.length}`;
+            document.getElementById('lb-counter').innerText = `${currentLbIndex + 1} / ${alleFotosGlobal.length}`;
+            document.getElementById('lb-tags').innerHTML = foto.tags || ''; 
             
             const linkBtn = document.getElementById('lb-link');
             if (foto.matchId && foto.matchId !== 'null' && foto.matchId !== 'undefined') { 
@@ -221,7 +284,9 @@
                 linkBtn.style.display = 'none'; 
             }
 
-            // Verberg knoppen als je aan het einde of begin bent
+            // Toon edit knop enkel bij extra foto's
+            document.getElementById('lb-edit-btn').style.display = foto.type === 'extra' ? 'flex' : 'none';
+
             document.getElementById('lb-prev').style.display = currentLbIndex > 0 ? 'flex' : 'none';
             document.getElementById('lb-next').style.display = currentLbIndex < alleFotosGlobal.length - 1 ? 'flex' : 'none';
         };
@@ -243,25 +308,84 @@
             document.body.style.overflow = 'auto';
         };
 
-        // Swipe detectie met Javascript
+        // Swipe detectie
         let touchstartX = 0;
         let touchendX = 0;
         const lightboxElement = document.getElementById('lightbox');
 
-        lightboxElement.addEventListener('touchstart', e => {
-            touchstartX = e.changedTouches[0].screenX;
-        }, {passive: true});
-
-        lightboxElement.addEventListener('touchend', e => {
-            touchendX = e.changedTouches[0].screenX;
-            handleSwipe();
-        }, {passive: true});
+        lightboxElement.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, {passive: true});
+        lightboxElement.addEventListener('touchend', e => { touchendX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
 
         function handleSwipe() {
-            // Minimaal 50px swipen om een wissel te triggeren (voorkomt per ongeluk tappen)
-            if (touchendX < touchstartX - 50) nextImage(); // Swipe Links = Volgende
-            if (touchendX > touchstartX + 50) prevImage(); // Swipe Rechts = Vorige
+            if (touchendX < touchstartX - 50) nextImage(); 
+            if (touchendX > touchstartX + 50) prevImage(); 
         }
+
+        // --- VERWIJDEREN & WIJZIGEN ---
+
+        window.verwijderHuidigeFoto = async function() {
+            const foto = alleFotosGlobal[currentLbIndex];
+            if (!foto) return;
+
+            const pin = prompt("Voer pincode in om te wissen:");
+            if (pin !== "0204") {
+                if (pin !== null) alert("Onjuiste code.");
+                return;
+            }
+
+            if (!confirm("Zeker dat je deze foto definitief wil wissen?")) return;
+
+            try {
+                if (foto.type === 'extra') {
+                    // Wis uit extra_fotos tabel
+                    await supabaseClient.from('extra_fotos').delete().eq('id', foto.recordId);
+                } else if (foto.type === 'match') {
+                    // Verwijder specifieke foto uit de array van de wedstrijd
+                    const { data: matchData } = await supabaseClient.from('wedstrijden').select('fotos').eq('id', foto.matchId).single();
+                    if (matchData && matchData.fotos) {
+                        const nieuweFotos = matchData.fotos.filter(url => url !== foto.url);
+                        await supabaseClient.from('wedstrijden').update({ fotos: nieuweFotos }).eq('id', foto.matchId);
+                    }
+                }
+                
+                // Probeer bestand uit opslag te halen (optioneel, faalt stil als het niet lukt)
+                try {
+                    const pad = foto.url.split('/public/media/')[1]; 
+                    if(pad) await supabaseClient.storage.from('media').remove([pad]);
+                } catch(e) {}
+
+                closeLightbox();
+                laadFotos(huidigeSpeler); 
+            } catch (err) { alert("Fout bij verwijderen."); }
+        };
+
+        window.bewerkHuidigeFoto = async function() {
+            const foto = alleFotosGlobal[currentLbIndex];
+            if (foto.type !== 'extra') return; // Enkel extra foto's kunnen rechtstreeks bewerkt worden
+
+            const pin = prompt("Voer pincode in om te wijzigen:");
+            if (pin !== "0204") {
+                if (pin !== null) alert("Onjuiste code.");
+                return;
+            }
+
+            const formatDatum = foto.datumRuw.toISOString().split('T')[0];
+            const nieuweDatum = prompt("Pas de datum aan (JJJJ-MM-DD):", formatDatum);
+            if (!nieuweDatum) return;
+
+            const nieuweOpmerking = prompt("Pas de opmerking aan:", foto.ruweOpmerking);
+            if (nieuweOpmerking === null) return; // Geannuleerd
+
+            try {
+                await supabaseClient.from('extra_fotos').update({ 
+                    datum: nieuweDatum, 
+                    opmerking: nieuweOpmerking 
+                }).eq('id', foto.recordId);
+                
+                closeLightbox();
+                laadFotos(huidigeSpeler);
+            } catch(e) { alert("Fout bij wijzigen."); }
+        };
 
         // --- UPLOAD LOGICA ---
 
