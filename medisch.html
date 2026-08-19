@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Medisch Dossier</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="theme-color" content="#f1f5f9">
+</head>
+<body>
+    <header>
+        <h1>Medisch</h1>
+        <nav style="display: flex; gap: 15px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px;">
+            <a href="index.html">Overzicht</a>
+            <a href="stats.html">Stats</a>
+            <a href="ploegen.html">Ploegen</a>
+            <a href="galerij.html">Galerij</a>
+        </nav>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="wisselSpeler(event, 'Lou')">Lou</button>
+        <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
+    </div>
+
+    <main id="medisch-lijst" style="padding: 0 20px 120px 20px;">
+        <p class="empty-state">Dossier inladen...</p>
+    </main>
+
+    <button onclick="openBlessureModal()" class="fab-btn">🏥 + Dossier</button>
+
+    <!-- Upload Modal -->
+    <div id="blessure-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.5); backdrop-filter: blur(5px); z-index: 9000; align-items: flex-end; justify-content: center;">
+        <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease; max-height: 90vh; overflow-y: auto;" id="blessure-modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 800;">Nieuwe Blessure</h2>
+                <button onclick="closeBlessureModal()" style="background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; color: #64748b;">✕</button>
+            </div>
+            
+            <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label>Datum Start</label>
+                    <input type="date" id="b-datum" required>
+                </div>
+            </div>
+
+            <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label>Lichaamsdeel</label>
+                    <select id="b-lichaam">
+                        <option value="Knie">Knie</option>
+                        <option value="Enkel">Enkel</option>
+                        <option value="Spier (Bovenbeen)">Spier (Bovenbeen)</option>
+                        <option value="Spier (Kuit)">Spier (Kuit)</option>
+                        <option value="Voet">Voet / Tenen</option>
+                        <option value="Arm / Pols">Arm / Pols</option>
+                        <option value="Hoofd">Hoofd</option>
+                        <option value="Ziekte">Ziekte / Algemeen</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label>Type Blessure</label>
+                    <select id="b-type">
+                        <option value="Kneuzing">Kneuzing (Stoot)</option>
+                        <option value="Verstuiking">Verstuiking / Omslaan</option>
+                        <option value="Overbelasting">Overbelasting</option>
+                        <option value="Scheur">Scheur / Breuk</option>
+                        <option value="Ziek">Ziek (Koorts/Griep)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Diagnose / Opmerking</label>
+                <textarea id="b-opmerking" rows="2" placeholder="Hoe is het gebeurd? Advies dokter?"></textarea>
+            </div>
+            
+            <button id="save-btn" onclick="saveBlessure()" class="submit-btn">Toevoegen aan dossier</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/database.js"></script>
+
+    <script>
+        let huidigeSpeler = 'Lou';
+
+        async function laadDossier(speler) {
+            huidigeSpeler = speler;
+            const container = document.getElementById('medisch-lijst');
+            container.innerHTML = '<p class="empty-state">Laden... ⏳</p>';
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('blessures')
+                    .select('*')
+                    .eq('speler', speler)
+                    .order('datum_start', { ascending: false });
+
+                if (error) throw error;
+
+                if (data.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px 20px;">
+                            <div style="font-size: 40px; margin-bottom: 10px;">🩺</div>
+                            <h3 style="font-size: 16px; color: #111827; margin: 0 0 5px 0;">Kerngezond!</h3>
+                            <p style="font-size: 13px; color: #64748b; margin: 0;">Geen medische historie gevonden voor ${speler}.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                data.forEach(item => {
+                    const isHersteld = item.datum_eind !== null;
+                    const startMooi = new Date(item.datum_start).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const eindMooi = isHersteld ? new Date(item.datum_eind).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Heden';
+                    
+                    const badgeBg = isHersteld ? '#ecfdf5' : '#fef2f2';
+                    const badgeText = isHersteld ? '#059669' : '#dc2626';
+                    const badgeBorder = isHersteld ? '#a7f3d0' : '#fecaca';
+                    const statusTekst = isHersteld ? 'Hersteld' : 'Actief';
+
+                    html += `
+                        <div style="background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                <div>
+                                    <h3 style="margin: 0 0 4px 0; font-size: 18px; font-weight: 800; color: #111827;">${item.lichaamsdeel}</h3>
+                                    <span style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">${item.type_blessure}</span>
+                                </div>
+                                <span style="background: ${badgeBg}; color: ${badgeText}; border: 1px solid ${badgeBorder}; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase;">${statusTekst}</span>
+                            </div>
+                            
+                            <div style="background: #f8fafc; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 15px;">
+                                📅 <b>Periode:</b> ${startMooi} &rarr; ${eindMooi}
+                            </div>
+                            
+                            ${item.opmerking ? `<p style="font-size: 13px; color: #4b5563; line-height: 1.5; margin: 0 0 15px 0; font-style: italic;">"${item.opmerking}"</p>` : ''}
+                            
+                            <div style="display: flex; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                                ${!isHersteld ? `<button onclick="markeerHersteld('${item.id}')" style="flex: 1; background: #059669; color: #fff; border: none; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer;">Zet als Hersteld</button>` : ''}
+                                <button onclick="verwijderBlessure('${item.id}')" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; width: 40px; border-radius: 8px; font-weight: 700; cursor: pointer;">✕</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+
+            } catch (err) { container.innerHTML = '<p class="empty-state">Fout bij ophalen dossier.</p>'; }
+        }
+
+        window.wisselSpeler = function(evt, speler) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            laadDossier(speler);
+        };
+
+        window.openBlessureModal = function() {
+            const pin = prompt("Voer pincode in:");
+            if (pin === "0204") {
+                document.getElementById('b-datum').valueAsDate = new Date();
+                document.getElementById('b-opmerking').value = "";
+                document.getElementById('blessure-modal').style.display = 'flex';
+                setTimeout(() => document.getElementById('blessure-modal-content').style.transform = 'translateY(0)', 10);
+            } else if (pin !== null) alert("Onjuiste code.");
+        };
+
+        window.closeBlessureModal = function() {
+            document.getElementById('blessure-modal-content').style.transform = 'translateY(100%)';
+            setTimeout(() => document.getElementById('blessure-modal').style.display = 'none', 300);
+        };
+
+        window.saveBlessure = async function() {
+            const datum = document.getElementById('b-datum').value;
+            const lichaam = document.getElementById('b-lichaam').value;
+            const type = document.getElementById('b-type').value;
+            const opmerking = document.getElementById('b-opmerking').value;
+
+            const btn = document.getElementById('save-btn');
+            btn.innerText = "Bezig... ⏳"; btn.disabled = true;
+
+            try {
+                const { error } = await supabaseClient.from('blessures').insert([{
+                    speler: huidigeSpeler, datum_start: datum, lichaamsdeel: lichaam, type_blessure: type, opmerking: opmerking
+                }]);
+                if (error) throw error;
+                
+                closeBlessureModal();
+                btn.innerText = "Toevoegen aan dossier"; btn.disabled = false;
+                laadDossier(huidigeSpeler);
+            } catch (e) { alert("Fout bij opslaan."); btn.innerText = "Toevoegen"; btn.disabled = false; }
+        };
+
+        window.markeerHersteld = async function(id) {
+            const pin = prompt("Voer pincode in om dossier af te sluiten:");
+            if (pin === "0204") {
+                const vandaag = new Date().toISOString().split('T')[0];
+                await supabaseClient.from('blessures').update({ datum_eind: vandaag }).eq('id', id);
+                laadDossier(huidigeSpeler);
+            }
+        };
+
+        window.verwijderBlessure = async function(id) {
+            const pin = prompt("Voer pincode in om te wissen:");
+            if (pin === "0204" && confirm("Dossierlijn definitief wissen?")) {
+                await supabaseClient.from('blessures').delete().eq('id', id);
+                laadDossier(huidigeSpeler);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => laadDossier('Lou'));
+    </script>
+</body>
+</html>
