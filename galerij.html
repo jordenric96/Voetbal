@@ -10,10 +10,11 @@
 <body>
     <header>
         <h1>Galerij</h1>
-        <nav>
+        <nav style="display: flex; gap: 15px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px;">
             <a href="index.html">Overzicht</a>
             <a href="stats.html">Stats</a>
             <a href="ploegen.html">Ploegen</a>
+            <a href="medisch.html">Medisch</a>
         </nav>
     </header>
 
@@ -23,62 +24,86 @@
     </div>
 
     <main style="padding: 0 20px 100px 20px;">
-        <!-- Het fotoraster -->
         <div id="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px;">
             <p class="empty-state" style="grid-column: 1 / -1;">Foto's laden...</p>
         </div>
     </main>
 
-    <!-- De Premium Lightbox (Schermvullende weergave) -->
-    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.3s ease;">
-        
+    <!-- Zwevende toevoeg knop -->
+    <button onclick="openUploadModal()" class="fab-btn">📷 + Foto</button>
+
+    <!-- Upload Modal (Losse foto's) -->
+    <div id="upload-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.5); backdrop-filter: blur(5px); z-index: 9000; align-items: flex-end; justify-content: center;">
+        <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease;" id="upload-modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 800;">Foto's Toevoegen</h2>
+                <button onclick="closeUploadModal()" style="background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; color: #64748b;">✕</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Kies Datum</label>
+                <input type="date" id="extra-datum" required>
+            </div>
+            <div class="form-group">
+                <label>Foto's (Training, Tuin, etc.)</label>
+                <input type="file" id="extra-fotos" accept="image/png, image/jpeg" multiple required>
+            </div>
+            
+            <button id="upload-btn" onclick="saveExtraFotos()" class="submit-btn">Uploaden</button>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(10px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.3s ease;">
         <button onclick="closeLightbox()" style="position: absolute; top: 25px; right: 25px; background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10000;">✕</button>
-        
         <img id="lb-img" src="" style="max-width: 100%; max-height: 65vh; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; transform: scale(0.95); transition: transform 0.3s ease;">
-        
         <div style="margin-top: 25px; text-align: center; width: 100%;">
             <p id="lb-title" style="color: #fff; font-weight: 800; font-size: 18px; margin: 0 0 4px 0;"></p>
             <p id="lb-date" style="color: #94a3b8; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 20px 0;"></p>
-            <a id="lb-link" href="#" style="background: #ffffff; color: #111827; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: 800; text-decoration: none; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">Bekijk Match details &rarr;</a>
+            <a id="lb-link" href="#" style="background: #ffffff; color: #111827; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: 800; text-decoration: none; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">Naar Match details &rarr;</a>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
     <script src="js/database.js"></script>
 
     <script>
+        let huidigeSpeler = 'Lou';
+
         async function laadFotos(speler) {
+            huidigeSpeler = speler;
             const container = document.getElementById('photo-grid');
             container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Foto\'s laden... ⏳</p>';
 
             try {
-                // Haal alle matchen op met foto's
-                const { data, error } = await supabaseClient
-                    .from('wedstrijden')
-                    .select('id, datum, tegenstander, type_wedstrijd, eigen_ploeg, fotos')
-                    .eq('speler', speler)
-                    .order('datum', { ascending: false });
+                // Haal zowel matchfoto's als losse foto's tegelijk op
+                const [matchRes, extraRes] = await Promise.all([
+                    supabaseClient.from('wedstrijden').select('id, datum, tegenstander, type_wedstrijd, eigen_ploeg, fotos').eq('speler', speler),
+                    supabaseClient.from('extra_fotos').select('*').eq('speler', speler)
+                ]);
 
-                if (error) throw error;
+                if (matchRes.error) throw matchRes.error;
+                if (extraRes.error) throw extraRes.error;
 
                 let alleFotos = [];
 
-                data.forEach(match => {
+                // Verwerk Match Foto's
+                matchRes.data.forEach(match => {
                     if (match.fotos && match.fotos.length > 0) {
-                        const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
                         const isToernooi = match.type_wedstrijd === 'Toernooi';
-                        const titel = isToernooi ? match.tegenstander : `${match.eigen_ploeg || 'Eigen Ploeg'} vs ${match.tegenstander}`;
-
-                        match.fotos.forEach(fotoUrl => {
-                            alleFotos.push({
-                                url: fotoUrl,
-                                datum: datumMooi,
-                                titel: titel,
-                                matchId: match.id
-                            });
-                        });
+                        const titel = isToernooi ? match.tegenstander : `${match.eigen_ploeg || 'Ploeg'} vs ${match.tegenstander}`;
+                        match.fotos.forEach(fotoUrl => alleFotos.push({ url: fotoUrl, datumRuw: new Date(match.datum), titel: titel, matchId: match.id, type: 'match' }));
                     }
                 });
+
+                // Verwerk Losse Foto's
+                extraRes.data.forEach(foto => {
+                    alleFotos.push({ url: foto.url, datumRuw: new Date(foto.datum), titel: "Training / Extra", matchId: null, type: 'extra' });
+                });
+
+                // Sorteer op datum (Nieuwste eerst)
+                alleFotos.sort((a, b) => b.datumRuw - a.datumRuw);
 
                 if (alleFotos.length === 0) {
                     container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Er zijn nog geen foto\'s geüpload voor deze speler.</p>';
@@ -87,22 +112,18 @@
 
                 let html = '';
                 alleFotos.forEach(foto => {
-                    // Escape quotes in strings to avoid HTML breaking
+                    const datumMooi = foto.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
                     const safeTitel = foto.titel.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                    const safeDatum = foto.datum.replace(/'/g, "\\'");
-
                     html += `
-                        <div onclick="openLightbox('${foto.url}', '${safeTitel}', '${safeDatum}', '${foto.matchId}')" style="position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; border: 1px solid #e2e8f0; background: #fff;">
+                        <div onclick="openLightbox('${foto.url}', '${safeTitel}', '${datumMooi}', '${foto.matchId}')" style="position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; border: 1px solid #e2e8f0; background: #fff;">
                             <img src="${foto.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            ${foto.type === 'extra' ? '<span style="position:absolute; bottom:4px; right:4px; font-size:10px; background:rgba(0,0,0,0.5); color:#fff; padding:2px 6px; border-radius:4px;">Extra</span>' : ''}
                         </div>
                     `;
                 });
-
                 container.innerHTML = html;
 
-            } catch (err) {
-                container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Fout bij ophalen van foto\'s.</p>';
-            }
+            } catch (err) { container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Fout bij ophalen van foto\'s.</p>'; }
         }
 
         window.wisselSpeler = function(evt, speler) {
@@ -111,36 +132,75 @@
             laadFotos(speler);
         };
 
-        // Lightbox functionaliteit
+        window.openUploadModal = function() {
+            const pin = prompt("Voer pincode in:");
+            if (pin === "0204") {
+                document.getElementById('extra-datum').valueAsDate = new Date();
+                document.getElementById('upload-modal').style.display = 'flex';
+                setTimeout(() => document.getElementById('upload-modal-content').style.transform = 'translateY(0)', 10);
+            } else if (pin !== null) alert("Onjuiste code.");
+        };
+
+        window.closeUploadModal = function() {
+            document.getElementById('upload-modal-content').style.transform = 'translateY(100%)';
+            setTimeout(() => document.getElementById('upload-modal').style.display = 'none', 300);
+        };
+
+        window.saveExtraFotos = async function() {
+            const files = document.getElementById('extra-fotos').files;
+            const datum = document.getElementById('extra-datum').value;
+            if(files.length === 0) return alert("Kies eerst een foto!");
+
+            const btn = document.getElementById('upload-btn');
+            btn.innerText = "Bezig met uploaden... ⏳"; btn.disabled = true;
+
+            try {
+                const compressieOpties = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true };
+                for (let i = 0; i < files.length; i++) {
+                    btn.innerText = `Foto ${i + 1}/${files.length} uploaden...`;
+                    const compressed = await imageCompression(files[i], compressieOpties);
+                    const bestandsNaam = `extra/${Date.now()}-${compressed.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+                    
+                    const { error: uploadError } = await supabaseClient.storage.from('media').upload(bestandsNaam, compressed);
+                    if (uploadError) throw uploadError;
+                    
+                    const { data: publicUrlData } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
+                    
+                    await supabaseClient.from('extra_fotos').insert([{
+                        speler: huidigeSpeler,
+                        datum: datum,
+                        url: publicUrlData.publicUrl
+                    }]);
+                }
+                closeUploadModal();
+                btn.innerText = "Uploaden"; btn.disabled = false;
+                document.getElementById('extra-fotos').value = "";
+                laadFotos(huidigeSpeler); // Ververs galerij
+            } catch (e) {
+                alert("Fout bij uploaden.");
+                btn.innerText = "Uploaden"; btn.disabled = false;
+            }
+        };
+
         window.openLightbox = function(imgUrl, titel, datum, matchId) {
             const lb = document.getElementById('lightbox');
             document.getElementById('lb-img').src = imgUrl;
             document.getElementById('lb-title').innerText = titel;
             document.getElementById('lb-date').innerText = datum;
-            document.getElementById('lb-link').href = `match-detail.html?id=${matchId}`;
+            
+            const linkBtn = document.getElementById('lb-link');
+            if (matchId !== 'null') { linkBtn.style.display = 'inline-block'; linkBtn.href = `match-detail.html?id=${matchId}`; } 
+            else { linkBtn.style.display = 'none'; }
             
             lb.style.display = 'flex';
-            // Kleine delay voor soepele animatie
-            setTimeout(() => {
-                lb.style.opacity = '1';
-                document.getElementById('lb-img').style.transform = 'scale(1)';
-            }, 10);
-            
-            // Zet scrollen van de body uit
+            setTimeout(() => { lb.style.opacity = '1'; document.getElementById('lb-img').style.transform = 'scale(1)'; }, 10);
             document.body.style.overflow = 'hidden';
         };
 
         window.closeLightbox = function() {
             const lb = document.getElementById('lightbox');
-            lb.style.opacity = '0';
-            document.getElementById('lb-img').style.transform = 'scale(0.95)';
-            
-            setTimeout(() => {
-                lb.style.display = 'none';
-                document.getElementById('lb-img').src = ''; // Clear memory
-            }, 300);
-            
-            // Zet scrollen weer aan
+            lb.style.opacity = '0'; document.getElementById('lb-img').style.transform = 'scale(0.95)';
+            setTimeout(() => { lb.style.display = 'none'; document.getElementById('lb-img').src = ''; }, 300);
             document.body.style.overflow = 'auto';
         };
 
