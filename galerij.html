@@ -28,10 +28,9 @@
         <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
     </div>
 
-    <main style="padding: 0 20px 100px 20px;">
-        <div id="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px;">
-            <p class="empty-state" style="grid-column: 1 / -1;">Foto's laden...</p>
-        </div>
+    <!-- Het nieuwe foto-container element (geen grid meer hier, dat regelen we in Javascript per groep) -->
+    <main id="photo-album-container" style="padding: 0 20px 100px 20px;">
+        <p class="empty-state">Foto's inladen... ⏳</p>
     </main>
 
     <button onclick="openUploadModal()" class="fab-btn">📷 + Foto</button>
@@ -62,11 +61,11 @@
         </div>
     </div>
 
-    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.3s ease;">
+    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.3s ease;">
         <button onclick="closeLightbox()" style="position: absolute; top: 25px; right: 25px; background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10000;">✕</button>
-        <img id="lb-img" src="" style="max-width: 100%; max-height: 65vh; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; transform: scale(0.95); transition: transform 0.3s ease;">
+        <img id="lb-img" src="" style="max-width: 100%; max-height: 65vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; transform: scale(0.95); transition: transform 0.3s ease;">
         <div style="margin-top: 25px; text-align: center; width: 100%; padding: 0 20px; box-sizing: border-box;">
-            <p id="lb-title" style="color: #fff; font-weight: 800; font-size: 18px; margin: 0 0 4px 0;"></p>
+            <p id="lb-title" style="color: #fff; font-weight: 800; font-size: 16px; margin: 0 0 6px 0;"></p>
             <p id="lb-date" style="color: #94a3b8; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 20px 0;"></p>
             <a id="lb-link" href="#" style="background: #ffffff; color: #1e293b; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: 800; text-decoration: none; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">Naar Match details &rarr;</a>
         </div>
@@ -81,8 +80,8 @@
 
         async function laadFotos(speler) {
             huidigeSpeler = speler;
-            const container = document.getElementById('photo-grid');
-            container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Foto\'s laden... ⏳</p>';
+            const container = document.getElementById('photo-album-container');
+            container.innerHTML = '<p class="empty-state">Foto\'s laden... ⏳</p>';
 
             try {
                 const [matchRes, extraRes] = await Promise.all([
@@ -111,31 +110,71 @@
                     alleFotos.push({ url: foto.url, datumRuw: new Date(foto.datum), titel: subtitel, matchId: null, type: 'extra' });
                 });
 
+                // Sorteer van nieuw naar oud
                 alleFotos.sort((a, b) => b.datumRuw - a.datumRuw);
 
                 if (alleFotos.length === 0) {
-                    container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Er zijn nog geen foto\'s geüpload voor deze speler.</p>';
+                    container.innerHTML = '<p class="empty-state">Er zijn nog geen foto\'s geüpload voor deze speler.</p>';
                     return;
                 }
 
-                let html = '';
+                // 🌟 MAGIE: Groepeer foto's op dezelfde datum & titel 🌟
+                const geclusterdeFotos = {};
+                const orderOfKeys = [];
+
                 alleFotos.forEach(foto => {
-                    const datumMooi = foto.datumRuw.toLocaleDateString('nl-BE', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
-                    const safeTitel = foto.titel.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    // Maak de datum mooi voor de titel (bijv. 19 augustus 2026 ipv 19 AUG)
+                    const datumVoluit = foto.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
                     
+                    // De sleutel is de datum + de titel, zodat ze bij elkaar in 1 blok komen
+                    const groupKey = `${datumVoluit}___${foto.titel}`;
+                    
+                    if (!geclusterdeFotos[groupKey]) {
+                        geclusterdeFotos[groupKey] = {
+                            datum: datumVoluit,
+                            titel: foto.titel,
+                            matchId: foto.matchId,
+                            fotos: []
+                        };
+                        orderOfKeys.push(groupKey); // Houd de juiste chronologische volgorde bij
+                    }
+                    geclusterdeFotos[groupKey].fotos.push(foto);
+                });
+
+                // Genereer de HTML per groep
+                let html = '';
+                
+                orderOfKeys.forEach(key => {
+                    const groep = geclusterdeFotos[key];
+                    const safeTitel = groep.titel.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    
+                    // Groep Header (Titel en Datum)
                     html += `
-                        <div onclick="openLightbox('${foto.url}', '${safeTitel}', '${datumMooi}', '${foto.matchId}')" style="position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; border: 1px solid #e2e8f0; background: #fff;">
-                            <img src="${foto.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(17,24,39,0.85) 0%, rgba(17,24,39,0.3) 60%, transparent 100%); padding: 25px 8px 8px 8px; display: flex; flex-direction: column; pointer-events: none;">
-                                <span style="color: #fff; font-size: 9px; font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${datumMooi}</span>
-                                <span style="color: #cbd5e1; font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${safeTitel}</span>
-                            </div>
+                        <div style="margin-top: 30px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
+                            <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #1e293b;">
+                                ${groep.titel}
+                            </h3>
+                            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${groep.datum}</span>
                         </div>
                     `;
+
+                    // Groep Grid (Clean, kleinere gap, geen afgeronde hoeken intern voor Apple-look)
+                    html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 4px; border-radius: 12px; overflow: hidden;">`;
+                    
+                    groep.fotos.forEach(foto => {
+                        html += `
+                            <div onclick="openLightbox('${foto.url}', '${safeTitel}', '${groep.datum}', '${groep.matchId}')" style="position: relative; aspect-ratio: 1; background: #e5e7eb; cursor: pointer; overflow: hidden;">
+                                <img src="${foto.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            </div>
+                        `;
+                    });
+
+                    html += `</div>`; // Sluit het grid van deze groep af
                 });
+
                 container.innerHTML = html;
 
-            } catch (err) { container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Fout bij ophalen van foto\'s.</p>'; }
+            } catch (err) { container.innerHTML = '<p class="empty-state">Fout bij ophalen van foto\'s.</p>'; }
         }
 
         window.wisselSpeler = function(evt, speler) {
