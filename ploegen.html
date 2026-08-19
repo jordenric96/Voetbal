@@ -11,16 +11,19 @@
     <meta name="theme-color" content="#f8fafc">
     <link rel="stylesheet" href="css/style.css?v=2">
     <style>
-        .leaderboard-item { display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 14px 12px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.1s ease; }
+        /* Vernieuwde layout voor de blokken, badges op tweede rij */
+        .leaderboard-item { display: flex; align-items: center; gap: 12px; background: #fff; padding: 14px 16px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.1s ease; }
         .leaderboard-item:active { transform: scale(0.98); background: #f8fafc; }
         
-        .team-main-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding-right: 10px; }
-        .rank-number { font-size: 13px; font-weight: 800; color: #94a3b8; width: 18px; text-align: center; }
-        .team-logo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #f1f5f9; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
-        .team-name { font-size: 14px; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rank-number { font-size: 15px; font-weight: 800; color: #94a3b8; width: 22px; text-align: center; flex-shrink: 0; }
+        .team-logo { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid #f1f5f9; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
         
-        .team-stats-badges { display: flex; gap: 4px; flex-shrink: 0; }
-        .stat-badge { display: flex; align-items: center; justify-content: center; padding: 4px 6px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; min-width: 28px; }
+        .team-details { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+        .team-name-row { display: flex; align-items: center; gap: 4px; width: 100%; }
+        .team-name { font-size: 16px; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .team-stats-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+        .stat-badge { display: flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
         .badge-played { background: #f1f5f9; color: #4b5563; border: 1px solid #e2e8f0; }
         .badge-wins { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
         .badge-losses { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
@@ -123,7 +126,6 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
     <script src="js/database.js"></script>
@@ -320,9 +322,8 @@
                     ? `<img src="${ploeg.logo}" class="team-logo">` 
                     : `<div class="team-logo">🛡️</div>`;
 
-                // Subtiel blauw vinkje ipv groot label
                 const verifiedBadge = ploeg.isFormeel 
-                    ? `<svg style="width: 14px; height: 14px; color: #0ea5e9; margin-left: 4px;" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>` 
+                    ? `<svg style="width: 14px; height: 14px; color: #0ea5e9; flex-shrink: 0;" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>` 
                     : '';
 
                 const item = document.createElement('div');
@@ -330,21 +331,21 @@
                 item.dataset.naam = ploeg.naam.toLowerCase(); 
                 item.setAttribute('onclick', `openTeamModal('${safeNaam}', '${safeLogo}', ${isFormeelStr})`);
 
-                // Toon ALTIJD de 4 bolletjes, ook als ze op 0 staan
+                // HIER IS DE MAGIE: Nieuwe layout, in 2 regels
                 item.innerHTML = `
-                    <div class="team-main-info">
-                        <span class="rank-number">${rank}</span>
-                        ${logoHtml}
-                        <div style="display: flex; align-items: center; overflow: hidden;">
+                    <span class="rank-number">${rank}</span>
+                    ${logoHtml}
+                    <div class="team-details">
+                        <div class="team-name-row">
                             <span class="team-name">${ploeg.naam}</span>
                             ${verifiedBadge}
                         </div>
-                    </div>
-                    <div class="team-stats-badges">
-                        <span class="stat-badge badge-played">${ploeg.gespeeld} G</span>
-                        <span class="stat-badge badge-wins">${ploeg.winst} W</span>
-                        <span class="stat-badge badge-losses">${ploeg.verlies} V</span>
-                        <span class="stat-badge badge-goals">${ploeg.goals} ⚽</span>
+                        <div class="team-stats-badges">
+                            <span class="stat-badge badge-played">${ploeg.gespeeld} G</span>
+                            <span class="stat-badge badge-wins">${ploeg.winst} W</span>
+                            <span class="stat-badge badge-losses">${ploeg.verlies} V</span>
+                            <span class="stat-badge badge-goals">${ploeg.goals} ⚽</span>
+                        </div>
                     </div>
                 `;
                 
