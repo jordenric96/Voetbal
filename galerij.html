@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Galerij</title>
-    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- PWA Installatie Fix -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#f1f5f9">
+    
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header>
@@ -14,6 +21,7 @@
             <a href="index.html">Overzicht</a>
             <a href="stats.html">Stats</a>
             <a href="ploegen.html">Ploegen</a>
+            <a href="galerij.html" class="active">Galerij</a>
             <a href="medisch.html">Medisch</a>
         </nav>
     </header>
@@ -24,6 +32,7 @@
     </div>
 
     <main style="padding: 0 20px 100px 20px;">
+        <!-- Het fotoraster -->
         <div id="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px;">
             <p class="empty-state" style="grid-column: 1 / -1;">Foto's laden...</p>
         </div>
@@ -37,15 +46,21 @@
         <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease;" id="upload-modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin: 0; font-size: 20px; font-weight: 800;">Foto's Toevoegen</h2>
-                <button onclick="closeUploadModal()" style="background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; color: #64748b;">✕</button>
+                <button onclick="closeUploadModal()" style="background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; color: #64748b; cursor: pointer;">✕</button>
             </div>
             
             <div class="form-group">
                 <label>Kies Datum</label>
                 <input type="date" id="extra-datum" required>
             </div>
+            
             <div class="form-group">
-                <label>Foto's (Training, Tuin, etc.)</label>
+                <label>Opmerking / Beschrijving (Optioneel)</label>
+                <textarea id="extra-opmerking" rows="2" placeholder="Bijv. Training in de regen..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Selecteer Foto's</label>
                 <input type="file" id="extra-fotos" accept="image/png, image/jpeg" multiple required>
             </div>
             
@@ -53,11 +68,11 @@
         </div>
     </div>
 
-    <!-- Lightbox -->
-    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(10px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.3s ease;">
+    <!-- Premium Lightbox -->
+    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.3s ease;">
         <button onclick="closeLightbox()" style="position: absolute; top: 25px; right: 25px; background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10000;">✕</button>
         <img id="lb-img" src="" style="max-width: 100%; max-height: 65vh; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; transform: scale(0.95); transition: transform 0.3s ease;">
-        <div style="margin-top: 25px; text-align: center; width: 100%;">
+        <div style="margin-top: 25px; text-align: center; width: 100%; padding: 0 20px; box-sizing: border-box;">
             <p id="lb-title" style="color: #fff; font-weight: 800; font-size: 18px; margin: 0 0 4px 0;"></p>
             <p id="lb-date" style="color: #94a3b8; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 20px 0;"></p>
             <a id="lb-link" href="#" style="background: #ffffff; color: #111827; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: 800; text-decoration: none; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">Naar Match details &rarr;</a>
@@ -92,14 +107,18 @@
                 matchRes.data.forEach(match => {
                     if (match.fotos && match.fotos.length > 0) {
                         const isToernooi = match.type_wedstrijd === 'Toernooi';
-                        const titel = isToernooi ? match.tegenstander : `${match.eigen_ploeg || 'Ploeg'} vs ${match.tegenstander}`;
-                        match.fotos.forEach(fotoUrl => alleFotos.push({ url: fotoUrl, datumRuw: new Date(match.datum), titel: titel, matchId: match.id, type: 'match' }));
+                        const subtitel = isToernooi ? `🏆 ${match.tegenstander}` : `⚽ vs ${match.tegenstander}`;
+                        
+                        match.fotos.forEach(fotoUrl => {
+                            alleFotos.push({ url: fotoUrl, datumRuw: new Date(match.datum), titel: subtitel, matchId: match.id, type: 'match' });
+                        });
                     }
                 });
 
-                // Verwerk Losse Foto's
+                // Verwerk Losse Foto's (Met de nieuwe opmerking)
                 extraRes.data.forEach(foto => {
-                    alleFotos.push({ url: foto.url, datumRuw: new Date(foto.datum), titel: "Training / Extra", matchId: null, type: 'extra' });
+                    const subtitel = foto.opmerking ? `📷 ${foto.opmerking}` : `📷 Training / Extra`;
+                    alleFotos.push({ url: foto.url, datumRuw: new Date(foto.datum), titel: subtitel, matchId: null, type: 'extra' });
                 });
 
                 // Sorteer op datum (Nieuwste eerst)
@@ -112,12 +131,19 @@
 
                 let html = '';
                 alleFotos.forEach(foto => {
-                    const datumMooi = foto.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+                    const datumMooi = foto.datumRuw.toLocaleDateString('nl-BE', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
                     const safeTitel = foto.titel.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    
+                    // Zachte premium overlay voor de thumbnail
                     html += `
                         <div onclick="openLightbox('${foto.url}', '${safeTitel}', '${datumMooi}', '${foto.matchId}')" style="position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; border: 1px solid #e2e8f0; background: #fff;">
                             <img src="${foto.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            ${foto.type === 'extra' ? '<span style="position:absolute; bottom:4px; right:4px; font-size:10px; background:rgba(0,0,0,0.5); color:#fff; padding:2px 6px; border-radius:4px;">Extra</span>' : ''}
+                            
+                            <!-- Subtiele Gradient Overlay met Datum en Context -->
+                            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(17,24,39,0.85) 0%, rgba(17,24,39,0.3) 60%, transparent 100%); padding: 25px 8px 8px 8px; display: flex; flex-direction: column; pointer-events: none;">
+                                <span style="color: #fff; font-size: 9px; font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${datumMooi}</span>
+                                <span style="color: #cbd5e1; font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">${safeTitel}</span>
+                            </div>
                         </div>
                     `;
                 });
@@ -136,6 +162,7 @@
             const pin = prompt("Voer pincode in:");
             if (pin === "0204") {
                 document.getElementById('extra-datum').valueAsDate = new Date();
+                document.getElementById('extra-opmerking').value = ""; // Veld leegmaken
                 document.getElementById('upload-modal').style.display = 'flex';
                 setTimeout(() => document.getElementById('upload-modal-content').style.transform = 'translateY(0)', 10);
             } else if (pin !== null) alert("Onjuiste code.");
@@ -149,6 +176,8 @@
         window.saveExtraFotos = async function() {
             const files = document.getElementById('extra-fotos').files;
             const datum = document.getElementById('extra-datum').value;
+            const opmerking = document.getElementById('extra-opmerking').value;
+            
             if(files.length === 0) return alert("Kies eerst een foto!");
 
             const btn = document.getElementById('upload-btn');
@@ -166,10 +195,12 @@
                     
                     const { data: publicUrlData } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
                     
+                    // Sla de foto op inclusief de optionele opmerking
                     await supabaseClient.from('extra_fotos').insert([{
                         speler: huidigeSpeler,
                         datum: datum,
-                        url: publicUrlData.publicUrl
+                        url: publicUrlData.publicUrl,
+                        opmerking: opmerking
                     }]);
                 }
                 closeUploadModal();
@@ -189,8 +220,13 @@
             document.getElementById('lb-date').innerText = datum;
             
             const linkBtn = document.getElementById('lb-link');
-            if (matchId !== 'null') { linkBtn.style.display = 'inline-block'; linkBtn.href = `match-detail.html?id=${matchId}`; } 
-            else { linkBtn.style.display = 'none'; }
+            // Alleen de link naar details tonen als het echt een match is
+            if (matchId !== 'null' && matchId !== 'undefined' && matchId !== '') { 
+                linkBtn.style.display = 'inline-block'; 
+                linkBtn.href = `match-detail.html?id=${matchId}`; 
+            } else { 
+                linkBtn.style.display = 'none'; 
+            }
             
             lb.style.display = 'flex';
             setTimeout(() => { lb.style.opacity = '1'; document.getElementById('lb-img').style.transform = 'scale(1)'; }, 10);
