@@ -11,14 +11,15 @@
     <meta name="theme-color" content="#f8fafc">
     <link rel="stylesheet" href="css/style.css?v=2">
     <style>
-        /* Specifieke stijlen voor het Ploegen Klassement */
         .leaderboard-item { display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 14px 16px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.1s ease; }
         .leaderboard-item:active { transform: scale(0.98); background: #f8fafc; }
         
         .team-main-info { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
         .rank-number { font-size: 14px; font-weight: 800; color: #94a3b8; width: 20px; text-align: center; }
         .team-logo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #f1f5f9; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+        .team-name-container { display: flex; flex-direction: column; overflow: hidden; }
         .team-name { font-size: 15px; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .verified-badge { font-size: 9px; font-weight: 800; color: #0284c7; display: inline-flex; align-items: center; gap: 3px; background: #e0f2fe; padding: 2px 6px; border-radius: 4px; margin-top: 2px; width: fit-content; border: 1px solid #bae6fd; }
         
         .team-stats-badges { display: flex; gap: 6px; flex-shrink: 0; }
         .stat-badge { display: flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
@@ -45,7 +46,7 @@
         <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
     </div>
 
-    <!-- FILTER BALK (Identiek aan stats & overzicht) -->
+    <!-- FILTER BALK -->
     <div class="filter-bar">
         <span style="font-size: 12px; font-weight: 700; color: #9ca3af;">Filter klassement</span>
         <div class="filter-toggle" onclick="toggleFilter()">
@@ -77,6 +78,31 @@
         <p class="empty-state">Klassement berekenen... ⏳</p>
     </main>
 
+    <!-- Zwevende toevoeg knop voor ploegen -->
+    <button onclick="openAddTeamModal()" class="fab-btn">🛡️ + Ploeg</button>
+
+    <!-- MODAL: NIEUWE PLOEG TOEVOEGEN -->
+    <div id="add-team-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.5); backdrop-filter: blur(5px); z-index: 9000; align-items: flex-end; justify-content: center;">
+        <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease;" id="add-team-modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 800;">Nieuwe Ploeg Toevoegen</h2>
+                <button onclick="closeAddTeamModal()" style="background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; color: #64748b; cursor: pointer;">✕</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Naam van de ploeg</label>
+                <input type="text" id="new-team-name" placeholder="Bijv. FC De Kampioenen" required>
+            </div>
+
+            <div class="form-group">
+                <label>Officieel Logo (Optioneel)</label>
+                <input type="file" id="new-team-logo" accept="image/png, image/jpeg">
+            </div>
+            
+            <button id="save-new-team-btn" onclick="saveNewTeam()" class="submit-btn">Ploeg Opslaan</button>
+        </div>
+    </div>
+
     <!-- HEAD-TO-HEAD MODAL -->
     <div id="team-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.5); backdrop-filter: blur(5px); z-index: 9000; align-items: flex-end; justify-content: center;">
         <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease; max-height: 90vh; display: flex; flex-direction: column;" id="team-modal-content">
@@ -87,28 +113,25 @@
                     <h2 id="modal-team-name" style="margin: 0; font-size: 20px; font-weight: 800; color: #1e293b;">Team Name</h2>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <button onclick="verwijderPloegUitDatabase()" style="background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.2); width: 32px; height: 32px; border-radius: 50%; color: #dc2626; cursor: pointer; display: flex; align-items: center; justify-content: center;">🗑️</button>
+                    <button id="modal-delete-btn" onclick="verwijderPloegUitDatabase()" style="background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.2); width: 32px; height: 32px; border-radius: 50%; color: #dc2626; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Verwijder uit databank">🗑️</button>
                     <button onclick="closeTeamModal()" style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
                 </div>
             </div>
             
             <div style="overflow-y: auto; flex-grow: 1; padding-bottom: 20px; -ms-overflow-style: none; scrollbar-width: none;">
-                
                 <div id="modal-quick-stats" style="display: flex; gap: 10px; margin-bottom: 20px;"></div>
-
                 <h3 style="font-size: 13px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 15px 0;">Alle Ontmoetingen (Gefilterd)</h3>
-                
                 <div id="team-history-list"></div>
-
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
     <script src="js/database.js"></script>
 
     <script>
-        // Kleuren brein voor de filters
         const badgeColors = {
             'U6': { bg: '#fef08a', text: '#713f12' }, 
             'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
@@ -138,23 +161,21 @@
         let ruweWedstrijden = [];
         let formelePloegenDB = [];
         let htmlLijstItems = []; 
-        let huidigeGeselecteerdePloeg = null; // Voor verwijderen
+        let huidigeGeselecteerdePloeg = null; 
+        let isHuidigePloegFormeel = false; // Checkt of we de DB-wis knop mogen tonen
 
         function toggleFilter() { document.getElementById('filter-panel').classList.toggle('open'); }
         
         function resetFilters() { 
-            filterCategorie = null; 
-            filterType = null; 
+            filterCategorie = null; filterType = null; 
             document.getElementById('filter-panel').classList.remove('open'); 
-            verwerkEnTekenKlassement(); 
-            buildFilterUI(); 
+            verwerkEnTekenKlassement(); buildFilterUI(); 
         }
         
         function setFilter(soort, waarde) {
             if (soort === 'cat') filterCategorie = (filterCategorie === waarde) ? null : waarde;
             if (soort === 'type') filterType = (filterType === waarde) ? null : waarde;
-            verwerkEnTekenKlassement(); 
-            buildFilterUI();
+            verwerkEnTekenKlassement(); buildFilterUI();
         }
 
         function buildFilterUI() {
@@ -216,17 +237,26 @@
 
         function verwerkEnTekenKlassement() {
             const container = document.getElementById('ploegen-lijst');
-            htmlLijstItems = []; // reset voor zoekfunctie
+            htmlLijstItems = []; 
 
-            // 1. Filter de matchen eerst op Speler, Categorie en Type
-            let relevanteMatchen = ruweWedstrijden.filter(m => m.speler === actieveSpeler);
-            if (filterCategorie) relevanteMatchen = relevanteMatchen.filter(m => m.categorie === filterCategorie);
-            if (filterType) relevanteMatchen = relevanteMatchen.filter(m => m.type_wedstrijd === filterType);
-
-            // 2. Bereken de stats per ploeg op basis van de gefilterde matchen
             const klassementMap = new Map();
 
-            relevanteMatchen.forEach(m => {
+            // 1. VOEG ALLE BEKENDE PLOEGEN TOE (Formeel én uit alle matchen)
+            // Zo verliest de lijst nooit een ploeg als je een filter aanzet.
+            
+            // 1A. Eerst de formele (opgeslagen) ploegen
+            formelePloegenDB.forEach(formelePloeg => {
+                const naamLower = formelePloeg.naam.trim().toLowerCase();
+                klassementMap.set(naamLower, {
+                    naam: formelePloeg.naam.trim(),
+                    logo: formelePloeg.logo_url,
+                    isFormeel: true, // Belangrijk voor het vinkje!
+                    gespeeld: 0, winst: 0, verlies: 0, gelijk: 0, goals: 0
+                });
+            });
+
+            // 1B. Dan ALLE ploegen uit ALLE wedstrijden (van beide spelers)
+            ruweWedstrijden.forEach(m => {
                 if (m.mini_scores && m.mini_scores.length > 0) {
                     m.mini_scores.forEach(s => {
                         const ploegNaam = (s.tegenstander || m.tegenstander || "Onbekend").trim();
@@ -236,78 +266,90 @@
                             klassementMap.set(naamLower, {
                                 naam: ploegNaam,
                                 logo: s.logo_tegenstander || m.logo_tegenstander || null,
-                                gespeeld: 0,
-                                winst: 0,
-                                verlies: 0,
-                                gelijk: 0,
-                                goals: 0
+                                isFormeel: false,
+                                gespeeld: 0, winst: 0, verlies: 0, gelijk: 0, goals: 0
                             });
-                        }
-
-                        const stat = klassementMap.get(naamLower);
-                        stat.gespeeld++;
-                        stat.goals += (s.goals || 0);
-
-                        let isWin = false, isLoss = false, isDraw = false;
-                        if (s.thuis > s.uit) { isWin = m.locatie === 'Thuis'; isLoss = m.locatie === 'Uit'; }
-                        else if (s.thuis < s.uit) { isWin = m.locatie === 'Uit'; isLoss = m.locatie === 'Thuis'; }
-                        else { isDraw = true; }
-
-                        if (isWin) stat.winst++;
-                        if (isLoss) stat.verlies++;
-                        if (isDraw) stat.gelijk++;
-
-                        // Probeer logo altijd up to date te houden
-                        if (!stat.logo && (s.logo_tegenstander || m.logo_tegenstander)) {
-                            stat.logo = s.logo_tegenstander || m.logo_tegenstander;
+                        } else if (!klassementMap.get(naamLower).logo && (s.logo_tegenstander || m.logo_tegenstander)) {
+                            klassementMap.get(naamLower).logo = s.logo_tegenstander || m.logo_tegenstander;
                         }
                     });
                 }
             });
 
-            // 3. Update logo's vanuit de formele ploegen tabel (overschrijft match logo's indien beschikbaar)
-            formelePloegenDB.forEach(formelePloeg => {
-                const naamLower = formelePloeg.naam.trim().toLowerCase();
-                if (klassementMap.has(naamLower) && formelePloeg.logo_url) {
-                    klassementMap.get(naamLower).logo = formelePloeg.logo_url;
+            // 2. NU FILTEREN WE DE WEDSTRIJDEN OM DE STATISTIEKEN TE BEREKENEN
+            let relevanteMatchen = ruweWedstrijden.filter(m => m.speler === actieveSpeler);
+            if (filterCategorie) relevanteMatchen = relevanteMatchen.filter(m => m.categorie === filterCategorie);
+            if (filterType) relevanteMatchen = relevanteMatchen.filter(m => m.type_wedstrijd === filterType);
+
+            // 3. BEREKEN DE STATS VOOR DE GEFILTERDE MATCHEN
+            relevanteMatchen.forEach(m => {
+                if (m.mini_scores && m.mini_scores.length > 0) {
+                    m.mini_scores.forEach(s => {
+                        const ploegNaam = (s.tegenstander || m.tegenstander || "Onbekend").trim();
+                        const naamLower = ploegNaam.toLowerCase();
+
+                        const stat = klassementMap.get(naamLower);
+                        if (stat) { // Beveiliging
+                            stat.gespeeld++;
+                            stat.goals += (s.goals || 0);
+
+                            let isWin = false, isLoss = false, isDraw = false;
+                            if (s.thuis > s.uit) { isWin = m.locatie === 'Thuis'; isLoss = m.locatie === 'Uit'; }
+                            else if (s.thuis < s.uit) { isWin = m.locatie === 'Uit'; isLoss = m.locatie === 'Thuis'; }
+                            else { isDraw = true; }
+
+                            if (isWin) stat.winst++;
+                            if (isLoss) stat.verlies++;
+                            if (isDraw) stat.gelijk++;
+                        }
+                    });
                 }
             });
 
-            // 4. Converteer naar Array en Sorteer: Meest gespeeld bovenaan, bij gelijk: alfabetisch
+            // 4. SORTEER (Eerst op gespeeld, dan alfabetisch)
             let klassementArray = Array.from(klassementMap.values());
             klassementArray.sort((a, b) => {
-                if (b.gespeeld !== a.gespeeld) return b.gespeeld - a.gespeeld; // Meeste matchen eerst
-                return a.naam.localeCompare(b.naam); // Daarna alfabetisch
+                if (b.gespeeld !== a.gespeeld) return b.gespeeld - a.gespeeld; 
+                return a.naam.localeCompare(b.naam); 
             });
 
-            // 5. Genereer HTML
+            // 5. GENEREER HTML
             container.innerHTML = '';
-            document.getElementById('searchInput').value = ''; // Reset zoekbalk bij filter wissel
+            document.getElementById('searchInput').value = ''; 
 
             if (klassementArray.length === 0) {
-                container.innerHTML = '<p class="empty-state">Geen ploegen gevonden voor deze filter.</p>';
+                container.innerHTML = '<p class="empty-state">Database is volledig leeg.</p>';
                 return;
             }
 
             klassementArray.forEach((ploeg, index) => {
                 const safeNaam = ploeg.naam.replace(/'/g, "\\'");
                 const safeLogo = ploeg.logo ? ploeg.logo.replace(/'/g, "\\'") : '';
+                const isFormeelStr = ploeg.isFormeel ? 'true' : 'false';
                 const rank = index + 1;
 
                 const logoHtml = ploeg.logo 
                     ? `<img src="${ploeg.logo}" class="team-logo">` 
                     : `<div class="team-logo">🛡️</div>`;
 
+                // Subtiele badge als je hem formeel had toegevoegd
+                const verifiedBadge = ploeg.isFormeel 
+                    ? `<span class="verified-badge"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>Opgeslagen</span>` 
+                    : '';
+
                 const item = document.createElement('div');
                 item.className = 'leaderboard-item';
                 item.dataset.naam = ploeg.naam.toLowerCase(); 
-                item.setAttribute('onclick', `openTeamModal('${safeNaam}', '${safeLogo}')`);
+                item.setAttribute('onclick', `openTeamModal('${safeNaam}', '${safeLogo}', ${isFormeelStr})`);
 
                 item.innerHTML = `
                     <div class="team-main-info">
                         <span class="rank-number">${rank}</span>
                         ${logoHtml}
-                        <span class="team-name">${ploeg.naam}</span>
+                        <div class="team-name-container">
+                            <span class="team-name">${ploeg.naam}</span>
+                            ${verifiedBadge}
+                        </div>
                     </div>
                     <div class="team-stats-badges">
                         <span class="stat-badge badge-played">${ploeg.gespeeld} G</span>
@@ -365,10 +407,73 @@
             verwerkEnTekenKlassement();
         };
 
+        // --- PLOEG TOEVOEGEN LOGICA ---
+        
+        window.openAddTeamModal = function() {
+            const pin = prompt("Voer pincode in:");
+            if (pin === "0204") {
+                document.getElementById('new-team-name').value = '';
+                document.getElementById('new-team-logo').value = '';
+                document.getElementById('add-team-modal').style.display = 'flex';
+                setTimeout(() => { document.getElementById('add-team-modal-content').style.transform = 'translateY(0)'; }, 10);
+            } else if (pin !== null) {
+                alert("Onjuiste code.");
+            }
+        };
+
+        window.closeAddTeamModal = function() {
+            document.getElementById('add-team-modal-content').style.transform = 'translateY(100%)';
+            setTimeout(() => { document.getElementById('add-team-modal').style.display = 'none'; }, 300);
+        };
+
+        window.saveNewTeam = async function() {
+            const naam = document.getElementById('new-team-name').value.trim();
+            const fileInput = document.getElementById('new-team-logo');
+            const file = fileInput.files[0];
+
+            if (!naam) return alert("Vul een ploegnaam in!");
+
+            const btn = document.getElementById('save-new-team-btn');
+            btn.innerText = "Bezig met uploaden... ⏳";
+            btn.disabled = true;
+
+            try {
+                let logoUrl = null;
+                
+                if (file) {
+                    const compressieOpties = { maxSizeMB: 0.5, maxWidthOrHeight: 800, useWebWorker: true };
+                    const compressed = await imageCompression(file, compressieOpties);
+                    const bestandsNaam = `logos/${Date.now()}-${compressed.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+
+                    const { error: uploadError } = await supabaseClient.storage.from('media').upload(bestandsNaam, compressed);
+                    if (uploadError) throw uploadError;
+
+                    const { data: publicUrlData } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
+                    logoUrl = publicUrlData.publicUrl;
+                }
+
+                const { error } = await supabaseClient.from('ploegen').insert([{
+                    naam: naam,
+                    logo_url: logoUrl
+                }]);
+
+                if (error) throw error;
+
+                closeAddTeamModal();
+                laadDatabase(); 
+            } catch (err) {
+                alert("Fout bij opslaan van ploeg.");
+            } finally {
+                btn.innerText = "Ploeg Opslaan";
+                btn.disabled = false;
+            }
+        };
+
         // --- H2H MODAL LOGICA ---
 
-        window.openTeamModal = function(teamNaam, teamLogo) {
-            huidigeGeselecteerdePloeg = teamNaam; // Opslaan voor verwijder functie
+        window.openTeamModal = function(teamNaam, teamLogo, isFormeel) {
+            huidigeGeselecteerdePloeg = teamNaam; 
+            isHuidigePloegFormeel = isFormeel;
             document.getElementById('modal-team-name').innerText = teamNaam;
             
             const logoContainer = document.getElementById('modal-team-logo-container');
@@ -378,7 +483,14 @@
                 logoContainer.innerHTML = `<div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid #e5e7eb;">🛡️</div>`;
             }
 
-            // Zoek alle ontmoetingen in de gefilterde data
+            // Toon de verwijder-knop ENKEL als de ploeg effectief in je DB zit
+            const deleteBtn = document.getElementById('modal-delete-btn');
+            if(isFormeel) {
+                deleteBtn.style.display = 'flex';
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+
             let encounters = [];
             let statsWins = 0, statsDraws = 0, statsLosses = 0, statsGoals = 0;
 
@@ -392,15 +504,8 @@
                         let sTegenstander = (s.tegenstander || m.tegenstander || "").trim().toLowerCase();
                         if (sTegenstander === teamNaam.toLowerCase()) {
                             encounters.push({
-                                datum: new Date(m.datum),
-                                speler: m.speler,
-                                categorie: m.categorie,
-                                locatie: m.locatie,
-                                type_wedstrijd: m.type_wedstrijd,
-                                thuis: s.thuis,
-                                uit: s.uit,
-                                goals: s.goals || 0,
-                                matchId: m.id
+                                datum: new Date(m.datum), speler: m.speler, categorie: m.categorie, locatie: m.locatie,
+                                type_wedstrijd: m.type_wedstrijd, thuis: s.thuis, uit: s.uit, goals: s.goals || 0, matchId: m.id
                             });
 
                             let isWin = false;
@@ -408,10 +513,7 @@
                             if (s.thuis < s.uit) isWin = m.locatie === 'Uit';
                             let isDraw = s.thuis === s.uit;
                             
-                            if (isWin) statsWins++;
-                            else if (isDraw) statsDraws++;
-                            else statsLosses++;
-                            
+                            if (isWin) statsWins++; else if (isDraw) statsDraws++; else statsLosses++;
                             statsGoals += (s.goals || 0);
                         }
                     });
@@ -434,16 +536,14 @@
             `;
 
             encounters.sort((a,b) => b.datum - a.datum);
-
             const listContainer = document.getElementById('team-history-list');
             let listHtml = '';
 
             if (encounters.length === 0) {
-                listHtml = '<p class="empty-state">Geen uitslagen gevonden.</p>';
+                listHtml = '<p class="empty-state">Nog niet tegen deze ploeg gespeeld met de huidige filters.</p>';
             } else {
                 encounters.forEach(enc => {
                     const datumMooi = enc.datum.toLocaleDateString('nl-BE', {day: 'numeric', month: 'short', year: 'numeric'}).toUpperCase();
-                    
                     let statusClass = 'draw';
                     if (enc.thuis > enc.uit) statusClass = enc.locatie === 'Thuis' ? 'win' : 'loss';
                     if (enc.thuis < enc.uit) statusClass = enc.locatie === 'Thuis' ? 'loss' : 'win';
@@ -451,7 +551,6 @@
                     let bgStatus = statusClass === 'win' ? '#ecfdf5' : (statusClass === 'loss' ? '#fef2f2' : '#f1f5f9');
                     let colorStatus = statusClass === 'win' ? '#059669' : (statusClass === 'loss' ? '#dc2626' : '#4b5563');
 
-                    // Tags HTML genereren
                     const catStyle = badgeColors[enc.categorie] || badgeColors['Standaard'];
                     const typeStyle = badgeColors[enc.type_wedstrijd] || badgeColors['Standaard'];
 
@@ -478,7 +577,6 @@
             }
 
             listContainer.innerHTML = listHtml;
-
             const modal = document.getElementById('team-modal');
             modal.style.display = 'flex';
             setTimeout(() => { document.getElementById('team-modal-content').style.transform = 'translateY(0)'; }, 10);
@@ -486,12 +584,11 @@
 
         window.closeTeamModal = function() {
             document.getElementById('team-modal-content').style.transform = 'translateY(100%)';
-            setTimeout(() => { document.getElementById('team-modal').style.display = 'none'; huidigeGeselecteerdePloeg = null; }, 300);
+            setTimeout(() => { document.getElementById('team-modal').style.display = 'none'; huidigeGeselecteerdePloeg = null; isHuidigePloegFormeel = false; }, 300);
         };
 
-        // Verwijder ploeg uit het formele ploegen register (Database)
         window.verwijderPloegUitDatabase = async function() {
-            if (!huidigeGeselecteerdePloeg) return;
+            if (!huidigeGeselecteerdePloeg || !isHuidigePloegFormeel) return;
 
             const pin = prompt("Voer pincode in om de ploeg definitief te wissen uit de database:");
             if (pin !== "0204") {
@@ -499,13 +596,12 @@
                 return;
             }
 
-            if (!confirm(`Weet je zeker dat je "${huidigeGeselecteerdePloeg}" inclusief logo wil wissen uit het ploegenbestand?\n\n(Let op: Bestaande uitslagen verdwijnen niet automatisch, maar het logo wordt gewist).`)) return;
+            if (!confirm(`Weet je zeker dat je "${huidigeGeselecteerdePloeg}" inclusief logo wil wissen uit het ploegenbestand?\n\n(Let op: Bestaande uitslagen in je overzicht verdwijnen niet, maar het logo wordt gewist).`)) return;
 
             try {
-                // Verwijder uit de 'ploegen' tabel in Supabase
                 await supabaseClient.from('ploegen').delete().ilike('naam', huidigeGeselecteerdePloeg);
                 closeTeamModal();
-                laadDatabase(); // Herlaad alles
+                laadDatabase(); 
             } catch (e) {
                 alert("Fout bij het verwijderen van de ploeg.");
             }
