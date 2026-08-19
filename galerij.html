@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Galerij</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="theme-color" content="#f1f5f9">
+</head>
+<body>
+    <header>
+        <h1>Galerij</h1>
+        <nav>
+            <a href="index.html">Overzicht</a>
+            <a href="stats.html">Stats</a>
+            <a href="ploegen.html">Ploegen</a>
+        </nav>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="wisselSpeler(event, 'Lou')">Lou</button>
+        <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
+    </div>
+
+    <main style="padding: 0 20px 100px 20px;">
+        <!-- Het fotoraster -->
+        <div id="photo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 12px;">
+            <p class="empty-state" style="grid-column: 1 / -1;">Foto's laden...</p>
+        </div>
+    </main>
+
+    <!-- De Premium Lightbox (Schermvullende weergave) -->
+    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.3s ease;">
+        
+        <button onclick="closeLightbox()" style="position: absolute; top: 25px; right: 25px; background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10000;">✕</button>
+        
+        <img id="lb-img" src="" style="max-width: 100%; max-height: 65vh; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; transform: scale(0.95); transition: transform 0.3s ease;">
+        
+        <div style="margin-top: 25px; text-align: center; width: 100%;">
+            <p id="lb-title" style="color: #fff; font-weight: 800; font-size: 18px; margin: 0 0 4px 0;"></p>
+            <p id="lb-date" style="color: #94a3b8; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 20px 0;"></p>
+            <a id="lb-link" href="#" style="background: #ffffff; color: #111827; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: 800; text-decoration: none; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">Bekijk Match details &rarr;</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/database.js"></script>
+
+    <script>
+        async function laadFotos(speler) {
+            const container = document.getElementById('photo-grid');
+            container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Foto\'s laden... ⏳</p>';
+
+            try {
+                // Haal alle matchen op met foto's
+                const { data, error } = await supabaseClient
+                    .from('wedstrijden')
+                    .select('id, datum, tegenstander, type_wedstrijd, eigen_ploeg, fotos')
+                    .eq('speler', speler)
+                    .order('datum', { ascending: false });
+
+                if (error) throw error;
+
+                let alleFotos = [];
+
+                data.forEach(match => {
+                    if (match.fotos && match.fotos.length > 0) {
+                        const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+                        const isToernooi = match.type_wedstrijd === 'Toernooi';
+                        const titel = isToernooi ? match.tegenstander : `${match.eigen_ploeg || 'Eigen Ploeg'} vs ${match.tegenstander}`;
+
+                        match.fotos.forEach(fotoUrl => {
+                            alleFotos.push({
+                                url: fotoUrl,
+                                datum: datumMooi,
+                                titel: titel,
+                                matchId: match.id
+                            });
+                        });
+                    }
+                });
+
+                if (alleFotos.length === 0) {
+                    container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Er zijn nog geen foto\'s geüpload voor deze speler.</p>';
+                    return;
+                }
+
+                let html = '';
+                alleFotos.forEach(foto => {
+                    // Escape quotes in strings to avoid HTML breaking
+                    const safeTitel = foto.titel.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                    const safeDatum = foto.datum.replace(/'/g, "\\'");
+
+                    html += `
+                        <div onclick="openLightbox('${foto.url}', '${safeTitel}', '${safeDatum}', '${foto.matchId}')" style="position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; border: 1px solid #e2e8f0; background: #fff;">
+                            <img src="${foto.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+
+            } catch (err) {
+                container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Fout bij ophalen van foto\'s.</p>';
+            }
+        }
+
+        window.wisselSpeler = function(evt, speler) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            laadFotos(speler);
+        };
+
+        // Lightbox functionaliteit
+        window.openLightbox = function(imgUrl, titel, datum, matchId) {
+            const lb = document.getElementById('lightbox');
+            document.getElementById('lb-img').src = imgUrl;
+            document.getElementById('lb-title').innerText = titel;
+            document.getElementById('lb-date').innerText = datum;
+            document.getElementById('lb-link').href = `match-detail.html?id=${matchId}`;
+            
+            lb.style.display = 'flex';
+            // Kleine delay voor soepele animatie
+            setTimeout(() => {
+                lb.style.opacity = '1';
+                document.getElementById('lb-img').style.transform = 'scale(1)';
+            }, 10);
+            
+            // Zet scrollen van de body uit
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeLightbox = function() {
+            const lb = document.getElementById('lightbox');
+            lb.style.opacity = '0';
+            document.getElementById('lb-img').style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                lb.style.display = 'none';
+                document.getElementById('lb-img').src = ''; // Clear memory
+            }, 300);
+            
+            // Zet scrollen weer aan
+            document.body.style.overflow = 'auto';
+        };
+
+        document.addEventListener('DOMContentLoaded', () => laadFotos('Lou'));
+    </script>
+</body>
+</html>
