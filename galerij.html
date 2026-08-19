@@ -28,7 +28,6 @@
         <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
     </div>
 
-    <!-- Het nieuwe foto-container element (geen grid meer hier, dat regelen we in Javascript per groep) -->
     <main id="photo-album-container" style="padding: 0 20px 100px 20px;">
         <p class="empty-state">Foto's inladen... ⏳</p>
     </main>
@@ -61,9 +60,22 @@
         </div>
     </div>
 
+    <!-- VERNIEUWDE LIGHTBOX MET SLIDER FUNCTIES -->
     <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; opacity: 0; transition: opacity 0.3s ease;">
-        <button onclick="closeLightbox()" style="position: absolute; top: 25px; right: 25px; background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10000;">✕</button>
-        <img id="lb-img" src="" style="max-width: 100%; max-height: 65vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; transform: scale(0.95); transition: transform 0.3s ease;">
+        
+        <!-- Header van de Lightbox met Teller en Sluitknop -->
+        <div style="position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 25px 20px; box-sizing: border-box; z-index: 10000;">
+            <span id="lb-counter" style="color: #94a3b8; font-size: 14px; font-weight: 800; letter-spacing: 0.5px;"></span>
+            <button onclick="closeLightbox()" style="background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+        </div>
+
+        <!-- Navigatie Pijlen -->
+        <button id="lb-prev" onclick="prevImage(event)" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); color: #fff; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; z-index: 10000; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">&#10094;</button>
+        
+        <button id="lb-next" onclick="nextImage(event)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); color: #fff; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; z-index: 10000; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">&#10095;</button>
+
+        <img id="lb-img" src="" style="max-width: 100%; max-height: 60vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); object-fit: contain; transition: opacity 0.2s ease;">
+        
         <div style="margin-top: 25px; text-align: center; width: 100%; padding: 0 20px; box-sizing: border-box;">
             <p id="lb-title" style="color: #fff; font-weight: 800; font-size: 16px; margin: 0 0 6px 0;"></p>
             <p id="lb-date" style="color: #94a3b8; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 20px 0;"></p>
@@ -77,6 +89,8 @@
 
     <script>
         let huidigeSpeler = 'Lou';
+        let alleFotosGlobal = []; // We slaan alle foto's globaal op voor de swiper
+        let currentLbIndex = 0;   // Houdt bij welke foto momenteel open staat
 
         async function laadFotos(speler) {
             huidigeSpeler = speler;
@@ -112,64 +126,50 @@
 
                 // Sorteer van nieuw naar oud
                 alleFotos.sort((a, b) => b.datumRuw - a.datumRuw);
+                alleFotosGlobal = alleFotos; // Opslaan voor de lightbox
 
                 if (alleFotos.length === 0) {
                     container.innerHTML = '<p class="empty-state">Er zijn nog geen foto\'s geüpload voor deze speler.</p>';
                     return;
                 }
 
-                // 🌟 MAGIE: Groepeer foto's op dezelfde datum & titel 🌟
                 const geclusterdeFotos = {};
                 const orderOfKeys = [];
 
-                alleFotos.forEach(foto => {
-                    // Maak de datum mooi voor de titel (bijv. 19 augustus 2026 ipv 19 AUG)
+                alleFotos.forEach((foto, index) => {
                     const datumVoluit = foto.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
-                    
-                    // De sleutel is de datum + de titel, zodat ze bij elkaar in 1 blok komen
                     const groupKey = `${datumVoluit}___${foto.titel}`;
                     
                     if (!geclusterdeFotos[groupKey]) {
-                        geclusterdeFotos[groupKey] = {
-                            datum: datumVoluit,
-                            titel: foto.titel,
-                            matchId: foto.matchId,
-                            fotos: []
-                        };
-                        orderOfKeys.push(groupKey); // Houd de juiste chronologische volgorde bij
+                        geclusterdeFotos[groupKey] = { datum: datumVoluit, titel: foto.titel, fotos: [] };
+                        orderOfKeys.push(groupKey);
                     }
-                    geclusterdeFotos[groupKey].fotos.push(foto);
+                    // Voeg de absolute index toe zodat de klik precies weet welke foto opent
+                    geclusterdeFotos[groupKey].fotos.push({ ...foto, globalIndex: index });
                 });
 
-                // Genereer de HTML per groep
                 let html = '';
-                
                 orderOfKeys.forEach(key => {
                     const groep = geclusterdeFotos[key];
-                    const safeTitel = groep.titel.replace(/'/g, "\\'").replace(/"/g, "&quot;");
                     
-                    // Groep Header (Titel en Datum)
                     html += `
                         <div style="margin-top: 30px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
-                            <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #1e293b;">
-                                ${groep.titel}
-                            </h3>
+                            <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #1e293b;">${groep.titel}</h3>
                             <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${groep.datum}</span>
                         </div>
                     `;
 
-                    // Groep Grid (Clean, kleinere gap, geen afgeronde hoeken intern voor Apple-look)
                     html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 4px; border-radius: 12px; overflow: hidden;">`;
                     
                     groep.fotos.forEach(foto => {
                         html += `
-                            <div onclick="openLightbox('${foto.url}', '${safeTitel}', '${groep.datum}', '${groep.matchId}')" style="position: relative; aspect-ratio: 1; background: #e5e7eb; cursor: pointer; overflow: hidden;">
+                            <div onclick="openLightbox(${foto.globalIndex})" style="position: relative; aspect-ratio: 1; background: #e5e7eb; cursor: pointer; overflow: hidden;">
                                 <img src="${foto.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                             </div>
                         `;
                     });
 
-                    html += `</div>`; // Sluit het grid van deze groep af
+                    html += `</div>`;
                 });
 
                 container.innerHTML = html;
@@ -184,6 +184,86 @@
             else { document.documentElement.style.setProperty('--brand-color', '#ef476f'); }
             laadFotos(speler);
         };
+
+        // --- SWIPE & LIGHTBOX LOGICA ---
+
+        window.openLightbox = function(index) {
+            currentLbIndex = index;
+            updateLightboxUI();
+            
+            const lb = document.getElementById('lightbox');
+            lb.style.display = 'flex';
+            setTimeout(() => { lb.style.opacity = '1'; }, 10);
+            document.body.style.overflow = 'hidden'; // Stop achtergrond scrollen
+        };
+
+        window.updateLightboxUI = function() {
+            if (alleFotosGlobal.length === 0) return;
+            const foto = alleFotosGlobal[currentLbIndex];
+            const datumMooi = foto.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+            
+            const imgEl = document.getElementById('lb-img');
+            imgEl.style.opacity = '0'; // Zachte fade out voor wissel
+            setTimeout(() => {
+                imgEl.src = foto.url;
+                imgEl.style.opacity = '1'; // Zachte fade in voor nieuwe foto
+            }, 150);
+
+            document.getElementById('lb-title').innerText = foto.titel;
+            document.getElementById('lb-date').innerText = datumMooi;
+            document.getElementById('lb-counter').innerText = `Foto ${currentLbIndex + 1} van ${alleFotosGlobal.length}`;
+            
+            const linkBtn = document.getElementById('lb-link');
+            if (foto.matchId && foto.matchId !== 'null' && foto.matchId !== 'undefined') { 
+                linkBtn.style.display = 'inline-block'; 
+                linkBtn.href = `match-detail.html?id=${foto.matchId}`; 
+            } else { 
+                linkBtn.style.display = 'none'; 
+            }
+
+            // Verberg knoppen als je aan het einde of begin bent
+            document.getElementById('lb-prev').style.display = currentLbIndex > 0 ? 'flex' : 'none';
+            document.getElementById('lb-next').style.display = currentLbIndex < alleFotosGlobal.length - 1 ? 'flex' : 'none';
+        };
+
+        window.prevImage = function(e) {
+            if (e) e.stopPropagation();
+            if (currentLbIndex > 0) { currentLbIndex--; updateLightboxUI(); }
+        };
+
+        window.nextImage = function(e) {
+            if (e) e.stopPropagation();
+            if (currentLbIndex < alleFotosGlobal.length - 1) { currentLbIndex++; updateLightboxUI(); }
+        };
+
+        window.closeLightbox = function() {
+            const lb = document.getElementById('lightbox');
+            lb.style.opacity = '0'; 
+            setTimeout(() => { lb.style.display = 'none'; document.getElementById('lb-img').src = ''; }, 300);
+            document.body.style.overflow = 'auto';
+        };
+
+        // Swipe detectie met Javascript
+        let touchstartX = 0;
+        let touchendX = 0;
+        const lightboxElement = document.getElementById('lightbox');
+
+        lightboxElement.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+        }, {passive: true});
+
+        lightboxElement.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, {passive: true});
+
+        function handleSwipe() {
+            // Minimaal 50px swipen om een wissel te triggeren (voorkomt per ongeluk tappen)
+            if (touchendX < touchstartX - 50) nextImage(); // Swipe Links = Volgende
+            if (touchendX > touchstartX + 50) prevImage(); // Swipe Rechts = Vorige
+        }
+
+        // --- UPLOAD LOGICA ---
 
         window.openUploadModal = function() {
             const pin = prompt("Voer pincode in:");
@@ -204,9 +284,7 @@
             const files = document.getElementById('extra-fotos').files;
             const datum = document.getElementById('extra-datum').value;
             const opmerking = document.getElementById('extra-opmerking').value;
-            
             if(files.length === 0) return alert("Kies eerst een foto!");
-
             const btn = document.getElementById('upload-btn');
             btn.innerText = "Bezig met uploaden... ⏳"; btn.disabled = true;
 
@@ -216,12 +294,9 @@
                     btn.innerText = `Foto ${i + 1}/${files.length} uploaden...`;
                     const compressed = await imageCompression(files[i], compressieOpties);
                     const bestandsNaam = `extra/${Date.now()}-${compressed.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-                    
                     const { error: uploadError } = await supabaseClient.storage.from('media').upload(bestandsNaam, compressed);
                     if (uploadError) throw uploadError;
-                    
                     const { data: publicUrlData } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
-                    
                     await supabaseClient.from('extra_fotos').insert([{
                         speler: huidigeSpeler, datum: datum, url: publicUrlData.publicUrl, opmerking: opmerking
                     }]);
@@ -230,36 +305,7 @@
                 btn.innerText = "Uploaden"; btn.disabled = false;
                 document.getElementById('extra-fotos').value = "";
                 laadFotos(huidigeSpeler); 
-            } catch (e) {
-                alert("Fout bij uploaden.");
-                btn.innerText = "Uploaden"; btn.disabled = false;
-            }
-        };
-
-        window.openLightbox = function(imgUrl, titel, datum, matchId) {
-            const lb = document.getElementById('lightbox');
-            document.getElementById('lb-img').src = imgUrl;
-            document.getElementById('lb-title').innerText = titel;
-            document.getElementById('lb-date').innerText = datum;
-            
-            const linkBtn = document.getElementById('lb-link');
-            if (matchId !== 'null' && matchId !== 'undefined' && matchId !== '') { 
-                linkBtn.style.display = 'inline-block'; 
-                linkBtn.href = `match-detail.html?id=${matchId}`; 
-            } else { 
-                linkBtn.style.display = 'none'; 
-            }
-            
-            lb.style.display = 'flex';
-            setTimeout(() => { lb.style.opacity = '1'; document.getElementById('lb-img').style.transform = 'scale(1)'; }, 10);
-            document.body.style.overflow = 'hidden';
-        };
-
-        window.closeLightbox = function() {
-            const lb = document.getElementById('lightbox');
-            lb.style.opacity = '0'; document.getElementById('lb-img').style.transform = 'scale(0.95)';
-            setTimeout(() => { lb.style.display = 'none'; document.getElementById('lb-img').src = ''; }, 300);
-            document.body.style.overflow = 'auto';
+            } catch (e) { alert("Fout bij uploaden."); btn.innerText = "Uploaden"; btn.disabled = false; }
         };
 
         document.addEventListener('DOMContentLoaded', () => laadFotos('Lou'));
