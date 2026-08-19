@@ -102,8 +102,7 @@ function renderStats() {
     let uitGames = 0, uitWins = 0, uitLosses = 0, uitDraws = 0;
     let oppStats = {};
 
-    // NIEUWE VARIABELEN
-    let hattricks = 0; let braces = 0; // Tweeklappers
+    let hattricks = 0; let braces = 0; 
     let totaalMinuten = 0; let totaalGeel = 0; let totaalRood = 0;
 
     data.forEach(m => {
@@ -120,7 +119,6 @@ function renderStats() {
                 
                 const scoreGoals = score.goals || 0;
                 
-                // Extra berekeningen
                 if (scoreGoals === 2) braces++;
                 if (scoreGoals >= 3) hattricks++;
                 totaalMinuten += (score.minuten || 0);
@@ -204,16 +202,14 @@ function renderStats() {
     const totaleGoalsNum = veldGoals + keeperGoals;
     let totaalMiniMatches = veldMatches + keeperMatches;
     
-    // G/A Ratio (Directe goal contributie per gespeelde match)
     const goalContribRatio = totaalMiniMatches > 0 ? ((totaleGoalsNum + veldAssists) / totaalMiniMatches).toFixed(2) : "0.00";
 
-    // CARD 1: PRODUCTIVITEIT
     html += `
         <div style="${cardStyle}">
             <h3 style="${titleStyle}">Productiviteit</h3>
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
                 <div style="flex: 1; border-right: 1px solid #e2e8f0;">
-                    <span style="font-size: 36px; font-weight: 800; color: #111827; line-height: 1; display: block;">${totaleGoalsNum}</span>
+                    <span style="font-size: 36px; font-weight: 800; color: #1e293b; line-height: 1; display: block;">${totaleGoalsNum}</span>
                     <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Goals</span>
                 </div>
                 <div style="flex: 1; padding-left: 20px;">
@@ -227,37 +223,35 @@ function renderStats() {
         </div>
     `;
 
-    // CARD NIEUW: GEVAAR VOOR DOEL (Hattricks & Contributie)
     html += `
         <div style="${cardStyle}">
             <h3 style="${titleStyle}">Gevaar voor het doel</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                 <div style="${statBoxStyle}; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                    <span style="font-size: 28px; font-weight: 800; color: #111827; line-height: 1; margin-bottom: 4px;">${goalContribRatio}</span>
+                    <span style="font-size: 28px; font-weight: 800; color: #1e293b; line-height: 1; margin-bottom: 4px;">${goalContribRatio}</span>
                     <span style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: center;">G/A Ratio<br>(Betrokken bij x goals per match)</span>
                 </div>
                 
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <div style="${statBoxStyle}; padding: 10px; display: flex; align-items: center; justify-content: space-between;">
                         <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase;">Hat-tricks (3+)</span>
-                        <span style="font-size: 18px; font-weight: 800; color: #111827;">${hattricks}</span>
+                        <span style="font-size: 18px; font-weight: 800; color: #1e293b;">${hattricks}</span>
                     </div>
                     <div style="${statBoxStyle}; padding: 10px; display: flex; align-items: center; justify-content: space-between;">
                         <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase;">Tweeklappers</span>
-                        <span style="font-size: 18px; font-weight: 800; color: #111827;">${braces}</span>
+                        <span style="font-size: 18px; font-weight: 800; color: #1e293b;">${braces}</span>
                     </div>
                 </div>
             </div>
         </div>
     `;
 
-    // CARD NIEUW: DISCIPLINE & INZET
     html += `
         <div style="${cardStyle}">
             <h3 style="${titleStyle}">Discipline & Speeltijd</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                 <div style="${statBoxStyle}; text-align: center; padding: 15px 10px;">
-                    <span style="font-size: 24px; font-weight: 800; color: #111827; display: block; margin-bottom: 4px;">${totaalMinuten}'</span>
+                    <span style="font-size: 24px; font-weight: 800; color: #1e293b; display: block; margin-bottom: 4px;">${totaalMinuten}'</span>
                     <span style="font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase;">Gespeeld</span>
                 </div>
                 <div style="background: #fefce8; border: 1px solid #fef08a; border-radius: 12px; text-align: center; padding: 15px 10px;">
@@ -272,7 +266,6 @@ function renderStats() {
         </div>
     `;
 
-    // CARD REEKSEN & RECORDS
     let streakDetailHtml = '';
     if (maxStreak > 0) {
         bestStreakMatches.forEach(m => {
@@ -296,7 +289,7 @@ function renderStats() {
                 <div style="${statBoxStyle}; border-left: 3px solid #059669;">
                     <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight:800; display:block; margin-bottom: 2px;">Grootste Overwinning</span>
                     ${biggestWin ? `
-                        <div style="font-size: 16px; font-weight: 800; color: #111827;">${biggestWin.eigenScore} - ${biggestWin.tegenScore} vs ${biggestWin.tegenstander}</div>
+                        <div style="font-size: 16px; font-weight: 800; color: #1e293b;">${biggestWin.eigenScore} - ${biggestWin.tegenScore} vs ${biggestWin.tegenstander}</div>
                         <span style="font-size: 10px; color: #94a3b8;">${biggestWin.datumMooi}</span>
                     ` : '<span style="font-size: 12px; color: #94a3b8;">Geen overwinning geregistreerd.</span>'}
                 </div>
@@ -304,15 +297,15 @@ function renderStats() {
                 <div style="${statBoxStyle}; border-left: 3px solid #dc2626;">
                     <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight:800; display:block; margin-bottom: 2px;">Zwaarste Verlies</span>
                     ${biggestLoss ? `
-                        <div style="font-size: 16px; font-weight: 800; color: #111827;">${biggestLoss.eigenScore} - ${biggestLoss.tegenScore} vs ${biggestLoss.tegenstander}</div>
+                        <div style="font-size: 16px; font-weight: 800; color: #1e293b;">${biggestLoss.eigenScore} - ${biggestLoss.tegenScore} vs ${biggestLoss.tegenstander}</div>
                         <span style="font-size: 10px; color: #94a3b8;">${biggestLoss.datumMooi}</span>
                     ` : '<span style="font-size: 12px; color: #94a3b8;">Geen verlies geregistreerd.</span>'}
                 </div>
 
-                <div style="${statBoxStyle}; border-left: 3px solid #111827;">
+                <div style="${statBoxStyle}; border-left: 3px solid #1e293b;">
                     <span style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight:800; display:block; margin-bottom: 2px;">Persoonlijk Record (Meeste Goals)</span>
                     ${maxGoalsGame ? `
-                        <div style="font-size: 16px; font-weight: 800; color: #111827;">${maxGoalsGame.goals} Goals gescoord</div>
+                        <div style="font-size: 16px; font-weight: 800; color: #1e293b;">${maxGoalsGame.goals} Goals gescoord</div>
                         <span style="font-size: 10px; color: #94a3b8;">Tegen ${maxGoalsGame.tegenstander} (${maxGoalsGame.datumMooi})</span>
                     ` : '<span style="font-size: 12px; color: #94a3b8;">Nog niet gescoord.</span>'}
                 </div>
@@ -320,7 +313,6 @@ function renderStats() {
         </div>
     `;
 
-    // CARD THUIS VS UIT
     const thuisWinPerc = thuisGames > 0 ? Math.round((thuisWins / thuisGames) * 100) : 0;
     const uitWinPerc = uitGames > 0 ? Math.round((uitWins / uitGames) * 100) : 0;
     
@@ -330,28 +322,27 @@ function renderStats() {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div style="${statBoxStyle}">
                     <span style="font-size: 10px; font-weight: 800; color: #3730a3; display: block; margin-bottom: 4px; text-transform: uppercase;">Thuis</span>
-                    <span style="font-size: 24px; font-weight: 800; color: #111827; display: block;">${thuisWinPerc}% <span style="font-size: 12px; color: #64748b;">Winst</span></span>
+                    <span style="font-size: 24px; font-weight: 800; color: #1e293b; display: block;">${thuisWinPerc}% <span style="font-size: 12px; color: #64748b;">Winst</span></span>
                     <span style="font-size: 10px; font-weight: 600; color: #94a3b8;">${thuisWins}W - ${thuisDraws}G - ${thuisLosses}V<br>(${thuisGames} matchen)</span>
                 </div>
                 <div style="${statBoxStyle}">
                     <span style="font-size: 10px; font-weight: 800; color: #9a3412; display: block; margin-bottom: 4px; text-transform: uppercase;">Uit / Verplaatsing</span>
-                    <span style="font-size: 24px; font-weight: 800; color: #111827; display: block;">${uitWinPerc}% <span style="font-size: 12px; color: #64748b;">Winst</span></span>
+                    <span style="font-size: 24px; font-weight: 800; color: #1e293b; display: block;">${uitWinPerc}% <span style="font-size: 12px; color: #64748b;">Winst</span></span>
                     <span style="font-size: 10px; font-weight: 600; color: #94a3b8;">${uitWins}W - ${uitDraws}G - ${uitLosses}V<br>(${uitGames} matchen)</span>
                 </div>
             </div>
         </div>
     `;
 
-    // CARD AARTSRIVAAL
     if (mostPlayedOpp) {
         html += `
             <div style="${cardStyle}">
                 <h3 style="${titleStyle}">Aartsrivaal</h3>
                 <div style="${statBoxStyle}">
                     <span style="font-size: 10px; font-weight: 800; color: #64748b; display: block; margin-bottom: 4px; text-transform: uppercase;">Vaakst Gespeeld Tegen</span>
-                    <span style="font-size: 18px; font-weight: 800; color: #111827; display: block;">${mostPlayedOpp.name}</span>
+                    <span style="font-size: 18px; font-weight: 800; color: #1e293b; display: block;">${mostPlayedOpp.name}</span>
                     <span style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 4px; display: block;">${mostPlayedOpp.count} Keer ontmoet</span>
-                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #111827;">
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 12px; font-weight: 700; color: #1e293b;">
                         Balans: <span style="color:#059669;">${mostPlayedOpp.wins} W</span> - <span style="color:#64748b;">${mostPlayedOpp.draws} G</span> - <span style="color:#dc2626;">${mostPlayedOpp.losses} V</span>
                     </div>
                 </div>
@@ -366,6 +357,13 @@ function renderStats() {
 window.wisselSpeler = function(evt, speler) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     evt.currentTarget.classList.add('active');
+    
+    if (speler === 'Lou') {
+        document.documentElement.style.setProperty('--brand-color', '#F34213'); 
+    } else {
+        document.documentElement.style.setProperty('--brand-color', '#ef476f'); 
+    }
+    
     laadStats(speler);
 };
 
