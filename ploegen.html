@@ -11,18 +11,16 @@
     <meta name="theme-color" content="#f8fafc">
     <link rel="stylesheet" href="css/style.css?v=2">
     <style>
-        .leaderboard-item { display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 14px 16px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.1s ease; }
+        .leaderboard-item { display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 14px 12px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.1s ease; }
         .leaderboard-item:active { transform: scale(0.98); background: #f8fafc; }
         
-        .team-main-info { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
-        .rank-number { font-size: 14px; font-weight: 800; color: #94a3b8; width: 20px; text-align: center; }
-        .team-logo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #f1f5f9; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-        .team-name-container { display: flex; flex-direction: column; overflow: hidden; }
-        .team-name { font-size: 15px; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .verified-badge { font-size: 9px; font-weight: 800; color: #0284c7; display: inline-flex; align-items: center; gap: 3px; background: #e0f2fe; padding: 2px 6px; border-radius: 4px; margin-top: 2px; width: fit-content; border: 1px solid #bae6fd; }
+        .team-main-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding-right: 10px; }
+        .rank-number { font-size: 13px; font-weight: 800; color: #94a3b8; width: 18px; text-align: center; }
+        .team-logo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #f1f5f9; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+        .team-name { font-size: 14px; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .team-stats-badges { display: flex; gap: 6px; flex-shrink: 0; }
-        .stat-badge { display: flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
+        .team-stats-badges { display: flex; gap: 4px; flex-shrink: 0; }
+        .stat-badge { display: flex; align-items: center; justify-content: center; padding: 4px 6px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; min-width: 28px; }
         .badge-played { background: #f1f5f9; color: #4b5563; border: 1px solid #e2e8f0; }
         .badge-wins { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
         .badge-losses { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
@@ -78,7 +76,6 @@
         <p class="empty-state">Klassement berekenen... ⏳</p>
     </main>
 
-    <!-- Zwevende toevoeg knop voor ploegen -->
     <button onclick="openAddTeamModal()" class="fab-btn">🛡️ + Ploeg</button>
 
     <!-- MODAL: NIEUWE PLOEG TOEVOEGEN -->
@@ -162,7 +159,7 @@
         let formelePloegenDB = [];
         let htmlLijstItems = []; 
         let huidigeGeselecteerdePloeg = null; 
-        let isHuidigePloegFormeel = false; // Checkt of we de DB-wis knop mogen tonen
+        let isHuidigePloegFormeel = false; 
 
         function toggleFilter() { document.getElementById('filter-panel').classList.toggle('open'); }
         
@@ -241,21 +238,16 @@
 
             const klassementMap = new Map();
 
-            // 1. VOEG ALLE BEKENDE PLOEGEN TOE (Formeel én uit alle matchen)
-            // Zo verliest de lijst nooit een ploeg als je een filter aanzet.
-            
-            // 1A. Eerst de formele (opgeslagen) ploegen
             formelePloegenDB.forEach(formelePloeg => {
                 const naamLower = formelePloeg.naam.trim().toLowerCase();
                 klassementMap.set(naamLower, {
                     naam: formelePloeg.naam.trim(),
                     logo: formelePloeg.logo_url,
-                    isFormeel: true, // Belangrijk voor het vinkje!
+                    isFormeel: true, 
                     gespeeld: 0, winst: 0, verlies: 0, gelijk: 0, goals: 0
                 });
             });
 
-            // 1B. Dan ALLE ploegen uit ALLE wedstrijden (van beide spelers)
             ruweWedstrijden.forEach(m => {
                 if (m.mini_scores && m.mini_scores.length > 0) {
                     m.mini_scores.forEach(s => {
@@ -276,12 +268,10 @@
                 }
             });
 
-            // 2. NU FILTEREN WE DE WEDSTRIJDEN OM DE STATISTIEKEN TE BEREKENEN
             let relevanteMatchen = ruweWedstrijden.filter(m => m.speler === actieveSpeler);
             if (filterCategorie) relevanteMatchen = relevanteMatchen.filter(m => m.categorie === filterCategorie);
             if (filterType) relevanteMatchen = relevanteMatchen.filter(m => m.type_wedstrijd === filterType);
 
-            // 3. BEREKEN DE STATS VOOR DE GEFILTERDE MATCHEN
             relevanteMatchen.forEach(m => {
                 if (m.mini_scores && m.mini_scores.length > 0) {
                     m.mini_scores.forEach(s => {
@@ -289,7 +279,7 @@
                         const naamLower = ploegNaam.toLowerCase();
 
                         const stat = klassementMap.get(naamLower);
-                        if (stat) { // Beveiliging
+                        if (stat) { 
                             stat.gespeeld++;
                             stat.goals += (s.goals || 0);
 
@@ -306,14 +296,12 @@
                 }
             });
 
-            // 4. SORTEER (Eerst op gespeeld, dan alfabetisch)
             let klassementArray = Array.from(klassementMap.values());
             klassementArray.sort((a, b) => {
                 if (b.gespeeld !== a.gespeeld) return b.gespeeld - a.gespeeld; 
                 return a.naam.localeCompare(b.naam); 
             });
 
-            // 5. GENEREER HTML
             container.innerHTML = '';
             document.getElementById('searchInput').value = ''; 
 
@@ -332,9 +320,9 @@
                     ? `<img src="${ploeg.logo}" class="team-logo">` 
                     : `<div class="team-logo">🛡️</div>`;
 
-                // Subtiele badge als je hem formeel had toegevoegd
+                // Subtiel blauw vinkje ipv groot label
                 const verifiedBadge = ploeg.isFormeel 
-                    ? `<span class="verified-badge"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>Opgeslagen</span>` 
+                    ? `<svg style="width: 14px; height: 14px; color: #0ea5e9; margin-left: 4px;" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>` 
                     : '';
 
                 const item = document.createElement('div');
@@ -342,20 +330,21 @@
                 item.dataset.naam = ploeg.naam.toLowerCase(); 
                 item.setAttribute('onclick', `openTeamModal('${safeNaam}', '${safeLogo}', ${isFormeelStr})`);
 
+                // Toon ALTIJD de 4 bolletjes, ook als ze op 0 staan
                 item.innerHTML = `
                     <div class="team-main-info">
                         <span class="rank-number">${rank}</span>
                         ${logoHtml}
-                        <div class="team-name-container">
+                        <div style="display: flex; align-items: center; overflow: hidden;">
                             <span class="team-name">${ploeg.naam}</span>
                             ${verifiedBadge}
                         </div>
                     </div>
                     <div class="team-stats-badges">
                         <span class="stat-badge badge-played">${ploeg.gespeeld} G</span>
-                        ${ploeg.winst > 0 ? `<span class="stat-badge badge-wins">${ploeg.winst} W</span>` : ''}
-                        ${ploeg.verlies > 0 ? `<span class="stat-badge badge-losses">${ploeg.verlies} V</span>` : ''}
-                        ${ploeg.goals > 0 ? `<span class="stat-badge badge-goals">${ploeg.goals} ⚽</span>` : ''}
+                        <span class="stat-badge badge-wins">${ploeg.winst} W</span>
+                        <span class="stat-badge badge-losses">${ploeg.verlies} V</span>
+                        <span class="stat-badge badge-goals">${ploeg.goals} ⚽</span>
                     </div>
                 `;
                 
@@ -407,8 +396,6 @@
             verwerkEnTekenKlassement();
         };
 
-        // --- PLOEG TOEVOEGEN LOGICA ---
-        
         window.openAddTeamModal = function() {
             const pin = prompt("Voer pincode in:");
             if (pin === "0204") {
@@ -469,8 +456,6 @@
             }
         };
 
-        // --- H2H MODAL LOGICA ---
-
         window.openTeamModal = function(teamNaam, teamLogo, isFormeel) {
             huidigeGeselecteerdePloeg = teamNaam; 
             isHuidigePloegFormeel = isFormeel;
@@ -483,7 +468,6 @@
                 logoContainer.innerHTML = `<div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid #e5e7eb;">🛡️</div>`;
             }
 
-            // Toon de verwijder-knop ENKEL als de ploeg effectief in je DB zit
             const deleteBtn = document.getElementById('modal-delete-btn');
             if(isFormeel) {
                 deleteBtn.style.display = 'flex';
