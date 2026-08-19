@@ -4,17 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Voetbal App</title>
-    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- PWA Installatie Fix: Koppel manifest en Apple Touch Icon -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#f1f5f9">
+    
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header>
         <h1>Overzicht</h1>
-       <nav>
-            <a href="index.html">Overzicht</a>
+        <!-- Scrollbare nav bar met de nieuwe menu items -->
+        <nav style="display: flex; gap: 15px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px;">
+            <a href="index.html" class="active">Overzicht</a>
             <a href="stats.html">Stats</a>
             <a href="ploegen.html">Ploegen</a>
             <a href="galerij.html">Galerij</a>
+            <a href="medisch.html">Medisch</a>
         </nav>
     </header>
 
@@ -48,11 +57,21 @@
 
     <a href="add-match.html" class="fab-btn">+ Match</a>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
 
     <script>
-        // UITGEBREID KLEUREN BREIN
+        // PWA Service Worker Registratie (Verplicht voor installatie!)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => {
+                    console.log('SW registratie overgeslagen/mislukt (geen sw.js bestand)', err);
+                });
+            });
+        }
+
+        // UITGEBREID KLEUREN BREIN (Inclusief Thuis/Uit badges en tot U17/Eerste ploeg)
         const badgeColors = {
             'U6': { bg: '#fef08a', text: '#713f12' }, 
             'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
@@ -77,7 +96,7 @@
             'Standaard': { bg: '#f3f4f6', text: '#4b5563' }
         };
 
-        // ONBREEKBARE INLINE STYLES VOOR TAGS (zodat het nooit meer stuk gaat zoals op de screenshot)
+        // ONBREEKBARE INLINE STYLES VOOR TAGS
         function getBadgeHtml(waarde) {
             if (!waarde) return '';
             const style = badgeColors[waarde] || badgeColors['Standaard'];
@@ -184,12 +203,13 @@
 
             tonenMatchen.forEach(match => {
                 const datumMooi = new Date(match.datum).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short' }).toUpperCase();
+                const isToernooi = match.type_wedstrijd === 'Toernooi';
                 
-                // Hier zorgen we dat de tags perfect uitlijnen in een mooie flex-box
+                // Tags toevoegen
                 let badges = `
                     ${getBadgeHtml(match.categorie)}
                     ${getBadgeHtml(match.type_wedstrijd)}
-                    ${getBadgeHtml(match.locatie)}
+                    ${!isToernooi ? getBadgeHtml(match.locatie) : ''}
                 `;
 
                 let subMatchesHtml = '';
@@ -219,8 +239,6 @@
                     });
                 }
 
-                const isToernooi = match.type_wedstrijd === 'Toernooi';
-
                 html += `
                     <a href="match-detail.html?id=${match.id}" class="match-card-v2">
                         <div class="card-meta-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -246,6 +264,7 @@
             evt.currentTarget.classList.add('active');
             laadWedstrijden(speler);
         };
+        
         document.addEventListener('DOMContentLoaded', () => laadWedstrijden('Lou'));
     </script>
 </body>
