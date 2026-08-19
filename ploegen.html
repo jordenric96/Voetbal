@@ -3,13 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ploegen</title>
+    <title>Ploegen Klassement</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.svg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#f8fafc">
     <link rel="stylesheet" href="css/style.css?v=2">
+    <style>
+        /* Specifieke stijlen voor het Ploegen Klassement */
+        .leaderboard-item { display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 14px 16px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.1s ease; }
+        .leaderboard-item:active { transform: scale(0.98); background: #f8fafc; }
+        
+        .team-main-info { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+        .rank-number { font-size: 14px; font-weight: 800; color: #94a3b8; width: 20px; text-align: center; }
+        .team-logo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #f1f5f9; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+        .team-name { font-size: 15px; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .team-stats-badges { display: flex; gap: 6px; flex-shrink: 0; }
+        .stat-badge { display: flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
+        .badge-played { background: #f1f5f9; color: #4b5563; border: 1px solid #e2e8f0; }
+        .badge-wins { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
+        .badge-losses { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+        .badge-goals { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
+    </style>
 </head>
 <body>
     <header>
@@ -23,45 +40,65 @@
         </nav>
     </header>
 
-    <div style="padding: 0 20px 20px 20px;">
+    <div class="tabs">
+        <button class="tab-btn active" onclick="wisselSpeler(event, 'Lou')">Lou</button>
+        <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
+    </div>
+
+    <!-- FILTER BALK (Identiek aan stats & overzicht) -->
+    <div class="filter-bar">
+        <span style="font-size: 12px; font-weight: 700; color: #9ca3af;">Filter klassement</span>
+        <div class="filter-toggle" onclick="toggleFilter()">
+            <span id="filter-indicator">Alle</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        
+        <div id="filter-panel" class="filter-panel">
+            <div class="filter-section-title">Leeftijd / Categorie</div>
+            <div id="filter-chips-leeftijd" class="filter-chips-container"></div>
+            
+            <div class="filter-section-title">Type Wedstrijd</div>
+            <div id="filter-chips-type" class="filter-chips-container"></div>
+            
+            <button onclick="resetFilters()" style="width: 100%; padding: 12px; border-radius: 8px; background: #f3f4f6; border: none; color: #4b5563; font-weight: 700; cursor: pointer;">Filters Wissen</button>
+        </div>
+    </div>
+
+    <div style="padding: 0 20px 15px 20px;">
         <div style="position: relative;">
             <svg style="position: absolute; left: 16px; top: 16px; color: #94a3b8; width: 18px; height: 18px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input type="text" id="searchInput" onkeyup="filterPloegen()" placeholder="Zoek een ploeg..." autocomplete="off" style="width: 100%; padding: 14px 14px 14px 44px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; font-weight: 500; color: var(--space-indigo); box-shadow: 0 2px 5px rgba(0,0,0,0.02); outline: none; box-sizing: border-box;">
+            <input type="text" id="searchInput" onkeyup="zoekPloeg()" placeholder="Zoek in het klassement..." autocomplete="off" style="width: 100%; padding: 14px 14px 14px 44px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; font-weight: 500; color: var(--space-indigo); box-shadow: 0 2px 5px rgba(0,0,0,0.02); outline: none; box-sizing: border-box;">
         </div>
     </div>
 
-    <main id="ploegen-lijst" style="padding: 0 20px 100px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px;">
-        <p class="empty-state">Ploegen laden...</p>
+    <main id="ploegen-lijst" style="padding: 0 20px 100px 20px;">
+        <p class="empty-state">Klassement berekenen... ⏳</p>
     </main>
 
-    <!-- HEAD-TO-HEAD MODAL (Slide-up menu) -->
+    <!-- HEAD-TO-HEAD MODAL -->
     <div id="team-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.5); backdrop-filter: blur(5px); z-index: 9000; align-items: flex-end; justify-content: center;">
         <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease; max-height: 90vh; display: flex; flex-direction: column;" id="team-modal-content">
             
-            <!-- Sticky Header van de Modal -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div id="modal-team-logo-container"></div>
                     <h2 id="modal-team-name" style="margin: 0; font-size: 20px; font-weight: 800; color: #1e293b;">Team Name</h2>
                 </div>
-                <button onclick="closeTeamModal()" style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="verwijderPloegUitDatabase()" style="background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.2); width: 32px; height: 32px; border-radius: 50%; color: #dc2626; cursor: pointer; display: flex; align-items: center; justify-content: center;">🗑️</button>
+                    <button onclick="closeTeamModal()" style="background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+                </div>
             </div>
             
-            <!-- Scrollbare Inhoud -->
             <div style="overflow-y: auto; flex-grow: 1; padding-bottom: 20px; -ms-overflow-style: none; scrollbar-width: none;">
                 
-                <!-- Quick Stats -->
-                <div id="modal-quick-stats" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <!-- Wordt ingevuld door JS -->
-                </div>
+                <div id="modal-quick-stats" style="display: flex; gap: 10px; margin-bottom: 20px;"></div>
 
-                <h3 style="font-size: 13px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 15px 0;">Onderlinge Matchen</h3>
+                <h3 style="font-size: 13px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 15px 0;">Alle Ontmoetingen (Gefilterd)</h3>
                 
-                <div id="team-history-list">
-                    <!-- Lijst met matchen komt hier -->
-                </div>
+                <div id="team-history-list"></div>
 
             </div>
         </div>
@@ -71,106 +108,227 @@
     <script src="js/database.js"></script>
 
     <script>
-        let allePloegenHTML = [];
-        let alleWedstrijdenGlobal = []; // Bewaar alle data lokaal
+        // Kleuren brein voor de filters
+        const badgeColors = {
+            'U6': { bg: '#fef08a', text: '#713f12' }, 
+            'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
+            'U8': { bg: '#fecaca', text: '#7f1d1d' }, 
+            'U9': { bg: '#fbcfe8', text: '#831843' }, 
+            'U10': { bg: '#e9d5ff', text: '#581c87' }, 
+            'U11': { bg: '#c7d2fe', text: '#312e81' }, 
+            'U12': { bg: '#bae6fd', text: '#0c4a6e' }, 
+            'U13': { bg: '#99f6e4', text: '#0f766e' }, 
+            'U14': { bg: '#bbf7d0', text: '#14532d' }, 
+            'U15': { bg: '#d9f99d', text: '#3f6212' }, 
+            'U16': { bg: '#fde68a', text: '#92400e' }, 
+            'U17': { bg: '#fcd34d', text: '#92400e' }, 
+            'Beloften': { bg: '#e2e8f0', text: '#1e293b' },
+            'Eerste Ploeg': { bg: '#1e293b', text: '#f9fafb' },
+            'Veteranen': { bg: '#9ca3af', text: '#1e293b' },
+            'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 
+            'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 
+            'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 
+            'Standaard': { bg: '#f3f4f6', text: '#4b5563' }
+        };
 
-        async function laadPloegen() {
+        let actieveSpeler = 'Lou';
+        let filterCategorie = null;
+        let filterType = null;
+        
+        let ruweWedstrijden = [];
+        let formelePloegenDB = [];
+        let htmlLijstItems = []; 
+        let huidigeGeselecteerdePloeg = null; // Voor verwijderen
+
+        function toggleFilter() { document.getElementById('filter-panel').classList.toggle('open'); }
+        
+        function resetFilters() { 
+            filterCategorie = null; 
+            filterType = null; 
+            document.getElementById('filter-panel').classList.remove('open'); 
+            verwerkEnTekenKlassement(); 
+            buildFilterUI(); 
+        }
+        
+        function setFilter(soort, waarde) {
+            if (soort === 'cat') filterCategorie = (filterCategorie === waarde) ? null : waarde;
+            if (soort === 'type') filterType = (filterType === waarde) ? null : waarde;
+            verwerkEnTekenKlassement(); 
+            buildFilterUI();
+        }
+
+        function buildFilterUI() {
+            const catContainer = document.getElementById('filter-chips-leeftijd');
+            const typeContainer = document.getElementById('filter-chips-type');
+            catContainer.innerHTML = ''; typeContainer.innerHTML = '';
+
+            const gefilterdeMatchen = ruweWedstrijden.filter(m => m.speler === actieveSpeler);
+
+            const actieveCategorieen = [...new Set(gefilterdeMatchen.map(m => m.categorie).filter(Boolean))].sort((a, b) => {
+                const numA = parseInt(a.replace('U', '')) || 999;
+                const numB = parseInt(b.replace('U', '')) || 999;
+                return numA - numB;
+            });
+            const actieveTypes = [...new Set(gefilterdeMatchen.map(m => m.type_wedstrijd).filter(Boolean))].sort();
+
+            actieveCategorieen.forEach(cat => {
+                const style = badgeColors[cat] || badgeColors['Standaard'];
+                const isActive = filterCategorie === cat ? 'active' : '';
+                catContainer.innerHTML += `<div class="filter-chip ${isActive}" onclick="setFilter('cat', '${cat}')" style="background: ${style.bg}; color: ${style.text}; border-color: ${isActive ? style.text : 'transparent'};">${cat}</div>`;
+            });
+
+            actieveTypes.forEach(type => {
+                const style = badgeColors[type] || badgeColors['Standaard'];
+                const isActive = filterType === type ? 'active' : '';
+                typeContainer.innerHTML += `<div class="filter-chip ${isActive}" onclick="setFilter('type', '${type}')" style="background: ${style.bg}; color: ${style.text}; border-color: ${isActive ? style.text : 'transparent'};">${type}</div>`;
+            });
+
+            let indText = "Alle";
+            if(filterCategorie && filterType) indText = `${filterCategorie} & ${filterType}`;
+            else if(filterCategorie) indText = filterCategorie;
+            else if(filterType) indText = filterType;
+            document.getElementById('filter-indicator').innerText = indText;
+        }
+
+        async function laadDatabase() {
             const container = document.getElementById('ploegen-lijst');
+            container.innerHTML = '<p class="empty-state">Data ophalen... ⏳</p>';
+            
             try {
-                // Haal formele logo's op én ALLE wedstrijden tegelijk
                 const [formeleRes, matchenRes] = await Promise.all([
-                    supabaseClient.from('ploegen').select('naam, logo_url'),
+                    supabaseClient.from('ploegen').select('id, naam, logo_url'),
                     supabaseClient.from('wedstrijden').select('*').order('datum', { ascending: false })
                 ]);
 
                 if (formeleRes.error) throw formeleRes.error;
                 if (matchenRes.error) throw matchenRes.error;
 
-                const formelePloegen = formeleRes.data;
-                alleWedstrijdenGlobal = matchenRes.data;
+                formelePloegenDB = formeleRes.data || [];
+                ruweWedstrijden = matchenRes.data || [];
 
-                const uniekePloegen = new Map();
-
-                if (formelePloegen) {
-                    formelePloegen.forEach(p => {
-                        uniekePloegen.set(p.naam.trim().toLowerCase(), { naam: p.naam.trim(), logo: p.logo_url });
-                    });
-                }
-
-                if (alleWedstrijdenGlobal) {
-                    alleWedstrijdenGlobal.forEach(m => {
-                        if (m.tegenstander) {
-                            const naam = m.tegenstander.trim().toLowerCase();
-                            if (!uniekePloegen.has(naam)) {
-                                uniekePloegen.set(naam, { naam: m.tegenstander.trim(), logo: m.logo_tegenstander });
-                            } else if (!uniekePloegen.get(naam).logo && m.logo_tegenstander) {
-                                uniekePloegen.get(naam).logo = m.logo_tegenstander;
-                            }
-                        }
-                        
-                        if (m.mini_scores) {
-                            m.mini_scores.forEach(s => {
-                                if (s.tegenstander) {
-                                    const sNaam = s.tegenstander.trim().toLowerCase();
-                                    if (!uniekePloegen.has(sNaam)) {
-                                        uniekePloegen.set(sNaam, { naam: s.tegenstander.trim(), logo: s.logo_tegenstander });
-                                    } else if (!uniekePloegen.get(sNaam).logo && s.logo_tegenstander) {
-                                        uniekePloegen.get(sNaam).logo = s.logo_tegenstander;
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-
-                const ploegenLijstData = Array.from(uniekePloegen.values());
-                ploegenLijstData.sort((a, b) => a.naam.localeCompare(b.naam));
-
-                container.innerHTML = '';
-                allePloegenHTML = []; 
-
-                if (ploegenLijstData.length === 0) {
-                    container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Nog geen ploegen bekend.</p>';
-                    return;
-                }
-
-                ploegenLijstData.forEach(p => {
-                    const safeNaam = p.naam.replace(/'/g, "\\'");
-                    const safeLogo = p.logo ? p.logo.replace(/'/g, "\\'") : '';
-                    
-                    const logoHtml = p.logo 
-                        ? `<img src="${p.logo}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%; border: 1px solid #e5e7eb; margin-bottom: 8px;">` 
-                        : `<div style="width: 50px; height: 50px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid #e5e7eb; margin-bottom: 8px;">🛡️</div>`;
-
-                    const item = document.createElement('div');
-                    item.className = 'ploeg-item';
-                    item.dataset.naam = p.naam.toLowerCase(); 
-                    item.style = "background: #fff; padding: 15px 10px; border-radius: 16px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border: 1px solid #e5e7eb; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;";
-                    
-                    // ONCLICK EVENT TOEGEVOEGD: Opent de geschiedenis Modal
-                    item.setAttribute('onclick', `openTeamModal('${safeNaam}', '${safeLogo}')`);
-
-                    item.innerHTML = `
-                        ${logoHtml}
-                        <span style="font-size: 12px; font-weight: 700; color: #1e293b; line-height: 1.2;">${p.naam}</span>
-                    `;
-                    
-                    container.appendChild(item);
-                    allePloegenHTML.push(item);
-                });
+                buildFilterUI();
+                verwerkEnTekenKlassement();
 
             } catch (err) {
-                container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1;">Fout bij laden.</p>';
+                container.innerHTML = '<p class="empty-state">Fout bij laden van data.</p>';
             }
         }
 
-        function filterPloegen() {
+        function verwerkEnTekenKlassement() {
+            const container = document.getElementById('ploegen-lijst');
+            htmlLijstItems = []; // reset voor zoekfunctie
+
+            // 1. Filter de matchen eerst op Speler, Categorie en Type
+            let relevanteMatchen = ruweWedstrijden.filter(m => m.speler === actieveSpeler);
+            if (filterCategorie) relevanteMatchen = relevanteMatchen.filter(m => m.categorie === filterCategorie);
+            if (filterType) relevanteMatchen = relevanteMatchen.filter(m => m.type_wedstrijd === filterType);
+
+            // 2. Bereken de stats per ploeg op basis van de gefilterde matchen
+            const klassementMap = new Map();
+
+            relevanteMatchen.forEach(m => {
+                if (m.mini_scores && m.mini_scores.length > 0) {
+                    m.mini_scores.forEach(s => {
+                        const ploegNaam = (s.tegenstander || m.tegenstander || "Onbekend").trim();
+                        const naamLower = ploegNaam.toLowerCase();
+
+                        if (!klassementMap.has(naamLower)) {
+                            klassementMap.set(naamLower, {
+                                naam: ploegNaam,
+                                logo: s.logo_tegenstander || m.logo_tegenstander || null,
+                                gespeeld: 0,
+                                winst: 0,
+                                verlies: 0,
+                                gelijk: 0,
+                                goals: 0
+                            });
+                        }
+
+                        const stat = klassementMap.get(naamLower);
+                        stat.gespeeld++;
+                        stat.goals += (s.goals || 0);
+
+                        let isWin = false, isLoss = false, isDraw = false;
+                        if (s.thuis > s.uit) { isWin = m.locatie === 'Thuis'; isLoss = m.locatie === 'Uit'; }
+                        else if (s.thuis < s.uit) { isWin = m.locatie === 'Uit'; isLoss = m.locatie === 'Thuis'; }
+                        else { isDraw = true; }
+
+                        if (isWin) stat.winst++;
+                        if (isLoss) stat.verlies++;
+                        if (isDraw) stat.gelijk++;
+
+                        // Probeer logo altijd up to date te houden
+                        if (!stat.logo && (s.logo_tegenstander || m.logo_tegenstander)) {
+                            stat.logo = s.logo_tegenstander || m.logo_tegenstander;
+                        }
+                    });
+                }
+            });
+
+            // 3. Update logo's vanuit de formele ploegen tabel (overschrijft match logo's indien beschikbaar)
+            formelePloegenDB.forEach(formelePloeg => {
+                const naamLower = formelePloeg.naam.trim().toLowerCase();
+                if (klassementMap.has(naamLower) && formelePloeg.logo_url) {
+                    klassementMap.get(naamLower).logo = formelePloeg.logo_url;
+                }
+            });
+
+            // 4. Converteer naar Array en Sorteer: Meest gespeeld bovenaan, bij gelijk: alfabetisch
+            let klassementArray = Array.from(klassementMap.values());
+            klassementArray.sort((a, b) => {
+                if (b.gespeeld !== a.gespeeld) return b.gespeeld - a.gespeeld; // Meeste matchen eerst
+                return a.naam.localeCompare(b.naam); // Daarna alfabetisch
+            });
+
+            // 5. Genereer HTML
+            container.innerHTML = '';
+            document.getElementById('searchInput').value = ''; // Reset zoekbalk bij filter wissel
+
+            if (klassementArray.length === 0) {
+                container.innerHTML = '<p class="empty-state">Geen ploegen gevonden voor deze filter.</p>';
+                return;
+            }
+
+            klassementArray.forEach((ploeg, index) => {
+                const safeNaam = ploeg.naam.replace(/'/g, "\\'");
+                const safeLogo = ploeg.logo ? ploeg.logo.replace(/'/g, "\\'") : '';
+                const rank = index + 1;
+
+                const logoHtml = ploeg.logo 
+                    ? `<img src="${ploeg.logo}" class="team-logo">` 
+                    : `<div class="team-logo">🛡️</div>`;
+
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.dataset.naam = ploeg.naam.toLowerCase(); 
+                item.setAttribute('onclick', `openTeamModal('${safeNaam}', '${safeLogo}')`);
+
+                item.innerHTML = `
+                    <div class="team-main-info">
+                        <span class="rank-number">${rank}</span>
+                        ${logoHtml}
+                        <span class="team-name">${ploeg.naam}</span>
+                    </div>
+                    <div class="team-stats-badges">
+                        <span class="stat-badge badge-played">${ploeg.gespeeld} G</span>
+                        ${ploeg.winst > 0 ? `<span class="stat-badge badge-wins">${ploeg.winst} W</span>` : ''}
+                        ${ploeg.verlies > 0 ? `<span class="stat-badge badge-losses">${ploeg.verlies} V</span>` : ''}
+                        ${ploeg.goals > 0 ? `<span class="stat-badge badge-goals">${ploeg.goals} ⚽</span>` : ''}
+                    </div>
+                `;
+                
+                container.appendChild(item);
+                htmlLijstItems.push(item);
+            });
+        }
+
+        function zoekPloeg() {
             const input = document.getElementById('searchInput');
             const filter = input.value.toLowerCase().trim();
             const container = document.getElementById('ploegen-lijst');
             let zichtbaar = 0;
 
-            allePloegenHTML.forEach(item => {
+            htmlLijstItems.forEach(item => {
                 const ploegNaam = item.dataset.naam;
                 if (ploegNaam.includes(filter)) {
                     item.style.display = "flex";
@@ -180,27 +338,37 @@
                 }
             });
 
-            const bestaandeMelding = document.getElementById('no-results-msg');
+            let bestaandeMelding = document.getElementById('no-results-msg');
             if (zichtbaar === 0) {
                 if (!bestaandeMelding) {
-                    const msg = document.createElement('p');
-                    msg.id = 'no-results-msg';
-                    msg.className = 'empty-state';
-                    msg.style.gridColumn = '1 / -1';
-                    msg.innerText = `Geen ploeg gevonden met "${input.value}"`;
-                    container.appendChild(msg);
-                } else {
-                    bestaandeMelding.innerText = `Geen ploeg gevonden met "${input.value}"`;
-                    bestaandeMelding.style.display = 'block';
+                    bestaandeMelding = document.createElement('p');
+                    bestaandeMelding.id = 'no-results-msg';
+                    bestaandeMelding.className = 'empty-state';
+                    container.appendChild(bestaandeMelding);
                 }
+                bestaandeMelding.innerText = `Geen ploeg gevonden met "${input.value}"`;
+                bestaandeMelding.style.display = 'block';
             } else if (bestaandeMelding) {
                 bestaandeMelding.style.display = 'none';
             }
         }
 
+        window.wisselSpeler = function(evt, speler) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            evt.currentTarget.classList.add('active');
+            actieveSpeler = speler;
+            
+            if (speler === 'Lou') document.documentElement.style.setProperty('--brand-color', '#F34213'); 
+            else document.documentElement.style.setProperty('--brand-color', '#ef476f'); 
+            
+            buildFilterUI();
+            verwerkEnTekenKlassement();
+        };
+
         // --- H2H MODAL LOGICA ---
 
         window.openTeamModal = function(teamNaam, teamLogo) {
+            huidigeGeselecteerdePloeg = teamNaam; // Opslaan voor verwijder functie
             document.getElementById('modal-team-name').innerText = teamNaam;
             
             const logoContainer = document.getElementById('modal-team-logo-container');
@@ -210,11 +378,15 @@
                 logoContainer.innerHTML = `<div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid #e5e7eb;">🛡️</div>`;
             }
 
-            // Zoek alle ontmoetingen in de geschiedenis
+            // Zoek alle ontmoetingen in de gefilterde data
             let encounters = [];
             let statsWins = 0, statsDraws = 0, statsLosses = 0, statsGoals = 0;
 
-            alleWedstrijdenGlobal.forEach(m => {
+            let relevanteMatchen = ruweWedstrijden.filter(m => m.speler === actieveSpeler);
+            if (filterCategorie) relevanteMatchen = relevanteMatchen.filter(m => m.categorie === filterCategorie);
+            if (filterType) relevanteMatchen = relevanteMatchen.filter(m => m.type_wedstrijd === filterType);
+
+            relevanteMatchen.forEach(m => {
                 if (m.mini_scores) {
                     m.mini_scores.forEach(s => {
                         let sTegenstander = (s.tegenstander || m.tegenstander || "").trim().toLowerCase();
@@ -224,6 +396,7 @@
                                 speler: m.speler,
                                 categorie: m.categorie,
                                 locatie: m.locatie,
+                                type_wedstrijd: m.type_wedstrijd,
                                 thuis: s.thuis,
                                 uit: s.uit,
                                 goals: s.goals || 0,
@@ -245,7 +418,6 @@
                 }
             });
 
-            // Bouw de Quick Stats HTML
             document.getElementById('modal-quick-stats').innerHTML = `
                 <div style="flex: 1; text-align: center; background: #f8fafc; padding: 12px 5px; border-radius: 12px; border: 1px solid #f1f5f9;">
                     <span style="display: block; font-size: 18px; font-weight: 800; color: #1e293b;">${encounters.length}</span>
@@ -261,14 +433,13 @@
                 </div>
             `;
 
-            // Sorteer op datum (nieuwste bovenaan)
             encounters.sort((a,b) => b.datum - a.datum);
 
             const listContainer = document.getElementById('team-history-list');
             let listHtml = '';
 
             if (encounters.length === 0) {
-                listHtml = '<p class="empty-state">Geen gedetailleerde uitslagen gevonden.</p>';
+                listHtml = '<p class="empty-state">Geen uitslagen gevonden.</p>';
             } else {
                 encounters.forEach(enc => {
                     const datumMooi = enc.datum.toLocaleDateString('nl-BE', {day: 'numeric', month: 'short', year: 'numeric'}).toUpperCase();
@@ -280,16 +451,17 @@
                     let bgStatus = statusClass === 'win' ? '#ecfdf5' : (statusClass === 'loss' ? '#fef2f2' : '#f1f5f9');
                     let colorStatus = statusClass === 'win' ? '#059669' : (statusClass === 'loss' ? '#dc2626' : '#4b5563');
 
-                    let spelerColor = enc.speler === 'Lou' ? '#F34213' : '#ef476f';
-                    let spelerBg = enc.speler === 'Lou' ? '#ffedd5' : '#fce7f3'; 
+                    // Tags HTML genereren
+                    const catStyle = badgeColors[enc.categorie] || badgeColors['Standaard'];
+                    const typeStyle = badgeColors[enc.type_wedstrijd] || badgeColors['Standaard'];
 
                     listHtml += `
                         <a href="match-detail.html?id=${enc.matchId}" style="text-decoration: none; display: block; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: transform 0.1s;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                 <span style="font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 0.5px;">${datumMooi}</span>
-                                <div style="display: flex; gap: 6px;">
-                                    <span style="padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; background: #f1f5f9; color: #4b5563; border: 1px solid #e2e8f0;">${enc.categorie || 'U?'}</span>
-                                    <span style="padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; background: ${spelerBg}; color: ${spelerColor}; border: 1px solid ${spelerColor}33;">${enc.speler}</span>
+                                <div style="display: flex; gap: 4px;">
+                                    <span style="padding: 4px 6px; border-radius: 6px; font-size: 9px; font-weight: 800; background: ${catStyle.bg}; color: ${catStyle.text}; border: 1px solid ${catStyle.bg};">${enc.categorie || 'U?'}</span>
+                                    <span style="padding: 4px 6px; border-radius: 6px; font-size: 9px; font-weight: 800; background: ${typeStyle.bg}; color: ${typeStyle.text}; border: 1px solid ${typeStyle.bg};">${enc.type_wedstrijd || '?'}</span>
                                 </div>
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -307,22 +479,42 @@
 
             listContainer.innerHTML = listHtml;
 
-            // Toon modal met animatie
             const modal = document.getElementById('team-modal');
             modal.style.display = 'flex';
-            setTimeout(() => {
-                document.getElementById('team-modal-content').style.transform = 'translateY(0)';
-            }, 10);
+            setTimeout(() => { document.getElementById('team-modal-content').style.transform = 'translateY(0)'; }, 10);
         };
 
         window.closeTeamModal = function() {
             document.getElementById('team-modal-content').style.transform = 'translateY(100%)';
-            setTimeout(() => {
-                document.getElementById('team-modal').style.display = 'none';
-            }, 300);
+            setTimeout(() => { document.getElementById('team-modal').style.display = 'none'; huidigeGeselecteerdePloeg = null; }, 300);
         };
 
-        document.addEventListener('DOMContentLoaded', laadPloegen);
+        // Verwijder ploeg uit het formele ploegen register (Database)
+        window.verwijderPloegUitDatabase = async function() {
+            if (!huidigeGeselecteerdePloeg) return;
+
+            const pin = prompt("Voer pincode in om de ploeg definitief te wissen uit de database:");
+            if (pin !== "0204") {
+                if (pin !== null) alert("Onjuiste code.");
+                return;
+            }
+
+            if (!confirm(`Weet je zeker dat je "${huidigeGeselecteerdePloeg}" inclusief logo wil wissen uit het ploegenbestand?\n\n(Let op: Bestaande uitslagen verdwijnen niet automatisch, maar het logo wordt gewist).`)) return;
+
+            try {
+                // Verwijder uit de 'ploegen' tabel in Supabase
+                await supabaseClient.from('ploegen').delete().ilike('naam', huidigeGeselecteerdePloeg);
+                closeTeamModal();
+                laadDatabase(); // Herlaad alles
+            } catch (e) {
+                alert("Fout bij het verwijderen van de ploeg.");
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (actieveSpeler === 'Lou') document.documentElement.style.setProperty('--brand-color', '#F34213');
+            laadDatabase();
+        });
     </script>
 </body>
 </html>
