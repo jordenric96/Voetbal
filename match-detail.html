@@ -207,18 +207,19 @@
         }
 
         window.bewerkMatch = function() {
-            const pin = prompt("Pincode (0204):");
+            const pin = prompt("Voer pincode in:");
             if (pin === "0204") window.location.href = `add-match.html?edit=${matchId}`;
+            else if (pin !== null) alert("Onjuiste code.");
         };
 
         window.verwijderMatch = async function() {
-            const pin = prompt("Pincode (0204):");
+            const pin = prompt("Voer pincode in:");
             if (pin === "0204") {
                 if(confirm("Weet je zeker dat je deze wedstrijd wil wissen?")) {
                     await supabaseClient.from('wedstrijden').delete().eq('id', matchId);
                     window.location.href = "index.html";
                 }
-            }
+            } else if (pin !== null) alert("Onjuiste code.");
         };
 
         window.deelViaWhatsApp = function() {
