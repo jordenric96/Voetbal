@@ -11,8 +11,7 @@
     <meta name="theme-color" content="#f8fafc">
     <link rel="stylesheet" href="css/style.css?v=2">
     <style>
-        /* Vernieuwde layout voor de blokken, badges op tweede rij */
-        .leaderboard-item { display: flex; align-items: center; gap: 12px; background: #fff; padding: 14px 16px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.1s ease; }
+        .leaderboard-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; padding: 14px 16px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); border: 1px solid #e5e7eb; cursor: pointer; transition: transform 0.1s ease; }
         .leaderboard-item:active { transform: scale(0.98); background: #f8fafc; }
         
         .rank-number { font-size: 15px; font-weight: 800; color: #94a3b8; width: 22px; text-align: center; flex-shrink: 0; }
@@ -28,6 +27,21 @@
         .badge-wins { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
         .badge-losses { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
         .badge-goals { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
+
+        /* Specifieke CSS voor het custom PIN toetsenbord */
+        .pin-dots-container { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; }
+        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #cbd5e1; transition: all 0.2s ease; }
+        .pin-dot.filled { background: #1e293b; border-color: #1e293b; }
+        .pin-dot.error { border-color: #dc2626; background: #fef2f2; }
+        
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .numpad-btn { background: #f8fafc; border: 1px solid #f1f5f9; font-size: 26px; font-weight: 600; color: #1e293b; border-radius: 50%; width: 70px; height: 70px; margin: 0 auto; cursor: pointer; transition: all 0.1s; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .numpad-btn:active { background: #e2e8f0; transform: scale(0.95); }
+        .numpad-btn.empty { background: transparent; border: none; cursor: default; }
+        .numpad-btn.empty:active { transform: none; }
+        
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-8px); } }
+        .shake { animation: shake 0.4s ease-in-out; }
     </style>
 </head>
 <body>
@@ -81,6 +95,38 @@
 
     <button onclick="openAddTeamModal()" class="fab-btn">🛡️ + Ploeg</button>
 
+    <!-- CUSTOM ON-SCREEN PIN MODAL -->
+    <div id="custom-pin-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.75); backdrop-filter: blur(8px); z-index: 10001; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease;">
+        <div style="background: #fff; width: 90%; max-width: 360px; border-radius: 28px; padding: 30px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.2s ease;" id="custom-pin-content">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #1e293b;">Beveiligde Actie</h3>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #64748b; font-weight: 600;">Voer je pincode in om verder te gaan.</p>
+            
+            <div id="pin-dots" class="pin-dots-container">
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+            </div>
+
+            <div class="numpad-grid">
+                <div class="numpad-btn" onclick="addPinDigit('1')">1</div>
+                <div class="numpad-btn" onclick="addPinDigit('2')">2</div>
+                <div class="numpad-btn" onclick="addPinDigit('3')">3</div>
+                <div class="numpad-btn" onclick="addPinDigit('4')">4</div>
+                <div class="numpad-btn" onclick="addPinDigit('5')">5</div>
+                <div class="numpad-btn" onclick="addPinDigit('6')">6</div>
+                <div class="numpad-btn" onclick="addPinDigit('7')">7</div>
+                <div class="numpad-btn" onclick="addPinDigit('8')">8</div>
+                <div class="numpad-btn" onclick="addPinDigit('9')">9</div>
+                <div class="numpad-btn empty"></div>
+                <div class="numpad-btn" onclick="addPinDigit('0')">0</div>
+                <div class="numpad-btn" style="font-size: 20px; background: #f1f5f9;" onclick="removePinDigit()">⌫</div>
+            </div>
+
+            <button onclick="closePinModal()" style="background: transparent; color: #94a3b8; border: none; font-size: 14px; font-weight: 700; padding: 10px; margin-top: 10px; cursor: pointer;">Annuleren</button>
+        </div>
+    </div>
+
     <!-- MODAL: NIEUWE PLOEG TOEVOEGEN -->
     <div id="add-team-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.5); backdrop-filter: blur(5px); z-index: 9000; align-items: flex-end; justify-content: center;">
         <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease;" id="add-team-modal-content">
@@ -131,51 +177,91 @@
     <script src="js/database.js"></script>
 
     <script>
+        // --- CUSTOM PIN TOETSENBORD LOGICA ---
+        let currentPin = '';
+        let pinSuccessCallback = null;
+
+        function requirePin(callback) {
+            currentPin = '';
+            pinSuccessCallback = callback;
+            updatePinDots();
+            
+            const modal = document.getElementById('custom-pin-modal');
+            const content = document.getElementById('custom-pin-content');
+            
+            modal.style.display = 'flex';
+            setTimeout(() => { modal.style.opacity = '1'; content.style.transform = 'scale(1)'; }, 10);
+        }
+
+        function closePinModal() {
+            const modal = document.getElementById('custom-pin-modal');
+            const content = document.getElementById('custom-pin-content');
+            
+            modal.style.opacity = '0';
+            content.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => { modal.style.display = 'none'; currentPin = ''; pinSuccessCallback = null; }, 200);
+        }
+
+        function addPinDigit(digit) {
+            if (currentPin.length < 4) {
+                currentPin += digit;
+                updatePinDots();
+                if (currentPin.length === 4) setTimeout(verifyPin, 150); 
+            }
+        }
+
+        function removePinDigit() {
+            if (currentPin.length > 0) { currentPin = currentPin.slice(0, -1); updatePinDots(); }
+        }
+
+        function updatePinDots() {
+            const dots = document.querySelectorAll('.pin-dot');
+            dots.forEach((dot, index) => {
+                dot.classList.remove('error'); 
+                if (index < currentPin.length) dot.classList.add('filled');
+                else dot.classList.remove('filled');
+            });
+        }
+
+        function verifyPin() {
+            if (currentPin === "0204") {
+                closePinModal();
+                if (pinSuccessCallback) pinSuccessCallback();
+            } else {
+                const dotsContainer = document.getElementById('pin-dots');
+                const dots = document.querySelectorAll('.pin-dot');
+                
+                dotsContainer.classList.add('shake');
+                dots.forEach(dot => { dot.classList.add('error'); dot.classList.remove('filled'); });
+                
+                setTimeout(() => {
+                    dotsContainer.classList.remove('shake');
+                    currentPin = '';
+                    updatePinDots(); 
+                }, 400);
+            }
+        }
+
+        // --- PLOEGEN LOGICA ---
         const badgeColors = {
-            'U6': { bg: '#fef08a', text: '#713f12' }, 
-            'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
-            'U8': { bg: '#fecaca', text: '#7f1d1d' }, 
-            'U9': { bg: '#fbcfe8', text: '#831843' }, 
-            'U10': { bg: '#e9d5ff', text: '#581c87' }, 
-            'U11': { bg: '#c7d2fe', text: '#312e81' }, 
-            'U12': { bg: '#bae6fd', text: '#0c4a6e' }, 
-            'U13': { bg: '#99f6e4', text: '#0f766e' }, 
-            'U14': { bg: '#bbf7d0', text: '#14532d' }, 
-            'U15': { bg: '#d9f99d', text: '#3f6212' }, 
-            'U16': { bg: '#fde68a', text: '#92400e' }, 
-            'U17': { bg: '#fcd34d', text: '#92400e' }, 
-            'Beloften': { bg: '#e2e8f0', text: '#1e293b' },
-            'Eerste Ploeg': { bg: '#1e293b', text: '#f9fafb' },
-            'Veteranen': { bg: '#9ca3af', text: '#1e293b' },
-            'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 
-            'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 
-            'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 
+            'U6': { bg: '#fef08a', text: '#713f12' }, 'U7': { bg: '#fed7aa', text: '#7c2d12' }, 'U8': { bg: '#fecaca', text: '#7f1d1d' }, 
+            'U9': { bg: '#fbcfe8', text: '#831843' }, 'U10': { bg: '#e9d5ff', text: '#581c87' }, 'U11': { bg: '#c7d2fe', text: '#312e81' }, 
+            'U12': { bg: '#bae6fd', text: '#0c4a6e' }, 'U13': { bg: '#99f6e4', text: '#0f766e' }, 'U14': { bg: '#bbf7d0', text: '#14532d' }, 
+            'U15': { bg: '#d9f99d', text: '#3f6212' }, 'U16': { bg: '#fde68a', text: '#92400e' }, 'U17': { bg: '#fcd34d', text: '#92400e' }, 
+            'Beloften': { bg: '#e2e8f0', text: '#1e293b' }, 'Eerste Ploeg': { bg: '#1e293b', text: '#f9fafb' }, 'Veteranen': { bg: '#9ca3af', text: '#1e293b' },
+            'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 
             'Standaard': { bg: '#f3f4f6', text: '#4b5563' }
         };
 
         let actieveSpeler = 'Lou';
-        let filterCategorie = null;
-        let filterType = null;
-        
-        let ruweWedstrijden = [];
-        let formelePloegenDB = [];
-        let htmlLijstItems = []; 
-        let huidigeGeselecteerdePloeg = null; 
-        let isHuidigePloegFormeel = false; 
+        let filterCategorie = null; let filterType = null;
+        let ruweWedstrijden = []; let formelePloegenDB = []; let htmlLijstItems = []; 
+        let huidigeGeselecteerdePloeg = null; let isHuidigePloegFormeel = false; 
 
         function toggleFilter() { document.getElementById('filter-panel').classList.toggle('open'); }
-        
-        function resetFilters() { 
-            filterCategorie = null; filterType = null; 
-            document.getElementById('filter-panel').classList.remove('open'); 
-            verwerkEnTekenKlassement(); buildFilterUI(); 
-        }
-        
-        function setFilter(soort, waarde) {
-            if (soort === 'cat') filterCategorie = (filterCategorie === waarde) ? null : waarde;
-            if (soort === 'type') filterType = (filterType === waarde) ? null : waarde;
-            verwerkEnTekenKlassement(); buildFilterUI();
-        }
+        function resetFilters() { filterCategorie = null; filterType = null; document.getElementById('filter-panel').classList.remove('open'); verwerkEnTekenKlassement(); buildFilterUI(); }
+        function setFilter(soort, waarde) { if (soort === 'cat') filterCategorie = (filterCategorie === waarde) ? null : waarde; if (soort === 'type') filterType = (filterType === waarde) ? null : waarde; verwerkEnTekenKlassement(); buildFilterUI(); }
 
         function buildFilterUI() {
             const catContainer = document.getElementById('filter-chips-leeftijd');
@@ -185,9 +271,7 @@
             const gefilterdeMatchen = ruweWedstrijden.filter(m => m.speler === actieveSpeler);
 
             const actieveCategorieen = [...new Set(gefilterdeMatchen.map(m => m.categorie).filter(Boolean))].sort((a, b) => {
-                const numA = parseInt(a.replace('U', '')) || 999;
-                const numB = parseInt(b.replace('U', '')) || 999;
-                return numA - numB;
+                const numA = parseInt(a.replace('U', '')) || 999; const numB = parseInt(b.replace('U', '')) || 999; return numA - numB;
             });
             const actieveTypes = [...new Set(gefilterdeMatchen.map(m => m.type_wedstrijd).filter(Boolean))].sort();
 
@@ -204,50 +288,33 @@
             });
 
             let indText = "Alle";
-            if(filterCategorie && filterType) indText = `${filterCategorie} & ${filterType}`;
-            else if(filterCategorie) indText = filterCategorie;
-            else if(filterType) indText = filterType;
+            if(filterCategorie && filterType) indText = `${filterCategorie} & ${filterType}`; else if(filterCategorie) indText = filterCategorie; else if(filterType) indText = filterType;
             document.getElementById('filter-indicator').innerText = indText;
         }
 
         async function laadDatabase() {
             const container = document.getElementById('ploegen-lijst');
             container.innerHTML = '<p class="empty-state">Data ophalen... ⏳</p>';
-            
             try {
                 const [formeleRes, matchenRes] = await Promise.all([
                     supabaseClient.from('ploegen').select('id, naam, logo_url'),
                     supabaseClient.from('wedstrijden').select('*').order('datum', { ascending: false })
                 ]);
-
                 if (formeleRes.error) throw formeleRes.error;
                 if (matchenRes.error) throw matchenRes.error;
-
                 formelePloegenDB = formeleRes.data || [];
                 ruweWedstrijden = matchenRes.data || [];
-
-                buildFilterUI();
-                verwerkEnTekenKlassement();
-
-            } catch (err) {
-                container.innerHTML = '<p class="empty-state">Fout bij laden van data.</p>';
-            }
+                buildFilterUI(); verwerkEnTekenKlassement();
+            } catch (err) { container.innerHTML = '<p class="empty-state">Fout bij laden van data.</p>'; }
         }
 
         function verwerkEnTekenKlassement() {
             const container = document.getElementById('ploegen-lijst');
-            htmlLijstItems = []; 
-
-            const klassementMap = new Map();
+            htmlLijstItems = []; const klassementMap = new Map();
 
             formelePloegenDB.forEach(formelePloeg => {
                 const naamLower = formelePloeg.naam.trim().toLowerCase();
-                klassementMap.set(naamLower, {
-                    naam: formelePloeg.naam.trim(),
-                    logo: formelePloeg.logo_url,
-                    isFormeel: true, 
-                    gespeeld: 0, winst: 0, verlies: 0, gelijk: 0, goals: 0
-                });
+                klassementMap.set(naamLower, { naam: formelePloeg.naam.trim(), logo: formelePloeg.logo_url, isFormeel: true, gespeeld: 0, winst: 0, verlies: 0, gelijk: 0, goals: 0 });
             });
 
             ruweWedstrijden.forEach(m => {
@@ -255,14 +322,8 @@
                     m.mini_scores.forEach(s => {
                         const ploegNaam = (s.tegenstander || m.tegenstander || "Onbekend").trim();
                         const naamLower = ploegNaam.toLowerCase();
-
                         if (!klassementMap.has(naamLower)) {
-                            klassementMap.set(naamLower, {
-                                naam: ploegNaam,
-                                logo: s.logo_tegenstander || m.logo_tegenstander || null,
-                                isFormeel: false,
-                                gespeeld: 0, winst: 0, verlies: 0, gelijk: 0, goals: 0
-                            });
+                            klassementMap.set(naamLower, { naam: ploegNaam, logo: s.logo_tegenstander || m.logo_tegenstander || null, isFormeel: false, gespeeld: 0, winst: 0, verlies: 0, gelijk: 0, goals: 0 });
                         } else if (!klassementMap.get(naamLower).logo && (s.logo_tegenstander || m.logo_tegenstander)) {
                             klassementMap.get(naamLower).logo = s.logo_tegenstander || m.logo_tegenstander;
                         }
@@ -279,67 +340,42 @@
                     m.mini_scores.forEach(s => {
                         const ploegNaam = (s.tegenstander || m.tegenstander || "Onbekend").trim();
                         const naamLower = ploegNaam.toLowerCase();
-
                         const stat = klassementMap.get(naamLower);
                         if (stat) { 
-                            stat.gespeeld++;
-                            stat.goals += (s.goals || 0);
-
+                            stat.gespeeld++; stat.goals += (s.goals || 0);
                             let isWin = false, isLoss = false, isDraw = false;
                             if (s.thuis > s.uit) { isWin = m.locatie === 'Thuis'; isLoss = m.locatie === 'Uit'; }
-                            else if (s.thuis < s.uit) { isWin = m.locatie === 'Uit'; isLoss = m.locatie === 'Thuis'; }
-                            else { isDraw = true; }
-
-                            if (isWin) stat.winst++;
-                            if (isLoss) stat.verlies++;
-                            if (isDraw) stat.gelijk++;
+                            else if (s.thuis < s.uit) { isWin = m.locatie === 'Uit'; isLoss = m.locatie === 'Thuis'; } else { isDraw = true; }
+                            if (isWin) stat.winst++; if (isLoss) stat.verlies++; if (isDraw) stat.gelijk++;
                         }
                     });
                 }
             });
 
             let klassementArray = Array.from(klassementMap.values());
-            klassementArray.sort((a, b) => {
-                if (b.gespeeld !== a.gespeeld) return b.gespeeld - a.gespeeld; 
-                return a.naam.localeCompare(b.naam); 
-            });
+            klassementArray.sort((a, b) => { if (b.gespeeld !== a.gespeeld) return b.gespeeld - a.gespeeld; return a.naam.localeCompare(b.naam); });
 
-            container.innerHTML = '';
-            document.getElementById('searchInput').value = ''; 
-
-            if (klassementArray.length === 0) {
-                container.innerHTML = '<p class="empty-state">Database is volledig leeg.</p>';
-                return;
-            }
+            container.innerHTML = ''; document.getElementById('searchInput').value = ''; 
+            if (klassementArray.length === 0) { container.innerHTML = '<p class="empty-state">Database is volledig leeg.</p>'; return; }
 
             klassementArray.forEach((ploeg, index) => {
                 const safeNaam = ploeg.naam.replace(/'/g, "\\'");
                 const safeLogo = ploeg.logo ? ploeg.logo.replace(/'/g, "\\'") : '';
                 const isFormeelStr = ploeg.isFormeel ? 'true' : 'false';
                 const rank = index + 1;
-
-                const logoHtml = ploeg.logo 
-                    ? `<img src="${ploeg.logo}" class="team-logo">` 
-                    : `<div class="team-logo">🛡️</div>`;
-
-                const verifiedBadge = ploeg.isFormeel 
-                    ? `<svg style="width: 14px; height: 14px; color: #0ea5e9; flex-shrink: 0;" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>` 
-                    : '';
+                const logoHtml = ploeg.logo ? `<img src="${ploeg.logo}" class="team-logo">` : `<div class="team-logo">🛡️</div>`;
+                const verifiedBadge = ploeg.isFormeel ? `<svg style="width: 14px; height: 14px; color: #0ea5e9; flex-shrink: 0;" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>` : '';
 
                 const item = document.createElement('div');
                 item.className = 'leaderboard-item';
                 item.dataset.naam = ploeg.naam.toLowerCase(); 
                 item.setAttribute('onclick', `openTeamModal('${safeNaam}', '${safeLogo}', ${isFormeelStr})`);
 
-                // HIER IS DE MAGIE: Nieuwe layout, in 2 regels
                 item.innerHTML = `
                     <span class="rank-number">${rank}</span>
                     ${logoHtml}
                     <div class="team-details">
-                        <div class="team-name-row">
-                            <span class="team-name">${ploeg.naam}</span>
-                            ${verifiedBadge}
-                        </div>
+                        <div class="team-name-row"><span class="team-name">${ploeg.naam}</span>${verifiedBadge}</div>
                         <div class="team-stats-badges">
                             <span class="stat-badge badge-played">${ploeg.gespeeld} G</span>
                             <span class="stat-badge badge-wins">${ploeg.winst} W</span>
@@ -348,9 +384,7 @@
                         </div>
                     </div>
                 `;
-                
-                container.appendChild(item);
-                htmlLijstItems.push(item);
+                container.appendChild(item); htmlLijstItems.push(item);
             });
         }
 
@@ -359,54 +393,29 @@
             const filter = input.value.toLowerCase().trim();
             const container = document.getElementById('ploegen-lijst');
             let zichtbaar = 0;
-
-            htmlLijstItems.forEach(item => {
-                const ploegNaam = item.dataset.naam;
-                if (ploegNaam.includes(filter)) {
-                    item.style.display = "flex";
-                    zichtbaar++;
-                } else {
-                    item.style.display = "none";
-                }
-            });
-
+            htmlLijstItems.forEach(item => { const ploegNaam = item.dataset.naam; if (ploegNaam.includes(filter)) { item.style.display = "flex"; zichtbaar++; } else { item.style.display = "none"; } });
             let bestaandeMelding = document.getElementById('no-results-msg');
             if (zichtbaar === 0) {
-                if (!bestaandeMelding) {
-                    bestaandeMelding = document.createElement('p');
-                    bestaandeMelding.id = 'no-results-msg';
-                    bestaandeMelding.className = 'empty-state';
-                    container.appendChild(bestaandeMelding);
-                }
-                bestaandeMelding.innerText = `Geen ploeg gevonden met "${input.value}"`;
-                bestaandeMelding.style.display = 'block';
-            } else if (bestaandeMelding) {
-                bestaandeMelding.style.display = 'none';
-            }
+                if (!bestaandeMelding) { bestaandeMelding = document.createElement('p'); bestaandeMelding.id = 'no-results-msg'; bestaandeMelding.className = 'empty-state'; container.appendChild(bestaandeMelding); }
+                bestaandeMelding.innerText = `Geen ploeg gevonden met "${input.value}"`; bestaandeMelding.style.display = 'block';
+            } else if (bestaandeMelding) { bestaandeMelding.style.display = 'none'; }
         }
 
         window.wisselSpeler = function(evt, speler) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            evt.currentTarget.classList.add('active');
-            actieveSpeler = speler;
-            
-            if (speler === 'Lou') document.documentElement.style.setProperty('--brand-color', '#F34213'); 
-            else document.documentElement.style.setProperty('--brand-color', '#ef476f'); 
-            
-            buildFilterUI();
-            verwerkEnTekenKlassement();
+            evt.currentTarget.classList.add('active'); actieveSpeler = speler;
+            if (speler === 'Lou') document.documentElement.style.setProperty('--brand-color', '#F34213'); else document.documentElement.style.setProperty('--brand-color', '#ef476f'); 
+            buildFilterUI(); verwerkEnTekenKlassement();
         };
 
+        // --- PLOEG TOEVOEGEN ---
         window.openAddTeamModal = function() {
-            const pin = prompt("Voer pincode in:");
-            if (pin === "0204") {
+            requirePin(() => {
                 document.getElementById('new-team-name').value = '';
                 document.getElementById('new-team-logo').value = '';
                 document.getElementById('add-team-modal').style.display = 'flex';
                 setTimeout(() => { document.getElementById('add-team-modal-content').style.transform = 'translateY(0)'; }, 10);
-            } else if (pin !== null) {
-                alert("Onjuiste code.");
-            }
+            });
         };
 
         window.closeAddTeamModal = function() {
@@ -418,67 +427,41 @@
             const naam = document.getElementById('new-team-name').value.trim();
             const fileInput = document.getElementById('new-team-logo');
             const file = fileInput.files[0];
-
             if (!naam) return alert("Vul een ploegnaam in!");
 
             const btn = document.getElementById('save-new-team-btn');
-            btn.innerText = "Bezig met uploaden... ⏳";
-            btn.disabled = true;
+            btn.innerText = "Bezig met uploaden... ⏳"; btn.disabled = true;
 
             try {
                 let logoUrl = null;
-                
                 if (file) {
                     const compressieOpties = { maxSizeMB: 0.5, maxWidthOrHeight: 800, useWebWorker: true };
                     const compressed = await imageCompression(file, compressieOpties);
                     const bestandsNaam = `logos/${Date.now()}-${compressed.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-
                     const { error: uploadError } = await supabaseClient.storage.from('media').upload(bestandsNaam, compressed);
                     if (uploadError) throw uploadError;
-
                     const { data: publicUrlData } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
                     logoUrl = publicUrlData.publicUrl;
                 }
-
-                const { error } = await supabaseClient.from('ploegen').insert([{
-                    naam: naam,
-                    logo_url: logoUrl
-                }]);
-
+                const { error } = await supabaseClient.from('ploegen').insert([{ naam: naam, logo_url: logoUrl }]);
                 if (error) throw error;
-
-                closeAddTeamModal();
-                laadDatabase(); 
-            } catch (err) {
-                alert("Fout bij opslaan van ploeg.");
-            } finally {
-                btn.innerText = "Ploeg Opslaan";
-                btn.disabled = false;
-            }
+                closeAddTeamModal(); laadDatabase(); 
+            } catch (err) { alert("Fout bij opslaan van ploeg."); } 
+            finally { btn.innerText = "Ploeg Opslaan"; btn.disabled = false; }
         };
 
+        // --- H2H MODAL & VERWIJDEREN ---
         window.openTeamModal = function(teamNaam, teamLogo, isFormeel) {
-            huidigeGeselecteerdePloeg = teamNaam; 
-            isHuidigePloegFormeel = isFormeel;
+            huidigeGeselecteerdePloeg = teamNaam; isHuidigePloegFormeel = isFormeel;
             document.getElementById('modal-team-name').innerText = teamNaam;
-            
             const logoContainer = document.getElementById('modal-team-logo-container');
-            if (teamLogo) {
-                logoContainer.innerHTML = `<img src="${teamLogo}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e7eb;">`;
-            } else {
-                logoContainer.innerHTML = `<div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid #e5e7eb;">🛡️</div>`;
-            }
+            if (teamLogo) logoContainer.innerHTML = `<img src="${teamLogo}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid #e5e7eb;">`;
+            else logoContainer.innerHTML = `<div style="width: 40px; height: 40px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid #e5e7eb;">🛡️</div>`;
 
             const deleteBtn = document.getElementById('modal-delete-btn');
-            if(isFormeel) {
-                deleteBtn.style.display = 'flex';
-            } else {
-                deleteBtn.style.display = 'none';
-            }
+            if(isFormeel) deleteBtn.style.display = 'flex'; else deleteBtn.style.display = 'none';
 
-            let encounters = [];
-            let statsWins = 0, statsDraws = 0, statsLosses = 0, statsGoals = 0;
-
+            let encounters = []; let statsWins = 0, statsDraws = 0, statsLosses = 0, statsGoals = 0;
             let relevanteMatchen = ruweWedstrijden.filter(m => m.speler === actieveSpeler);
             if (filterCategorie) relevanteMatchen = relevanteMatchen.filter(m => m.categorie === filterCategorie);
             if (filterType) relevanteMatchen = relevanteMatchen.filter(m => m.type_wedstrijd === filterType);
@@ -488,16 +471,11 @@
                     m.mini_scores.forEach(s => {
                         let sTegenstander = (s.tegenstander || m.tegenstander || "").trim().toLowerCase();
                         if (sTegenstander === teamNaam.toLowerCase()) {
-                            encounters.push({
-                                datum: new Date(m.datum), speler: m.speler, categorie: m.categorie, locatie: m.locatie,
-                                type_wedstrijd: m.type_wedstrijd, thuis: s.thuis, uit: s.uit, goals: s.goals || 0, matchId: m.id
-                            });
-
+                            encounters.push({ datum: new Date(m.datum), speler: m.speler, categorie: m.categorie, locatie: m.locatie, type_wedstrijd: m.type_wedstrijd, thuis: s.thuis, uit: s.uit, goals: s.goals || 0, matchId: m.id });
                             let isWin = false;
                             if (s.thuis > s.uit) isWin = m.locatie === 'Thuis';
                             if (s.thuis < s.uit) isWin = m.locatie === 'Uit';
                             let isDraw = s.thuis === s.uit;
-                            
                             if (isWin) statsWins++; else if (isDraw) statsDraws++; else statsLosses++;
                             statsGoals += (s.goals || 0);
                         }
@@ -523,7 +501,6 @@
             encounters.sort((a,b) => b.datum - a.datum);
             const listContainer = document.getElementById('team-history-list');
             let listHtml = '';
-
             if (encounters.length === 0) {
                 listHtml = '<p class="empty-state">Nog niet tegen deze ploeg gespeeld met de huidige filters.</p>';
             } else {
@@ -532,7 +509,6 @@
                     let statusClass = 'draw';
                     if (enc.thuis > enc.uit) statusClass = enc.locatie === 'Thuis' ? 'win' : 'loss';
                     if (enc.thuis < enc.uit) statusClass = enc.locatie === 'Thuis' ? 'loss' : 'win';
-                    
                     let bgStatus = statusClass === 'win' ? '#ecfdf5' : (statusClass === 'loss' ? '#fef2f2' : '#f1f5f9');
                     let colorStatus = statusClass === 'win' ? '#059669' : (statusClass === 'loss' ? '#dc2626' : '#4b5563');
 
@@ -552,15 +528,12 @@
                                 <div style="font-weight: 800; font-size: 16px; padding: 6px 12px; border-radius: 8px; background: ${bgStatus}; color: ${colorStatus}; border: 1px solid ${colorStatus}33;">
                                     ${enc.thuis} - ${enc.uit}
                                 </div>
-                                ${enc.goals > 0 
-                                    ? `<div style="font-size: 14px; font-weight: 800; color: #1e293b;">⚽ ${enc.goals} Goal${enc.goals>1?'s':''}</div>` 
-                                    : `<div style="font-size: 12px; font-weight: 600; color: #94a3b8;">Geen goals</div>`}
+                                ${enc.goals > 0 ? `<div style="font-size: 14px; font-weight: 800; color: #1e293b;">⚽ ${enc.goals} Goal${enc.goals>1?'s':''}</div>` : `<div style="font-size: 12px; font-weight: 600; color: #94a3b8;">Geen goals</div>`}
                             </div>
                         </a>
                     `;
                 });
             }
-
             listContainer.innerHTML = listHtml;
             const modal = document.getElementById('team-modal');
             modal.style.display = 'flex';
@@ -572,24 +545,18 @@
             setTimeout(() => { document.getElementById('team-modal').style.display = 'none'; huidigeGeselecteerdePloeg = null; isHuidigePloegFormeel = false; }, 300);
         };
 
-        window.verwijderPloegUitDatabase = async function() {
+        window.verwijderPloegUitDatabase = function() {
             if (!huidigeGeselecteerdePloeg || !isHuidigePloegFormeel) return;
 
-            const pin = prompt("Voer pincode in om de ploeg definitief te wissen uit de database:");
-            if (pin !== "0204") {
-                if (pin !== null) alert("Onjuiste code.");
-                return;
-            }
+            requirePin(async () => {
+                if (!confirm(`Weet je zeker dat je "${huidigeGeselecteerdePloeg}" inclusief logo wil wissen uit het ploegenbestand?\n\n(Let op: Bestaande uitslagen in je overzicht verdwijnen niet, maar het logo wordt gewist).`)) return;
 
-            if (!confirm(`Weet je zeker dat je "${huidigeGeselecteerdePloeg}" inclusief logo wil wissen uit het ploegenbestand?\n\n(Let op: Bestaande uitslagen in je overzicht verdwijnen niet, maar het logo wordt gewist).`)) return;
-
-            try {
-                await supabaseClient.from('ploegen').delete().ilike('naam', huidigeGeselecteerdePloeg);
-                closeTeamModal();
-                laadDatabase(); 
-            } catch (e) {
-                alert("Fout bij het verwijderen van de ploeg.");
-            }
+                try {
+                    await supabaseClient.from('ploegen').delete().ilike('naam', huidigeGeselecteerdePloeg);
+                    closeTeamModal();
+                    laadDatabase(); 
+                } catch (e) { alert("Fout bij het verwijderen van de ploeg."); }
+            });
         };
 
         document.addEventListener('DOMContentLoaded', () => {
