@@ -10,6 +10,27 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#f8fafc">
     <link rel="stylesheet" href="css/style.css?v=2">
+    <style>
+        /* Specifieke CSS voor het custom PIN toetsenbord */
+        .pin-dots-container { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; }
+        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #cbd5e1; transition: all 0.2s ease; }
+        .pin-dot.filled { background: #1e293b; border-color: #1e293b; }
+        .pin-dot.error { border-color: #dc2626; background: #fef2f2; }
+        
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .numpad-btn { background: #f8fafc; border: 1px solid #f1f5f9; font-size: 26px; font-weight: 600; color: #1e293b; border-radius: 50%; width: 70px; height: 70px; margin: 0 auto; cursor: pointer; transition: all 0.1s; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .numpad-btn:active { background: #e2e8f0; transform: scale(0.95); }
+        .numpad-btn.empty { background: transparent; border: none; cursor: default; }
+        .numpad-btn.empty:active { transform: none; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+    </style>
 </head>
 <body>
     <header>
@@ -33,6 +54,38 @@
     </main>
 
     <button onclick="openUploadModal()" class="fab-btn">📷/🎥 Media</button>
+
+    <!-- CUSTOM ON-SCREEN PIN MODAL -->
+    <div id="custom-pin-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.75); backdrop-filter: blur(8px); z-index: 10001; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease;">
+        <div style="background: #fff; width: 90%; max-width: 360px; border-radius: 28px; padding: 30px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.2s ease;" id="custom-pin-content">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #1e293b;">Beveiligde Actie</h3>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #64748b; font-weight: 600;">Voer je pincode in om verder te gaan.</p>
+            
+            <div id="pin-dots" class="pin-dots-container">
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+            </div>
+
+            <div class="numpad-grid">
+                <div class="numpad-btn" onclick="addPinDigit('1')">1</div>
+                <div class="numpad-btn" onclick="addPinDigit('2')">2</div>
+                <div class="numpad-btn" onclick="addPinDigit('3')">3</div>
+                <div class="numpad-btn" onclick="addPinDigit('4')">4</div>
+                <div class="numpad-btn" onclick="addPinDigit('5')">5</div>
+                <div class="numpad-btn" onclick="addPinDigit('6')">6</div>
+                <div class="numpad-btn" onclick="addPinDigit('7')">7</div>
+                <div class="numpad-btn" onclick="addPinDigit('8')">8</div>
+                <div class="numpad-btn" onclick="addPinDigit('9')">9</div>
+                <div class="numpad-btn empty"></div>
+                <div class="numpad-btn" onclick="addPinDigit('0')">0</div>
+                <div class="numpad-btn" style="font-size: 20px; background: #f1f5f9;" onclick="removePinDigit()">⌫</div>
+            </div>
+
+            <button onclick="closePinModal()" style="background: transparent; color: #94a3b8; border: none; font-size: 14px; font-weight: 700; padding: 10px; margin-top: 10px; cursor: pointer;">Annuleren</button>
+        </div>
+    </div>
 
     <!-- UPLOAD MODAL -->
     <div id="upload-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.5); backdrop-filter: blur(5px); z-index: 9000; align-items: flex-end; justify-content: center;">
@@ -96,6 +149,96 @@
     <script src="js/database.js"></script>
 
     <script>
+        // --- CUSTOM PIN TOETSENBORD LOGICA ---
+        let currentPin = '';
+        let pinSuccessCallback = null;
+
+        function requirePin(callback) {
+            currentPin = '';
+            pinSuccessCallback = callback;
+            updatePinDots();
+            
+            const modal = document.getElementById('custom-pin-modal');
+            const content = document.getElementById('custom-pin-content');
+            
+            modal.style.display = 'flex';
+            // Kleine delay voor fade in animatie
+            setTimeout(() => {
+                modal.style.opacity = '1';
+                content.style.transform = 'scale(1)';
+            }, 10);
+        }
+
+        function closePinModal() {
+            const modal = document.getElementById('custom-pin-modal');
+            const content = document.getElementById('custom-pin-content');
+            
+            modal.style.opacity = '0';
+            content.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                modal.style.display = 'none';
+                currentPin = '';
+                pinSuccessCallback = null;
+            }, 200);
+        }
+
+        function addPinDigit(digit) {
+            if (currentPin.length < 4) {
+                currentPin += digit;
+                updatePinDots();
+                
+                // Als er 4 cijfers zijn ingegeven, controleer automatisch!
+                if (currentPin.length === 4) {
+                    setTimeout(verifyPin, 150); // Heel even wachten zodat je het laatste bolletje nog ziet kleuren
+                }
+            }
+        }
+
+        function removePinDigit() {
+            if (currentPin.length > 0) {
+                currentPin = currentPin.slice(0, -1);
+                updatePinDots();
+            }
+        }
+
+        function updatePinDots() {
+            const dots = document.querySelectorAll('.pin-dot');
+            dots.forEach((dot, index) => {
+                dot.classList.remove('error'); // Verwijder rode rand indien aanwezig
+                if (index < currentPin.length) {
+                    dot.classList.add('filled');
+                } else {
+                    dot.classList.remove('filled');
+                }
+            });
+        }
+
+        function verifyPin() {
+            if (currentPin === "0204") {
+                // Correct!
+                closePinModal();
+                if (pinSuccessCallback) {
+                    pinSuccessCallback();
+                }
+            } else {
+                // Fout! Trillen en rood maken
+                const dotsContainer = document.getElementById('pin-dots');
+                const dots = document.querySelectorAll('.pin-dot');
+                
+                dotsContainer.classList.add('shake');
+                dots.forEach(dot => { dot.classList.add('error'); dot.classList.remove('filled'); });
+                
+                setTimeout(() => {
+                    dotsContainer.classList.remove('shake');
+                    currentPin = '';
+                    updatePinDots(); // Bolletjes weer netjes leegmaken
+                }, 400);
+            }
+        }
+
+
+        // --- STANDAARD GALERIJ LOGICA ---
         let huidigeSpeler = 'Lou';
         let alleFotosGlobal = []; 
         let groepenGlobal = []; 
@@ -264,47 +407,43 @@
             const groep = groepenGlobal[groupIndex];
             if (!groep || groep.fotos.length === 0) return;
 
-            const pin = prompt("Voer pincode in om deze volledige reeks (" + groep.fotos.length + " items) in één keer te wissen:");
-            if (pin !== "0204") {
-                if (pin !== null) alert("Onjuiste code.");
-                return;
-            }
+            // VROEGER: prompt(). NU: requirePin()!
+            requirePin(async () => {
+                if (!confirm(`Zeker dat je ALLE ${groep.fotos.length} foto's/video's van "${groep.titel}" (${groep.datum}) definitief wil wissen?`)) return;
 
-            if (!confirm(`Zeker dat je ALLE ${groep.fotos.length} foto's/video's van "${groep.titel}" (${groep.datum}) definitief wil wissen?`)) return;
+                document.body.style.cursor = 'wait'; 
 
-            document.body.style.cursor = 'wait'; 
-
-            try {
-                let matchUpdates = {}; 
-                
-                for (let media of groep.fotos) {
-                    if (media.type === 'extra') {
-                        const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
-                        await supabaseClient.from(table).delete().eq('id', media.recordId);
-                    } else if (media.type === 'match') {
-                        matchUpdates[media.matchId] = true;
-                    }
+                try {
+                    let matchUpdates = {}; 
                     
-                    try {
-                        const pad = media.url.split('/public/media/')[1]; 
-                        if(pad) await supabaseClient.storage.from('media').remove([pad]);
-                    } catch(e) { console.warn("Kon bestand niet wissen uit storage", e); }
-                }
+                    for (let media of groep.fotos) {
+                        if (media.type === 'extra') {
+                            const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
+                            await supabaseClient.from(table).delete().eq('id', media.recordId);
+                        } else if (media.type === 'match') {
+                            matchUpdates[media.matchId] = true;
+                        }
+                        
+                        try {
+                            const pad = media.url.split('/public/media/')[1]; 
+                            if(pad) await supabaseClient.storage.from('media').remove([pad]);
+                        } catch(e) { console.warn("Kon niet wissen", e); }
+                    }
 
-                for (let matchId in matchUpdates) {
-                    await supabaseClient.from('wedstrijden').update({ fotos: [] }).eq('id', matchId);
-                }
+                    for (let matchId in matchUpdates) {
+                        await supabaseClient.from('wedstrijden').update({ fotos: [] }).eq('id', matchId);
+                    }
 
-                document.body.style.cursor = 'default';
-                laadFotos(huidigeSpeler); 
-            } catch (err) { 
-                document.body.style.cursor = 'default';
-                alert("Fout bij verwijderen van de reeks."); 
-            }
+                    document.body.style.cursor = 'default';
+                    laadFotos(huidigeSpeler); 
+                } catch (err) { 
+                    document.body.style.cursor = 'default';
+                    alert("Fout bij verwijderen van de reeks."); 
+                }
+            });
         };
 
         // --- LIGHTBOX LOGICA ---
-
         window.openLightbox = function(index) {
             currentLbIndex = index;
             updateLightboxUI();
@@ -362,25 +501,14 @@
             document.getElementById('lb-next').style.display = currentLbIndex < alleFotosGlobal.length - 1 ? 'flex' : 'none';
         };
 
-        window.prevImage = function(e) {
-            if (e) e.stopPropagation();
-            if (currentLbIndex > 0) { currentLbIndex--; updateLightboxUI(); }
-        };
-
-        window.nextImage = function(e) {
-            if (e) e.stopPropagation();
-            if (currentLbIndex < alleFotosGlobal.length - 1) { currentLbIndex++; updateLightboxUI(); }
-        };
+        window.prevImage = function(e) { if (e) e.stopPropagation(); if (currentLbIndex > 0) { currentLbIndex--; updateLightboxUI(); } };
+        window.nextImage = function(e) { if (e) e.stopPropagation(); if (currentLbIndex < alleFotosGlobal.length - 1) { currentLbIndex++; updateLightboxUI(); } };
 
         window.closeLightbox = function() {
             const lb = document.getElementById('lightbox');
             lb.style.opacity = '0'; 
             document.getElementById('lb-video').pause();
-            setTimeout(() => { 
-                lb.style.display = 'none'; 
-                document.getElementById('lb-img').src = ''; 
-                document.getElementById('lb-video').src = ''; 
-            }, 300);
+            setTimeout(() => { lb.style.display = 'none'; document.getElementById('lb-img').src = ''; document.getElementById('lb-video').src = ''; }, 300);
             document.body.style.overflow = 'auto';
         };
 
@@ -395,80 +523,72 @@
         }
 
         // --- VERWIJDEREN 1 PER 1 (IN LIGHTBOX) ---
-
         window.verwijderHuidigeFoto = async function() {
             const media = alleFotosGlobal[currentLbIndex];
             if (!media) return;
 
-            const pin = prompt("Voer pincode in om te wissen:");
-            if (pin !== "0204") {
-                if (pin !== null) alert("Onjuiste code.");
-                return;
-            }
+            // Custom PIN Modal
+            requirePin(async () => {
+                if (!confirm("Zeker dat je deze ene media definitief wil wissen?")) return;
 
-            if (!confirm("Zeker dat je deze ene media definitief wil wissen?")) return;
-
-            try {
-                if (media.type === 'extra') {
-                    const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
-                    await supabaseClient.from(table).delete().eq('id', media.recordId);
-                } else if (media.type === 'match') {
-                    const { data: matchData } = await supabaseClient.from('wedstrijden').select('fotos').eq('id', media.matchId).single();
-                    if (matchData && matchData.fotos) {
-                        const nieuweFotos = matchData.fotos.filter(url => url !== media.url);
-                        await supabaseClient.from('wedstrijden').update({ fotos: nieuweFotos }).eq('id', media.matchId);
-                    }
-                }
-                
                 try {
-                    const pad = media.url.split('/public/media/')[1]; 
-                    if(pad) await supabaseClient.storage.from('media').remove([pad]);
-                } catch(e) {}
+                    if (media.type === 'extra') {
+                        const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
+                        await supabaseClient.from(table).delete().eq('id', media.recordId);
+                    } else if (media.type === 'match') {
+                        const { data: matchData } = await supabaseClient.from('wedstrijden').select('fotos').eq('id', media.matchId).single();
+                        if (matchData && matchData.fotos) {
+                            const nieuweFotos = matchData.fotos.filter(url => url !== media.url);
+                            await supabaseClient.from('wedstrijden').update({ fotos: nieuweFotos }).eq('id', media.matchId);
+                        }
+                    }
+                    try {
+                        const pad = media.url.split('/public/media/')[1]; 
+                        if(pad) await supabaseClient.storage.from('media').remove([pad]);
+                    } catch(e) {}
 
-                closeLightbox();
-                laadFotos(huidigeSpeler); 
-            } catch (err) { alert("Fout bij verwijderen."); }
+                    closeLightbox();
+                    laadFotos(huidigeSpeler); 
+                } catch (err) { alert("Fout bij verwijderen."); }
+            });
         };
 
         window.bewerkHuidigeFoto = async function() {
             const media = alleFotosGlobal[currentLbIndex];
             if (media.type !== 'extra') return; 
 
-            const pin = prompt("Voer pincode in om te wijzigen:");
-            if (pin !== "0204") {
-                if (pin !== null) alert("Onjuiste code.");
-                return;
-            }
+            // Custom PIN Modal
+            requirePin(async () => {
+                const formatDatum = media.datumRuw.toISOString().split('T')[0];
+                // Voor gewone tekstinput gebruiken we nog wel de standaard prompt (is overzichtelijker voor een datum/tekst dan een custom modal hiervoor)
+                const nieuweDatum = prompt("Pas de datum aan (JJJJ-MM-DD):", formatDatum);
+                if (!nieuweDatum) return;
 
-            const formatDatum = media.datumRuw.toISOString().split('T')[0];
-            const nieuweDatum = prompt("Pas de datum aan (JJJJ-MM-DD):", formatDatum);
-            if (!nieuweDatum) return;
+                const nieuweOpmerking = prompt("Pas de opmerking aan:", media.ruweOpmerking);
+                if (nieuweOpmerking === null) return; 
 
-            const nieuweOpmerking = prompt("Pas de opmerking aan:", media.ruweOpmerking);
-            if (nieuweOpmerking === null) return; 
-
-            try {
-                const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
-                await supabaseClient.from(table).update({ 
-                    datum: nieuweDatum, 
-                    opmerking: nieuweOpmerking 
-                }).eq('id', media.recordId);
-                
-                closeLightbox();
-                laadFotos(huidigeSpeler);
-            } catch(e) { alert("Fout bij wijzigen."); }
+                try {
+                    const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
+                    await supabaseClient.from(table).update({ 
+                        datum: nieuweDatum, 
+                        opmerking: nieuweOpmerking 
+                    }).eq('id', media.recordId);
+                    
+                    closeLightbox();
+                    laadFotos(huidigeSpeler);
+                } catch(e) { alert("Fout bij wijzigen."); }
+            });
         };
 
         // --- UPLOAD LOGICA ---
-
         window.openUploadModal = function() {
-            const pin = prompt("Voer pincode in:");
-            if (pin === "0204") {
+            // Custom PIN Modal!
+            requirePin(() => {
                 document.getElementById('extra-datum').valueAsDate = new Date();
                 document.getElementById('extra-opmerking').value = ""; 
                 document.getElementById('upload-modal').style.display = 'flex';
                 setTimeout(() => document.getElementById('upload-modal-content').style.transform = 'translateY(0)', 10);
-            } else if (pin !== null) alert("Onjuiste code.");
+            });
         };
 
         window.closeUploadModal = function() {
@@ -491,11 +611,8 @@
                     const file = files[i];
                     const isVideo = file.type.startsWith('video/');
 
-                    // CHECK GROOTTE: Maximaal 50MB toegestaan door Supabase gratis versie
                     const fileSizeMB = file.size / (1024 * 1024);
-                    if (fileSizeMB > 50) {
-                        throw new Error(`Bestand is te groot (${fileSizeMB.toFixed(1)}MB). Maximaal 50MB toegestaan.`);
-                    }
+                    if (fileSizeMB > 50) throw new Error(`Bestand is te groot (${fileSizeMB.toFixed(1)}MB). Maximaal 50MB toegestaan.`);
 
                     btn.innerText = `Bestand ${i + 1}/${files.length} uploaden...`;
 
@@ -516,13 +633,11 @@
                     const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 15);
                     const bestandsNaam = `${folder}/${Date.now()}-${cleanName}.${ext}`;
                     
-                    // 1. Upload naar opslagmap
                     const { error: uploadError } = await supabaseClient.storage.from('media').upload(bestandsNaam, uploadFile);
                     if (uploadError) throw uploadError;
                     
                     const { data: publicUrlData } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
                     
-                    // 2. Sla link op in de database
                     const { error: dbError } = await supabaseClient.from(dbTable).insert([{
                         speler: huidigeSpeler, datum: datum, url: publicUrlData.publicUrl, opmerking: opmerking
                     }]);
@@ -535,7 +650,6 @@
                 laadFotos(huidigeSpeler); 
                 
             } catch (e) {
-                // HIER TONEN WE NU DE EXACTE FOUTMELDING
                 alert("Upload mislukt:\n" + (e.message || JSON.stringify(e)));
                 btn.innerText = "Uploaden"; 
                 btn.disabled = false;
