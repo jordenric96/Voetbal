@@ -11,7 +11,6 @@
     <meta name="theme-color" content="#f8fafc">
     <link rel="stylesheet" href="css/style.css?v=2">
     <style>
-        /* Specifieke CSS voor het custom PIN toetsenbord */
         .pin-dots-container { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; }
         .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #cbd5e1; transition: all 0.2s ease; }
         .pin-dot.filled { background: #1e293b; border-color: #1e293b; }
@@ -23,12 +22,7 @@
         .numpad-btn.empty { background: transparent; border: none; cursor: default; }
         .numpad-btn.empty:active { transform: none; }
         
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-8px); }
-            50% { transform: translateX(8px); }
-            75% { transform: translateX(-8px); }
-        }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-8px); } }
         .shake { animation: shake 0.4s ease-in-out; }
     </style>
 </head>
@@ -47,6 +41,25 @@
     <div class="tabs">
         <button class="tab-btn active" onclick="wisselSpeler(event, 'Lou')">Lou</button>
         <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
+    </div>
+
+    <!-- FILTER BALK GALERIJ -->
+    <div class="filter-bar">
+        <span style="font-size: 12px; font-weight: 700; color: #9ca3af;">Filter galerij</span>
+        <div class="filter-toggle" onclick="toggleFilter()">
+            <span id="filter-indicator">Alle</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        
+        <div id="filter-panel" class="filter-panel">
+            <div class="filter-section-title">Leeftijd / Categorie</div>
+            <div id="filter-chips-leeftijd" class="filter-chips-container"></div>
+            
+            <div class="filter-section-title">Ploeg / Tegenstander</div>
+            <div id="filter-chips-ploeg" class="filter-chips-container"></div>
+            
+            <button onclick="resetFilters()" style="width: 100%; padding: 12px; border-radius: 8px; background: #f3f4f6; border: none; color: #4b5563; font-weight: 700; cursor: pointer;">Filters Wissen</button>
+        </div>
     </div>
 
     <main id="photo-album-container" style="padding: 0 20px 100px 20px;">
@@ -89,25 +102,47 @@
 
     <!-- UPLOAD MODAL -->
     <div id="upload-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.5); backdrop-filter: blur(5px); z-index: 9000; align-items: flex-end; justify-content: center;">
-        <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease;" id="upload-modal-content">
+        <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease; max-height: 90vh; overflow-y: auto;" id="upload-modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin: 0; font-size: 20px; font-weight: 800;">Media Toevoegen</h2>
                 <button onclick="closeUploadModal()" style="background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; color: #64748b; cursor: pointer;">✕</button>
             </div>
             
-            <div class="form-group">
-                <label>Kies Datum</label>
-                <input type="date" id="extra-datum" required>
+            <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label>Kies Datum</label>
+                    <input type="date" id="extra-datum" required style="width: 100%; padding: 14px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; font-weight: 500; color: #1e293b;">
+                </div>
+                <div style="flex: 1;">
+                    <label>Categorie (Leeftijd)</label>
+                    <select id="extra-categorie" required style="width: 100%; padding: 14px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; font-weight: 500; color: #1e293b;">
+                        <option value="U6" selected>U6</option>
+                        <option value="U7">U7</option>
+                        <option value="U8">U8</option>
+                        <option value="U9">U9</option>
+                        <option value="U10">U10</option>
+                        <option value="U11">U11</option>
+                        <option value="U12">U12</option>
+                        <option value="U13">U13</option>
+                        <option value="U14">U14</option>
+                        <option value="U15">U15</option>
+                        <option value="U16">U16</option>
+                        <option value="U17">U17</option>
+                        <option value="Beloften">Beloften</option>
+                        <option value="Eerste Ploeg">Eerste Ploeg</option>
+                        <option value="Veteranen">Veteranen</option>
+                    </select>
+                </div>
             </div>
             
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 15px;">
                 <label>Opmerking / Beschrijving (Optioneel)</label>
-                <textarea id="extra-opmerking" rows="2" placeholder="Bijv. Eerste doelpunt..."></textarea>
+                <textarea id="extra-opmerking" rows="2" placeholder="Bijv. Eerste doelpunt..." style="width: 100%; padding: 14px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; font-weight: 500; color: #1e293b;"></textarea>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 20px;">
                 <label>Selecteer Foto's en/of Video's</label>
-                <input type="file" id="extra-fotos" accept="image/*, video/*" multiple required>
+                <input type="file" id="extra-fotos" accept="image/*, video/*" multiple required style="width: 100%; padding: 14px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 15px; font-weight: 500; color: #1e293b;">
                 <span style="font-size: 10px; color: #94a3b8; display: block; margin-top: 6px;">Video's max 50MB per stuk. Foto's worden opgeslagen in 2MB/2560px resolutie.</span>
             </div>
             
@@ -117,10 +152,8 @@
 
     <!-- LIGHTBOX -->
     <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
-        
         <div style="position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); box-sizing: border-box; z-index: 10000; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);">
             <span id="lb-counter" style="color: #fff; font-size: 15px; font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 1px 4px rgba(0,0,0,0.8);"></span>
-            
             <div style="display: flex; gap: 10px;">
                 <button id="lb-edit-btn" onclick="bewerkHuidigeFoto()" style="background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">✏️</button>
                 <button onclick="verwijderHuidigeFoto()" style="background: rgba(220, 38, 38, 0.8); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">🗑️</button>
@@ -149,137 +182,106 @@
     <script src="js/database.js"></script>
 
     <script>
-        // --- CUSTOM PIN TOETSENBORD LOGICA ---
+        // --- CUSTOM PIN LOGICA ---
         let currentPin = '';
         let pinSuccessCallback = null;
 
         function requirePin(callback) {
-            currentPin = '';
-            pinSuccessCallback = callback;
-            updatePinDots();
-            
+            currentPin = ''; pinSuccessCallback = callback; updatePinDots();
             const modal = document.getElementById('custom-pin-modal');
             const content = document.getElementById('custom-pin-content');
-            
-            modal.style.display = 'flex';
-            // Kleine delay voor fade in animatie
-            setTimeout(() => {
-                modal.style.opacity = '1';
-                content.style.transform = 'scale(1)';
-            }, 10);
+            modal.style.display = 'flex'; setTimeout(() => { modal.style.opacity = '1'; content.style.transform = 'scale(1)'; }, 10);
         }
 
         function closePinModal() {
             const modal = document.getElementById('custom-pin-modal');
             const content = document.getElementById('custom-pin-content');
-            
-            modal.style.opacity = '0';
-            content.style.transform = 'scale(0.95)';
-            
-            setTimeout(() => {
-                modal.style.display = 'none';
-                currentPin = '';
-                pinSuccessCallback = null;
-            }, 200);
+            modal.style.opacity = '0'; content.style.transform = 'scale(0.95)';
+            setTimeout(() => { modal.style.display = 'none'; currentPin = ''; pinSuccessCallback = null; }, 200);
         }
 
-        function addPinDigit(digit) {
-            if (currentPin.length < 4) {
-                currentPin += digit;
-                updatePinDots();
-                
-                // Als er 4 cijfers zijn ingegeven, controleer automatisch!
-                if (currentPin.length === 4) {
-                    setTimeout(verifyPin, 150); // Heel even wachten zodat je het laatste bolletje nog ziet kleuren
-                }
-            }
-        }
-
-        function removePinDigit() {
-            if (currentPin.length > 0) {
-                currentPin = currentPin.slice(0, -1);
-                updatePinDots();
-            }
-        }
-
+        function addPinDigit(digit) { if (currentPin.length < 4) { currentPin += digit; updatePinDots(); if (currentPin.length === 4) setTimeout(verifyPin, 150); } }
+        function removePinDigit() { if (currentPin.length > 0) { currentPin = currentPin.slice(0, -1); updatePinDots(); } }
         function updatePinDots() {
             const dots = document.querySelectorAll('.pin-dot');
-            dots.forEach((dot, index) => {
-                dot.classList.remove('error'); // Verwijder rode rand indien aanwezig
-                if (index < currentPin.length) {
-                    dot.classList.add('filled');
-                } else {
-                    dot.classList.remove('filled');
-                }
-            });
+            dots.forEach((dot, index) => { dot.classList.remove('error'); if (index < currentPin.length) dot.classList.add('filled'); else dot.classList.remove('filled'); });
         }
-
         function verifyPin() {
-            if (currentPin === "0204") {
-                // Correct!
-                closePinModal();
-                if (pinSuccessCallback) {
-                    pinSuccessCallback();
-                }
-            } else {
-                // Fout! Trillen en rood maken
-                const dotsContainer = document.getElementById('pin-dots');
-                const dots = document.querySelectorAll('.pin-dot');
-                
-                dotsContainer.classList.add('shake');
-                dots.forEach(dot => { dot.classList.add('error'); dot.classList.remove('filled'); });
-                
-                setTimeout(() => {
-                    dotsContainer.classList.remove('shake');
-                    currentPin = '';
-                    updatePinDots(); // Bolletjes weer netjes leegmaken
-                }, 400);
+            if (currentPin === "0204") { closePinModal(); if (pinSuccessCallback) pinSuccessCallback(); } 
+            else {
+                const dotsContainer = document.getElementById('pin-dots'); const dots = document.querySelectorAll('.pin-dot');
+                dotsContainer.classList.add('shake'); dots.forEach(dot => { dot.classList.add('error'); dot.classList.remove('filled'); });
+                setTimeout(() => { dotsContainer.classList.remove('shake'); currentPin = ''; updatePinDots(); }, 400);
             }
         }
 
-
-        // --- STANDAARD GALERIJ LOGICA ---
-        let huidigeSpeler = 'Lou';
-        let alleFotosGlobal = []; 
-        let groepenGlobal = []; 
-        let currentLbIndex = 0;   
-
+        // --- FILTER EN GALERIJ LOGICA ---
         const badgeColors = {
-            'U6': { bg: '#fef08a', text: '#713f12' }, 
-            'U7': { bg: '#fed7aa', text: '#7c2d12' }, 
-            'U8': { bg: '#fecaca', text: '#7f1d1d' }, 
-            'U9': { bg: '#fbcfe8', text: '#831843' }, 
-            'U10': { bg: '#e9d5ff', text: '#581c87' }, 
-            'U11': { bg: '#c7d2fe', text: '#312e81' }, 
-            'U12': { bg: '#bae6fd', text: '#0c4a6e' }, 
-            'U13': { bg: '#99f6e4', text: '#0f766e' }, 
-            'U14': { bg: '#bbf7d0', text: '#14532d' }, 
-            'U15': { bg: '#d9f99d', text: '#3f6212' }, 
-            'U16': { bg: '#fde68a', text: '#92400e' }, 
-            'U17': { bg: '#fcd34d', text: '#92400e' }, 
-            'Beloften': { bg: '#e2e8f0', text: '#1e293b' },
-            'Eerste Ploeg': { bg: '#1e293b', text: '#f9fafb' },
-            'Veteranen': { bg: '#9ca3af', text: '#1e293b' },
-            'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 
-            'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 
-            'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 
-            'Thuis': { bg: '#e0e7ff', text: '#3730a3' }, 
-            'Uit': { bg: '#ffedd5', text: '#9a3412' }, 
-            'Extra': { bg: '#334155', text: '#f8fafc' }, 
+            'U6': { bg: '#fef08a', text: '#713f12' }, 'U7': { bg: '#fed7aa', text: '#7c2d12' }, 'U8': { bg: '#fecaca', text: '#7f1d1d' }, 
+            'U9': { bg: '#fbcfe8', text: '#831843' }, 'U10': { bg: '#e9d5ff', text: '#581c87' }, 'U11': { bg: '#c7d2fe', text: '#312e81' }, 
+            'U12': { bg: '#bae6fd', text: '#0c4a6e' }, 'U13': { bg: '#99f6e4', text: '#0f766e' }, 'U14': { bg: '#bbf7d0', text: '#14532d' }, 
+            'U15': { bg: '#d9f99d', text: '#3f6212' }, 'U16': { bg: '#fde68a', text: '#92400e' }, 'U17': { bg: '#fcd34d', text: '#92400e' }, 
+            'Beloften': { bg: '#e2e8f0', text: '#1e293b' }, 'Eerste Ploeg': { bg: '#1e293b', text: '#f9fafb' }, 'Veteranen': { bg: '#9ca3af', text: '#1e293b' },
+            'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 
+            'Thuis': { bg: '#e0e7ff', text: '#3730a3' }, 'Uit': { bg: '#ffedd5', text: '#9a3412' }, 'Extra': { bg: '#334155', text: '#f8fafc' }, 
             'Standaard': { bg: '#f3f4f6', text: '#4b5563' }
         };
 
         function getBadgeHtml(waarde) {
-            if (!waarde) return '';
-            const style = badgeColors[waarde] || badgeColors['Standaard'];
+            if (!waarde) return ''; const style = badgeColors[waarde] || badgeColors['Standaard'];
             return `<span style="display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; padding: 4px 8px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; background-color: ${style.bg}; color: ${style.text}; border: 1px solid ${style.bg};">${waarde}</span>`;
+        }
+
+        let huidigeSpeler = 'Lou';
+        let ruweMedia = [];
+        let alleFotosGlobal = []; 
+        let groepenGlobal = []; 
+        let currentLbIndex = 0;   
+        
+        let filterCategorie = null;
+        let filterPloeg = null;
+
+        function toggleFilter() { document.getElementById('filter-panel').classList.toggle('open'); }
+        function resetFilters() { filterCategorie = null; filterPloeg = null; document.getElementById('filter-panel').classList.remove('open'); verwerkEnTekenGalerij(); buildFilterUI(); }
+        function setFilter(soort, waarde) {
+            if (soort === 'cat') filterCategorie = (filterCategorie === waarde) ? null : waarde;
+            if (soort === 'ploeg') filterPloeg = (filterPloeg === waarde) ? null : waarde;
+            verwerkEnTekenGalerij(); buildFilterUI();
+        }
+
+        function buildFilterUI() {
+            const catContainer = document.getElementById('filter-chips-leeftijd');
+            const ploegContainer = document.getElementById('filter-chips-ploeg');
+            catContainer.innerHTML = ''; ploegContainer.innerHTML = '';
+
+            const actieveCategorieen = [...new Set(ruweMedia.map(m => m.categorie).filter(Boolean))].sort((a, b) => {
+                const numA = parseInt(a.replace('U', '')) || 999; const numB = parseInt(b.replace('U', '')) || 999; return numA - numB;
+            });
+            const actievePloegen = [...new Set(ruweMedia.map(m => m.tegenstander).filter(Boolean))].sort();
+
+            actieveCategorieen.forEach(cat => {
+                const style = badgeColors[cat] || badgeColors['Standaard'];
+                const isActive = filterCategorie === cat ? 'active' : '';
+                catContainer.innerHTML += `<div class="filter-chip ${isActive}" onclick="setFilter('cat', '${cat}')" style="background: ${style.bg}; color: ${style.text}; border-color: ${isActive ? style.text : 'transparent'};">${cat}</div>`;
+            });
+
+            actievePloegen.forEach(ploeg => {
+                const isActive = filterPloeg === ploeg ? 'active' : '';
+                ploegContainer.innerHTML += `<div class="filter-chip ${isActive}" onclick="setFilter('ploeg', '${ploeg.replace(/'/g, "\\'")}')" style="background: #f1f5f9; color: #4b5563; border-color: ${isActive ? '#4b5563' : 'transparent'};">${ploeg}</div>`;
+            });
+
+            let indText = "Alle";
+            if(filterCategorie && filterPloeg) indText = `${filterCategorie} & ${filterPloeg}`;
+            else if(filterCategorie) indText = filterCategorie;
+            else if(filterPloeg) indText = filterPloeg;
+            document.getElementById('filter-indicator').innerText = indText;
         }
 
         async function laadFotos(speler) {
             huidigeSpeler = speler;
             const container = document.getElementById('photo-album-container');
             container.innerHTML = '<p class="empty-state">Media laden... ⏳</p>';
-            groepenGlobal = [];
+            ruweMedia = [];
 
             try {
                 const [matchRes, extraRes, videoRes] = await Promise.all([
@@ -291,8 +293,6 @@
                 if (matchRes.error) throw matchRes.error;
                 if (extraRes.error) throw extraRes.error;
 
-                let alleMedia = [];
-
                 matchRes.data.forEach(match => {
                     if (match.fotos && match.fotos.length > 0) {
                         const isToernooi = match.type_wedstrijd === 'Toernooi';
@@ -303,95 +303,114 @@
 
                         match.fotos.forEach(url => {
                             const isVid = url.toLowerCase().match(/\.(mp4|mov|mkv|webm)$/) != null;
-                            alleMedia.push({ 
+                            ruweMedia.push({ 
                                 url: url, datumRuw: new Date(match.datum), titel: subtitel, matchId: match.id, 
-                                type: 'match', isVideo: isVid, tags: tagsHtml 
+                                type: 'match', isVideo: isVid, tags: tagsHtml, 
+                                categorie: match.categorie || 'U6', tegenstander: match.tegenstander || 'Onbekend'
                             });
                         });
                     }
                 });
 
+                // Losse media krijgt de nieuwe opgeslagen categorie, of valt terug op 'U6' (historische data)
                 extraRes.data.forEach(foto => {
                     const subtitel = foto.opmerking ? `📷 ${foto.opmerking}` : `📷 Training / Extra`;
-                    alleMedia.push({ 
+                    const cat = foto.categorie || 'U6';
+                    ruweMedia.push({ 
                         url: foto.url, datumRuw: new Date(foto.datum), titel: subtitel, matchId: null, 
-                        recordId: foto.id, type: 'extra', isVideo: false, tags: getBadgeHtml('Extra'), ruweOpmerking: foto.opmerking || ''
+                        recordId: foto.id, type: 'extra', isVideo: false, tags: getBadgeHtml(cat) + getBadgeHtml('Extra'), 
+                        ruweOpmerking: foto.opmerking || '', categorie: cat, tegenstander: 'Training / Extra'
                     });
                 });
 
                 if (videoRes && videoRes.data) {
                     videoRes.data.forEach(vid => {
                         const subtitel = vid.opmerking ? `🎥 ${vid.opmerking}` : `🎥 Video / Extra`;
-                        alleMedia.push({ 
+                        const cat = vid.categorie || 'U6';
+                        ruweMedia.push({ 
                             url: vid.url, datumRuw: new Date(vid.datum), titel: subtitel, matchId: null, 
-                            recordId: vid.id, type: 'extra', isVideo: true, tags: getBadgeHtml('Extra'), ruweOpmerking: vid.opmerking || ''
+                            recordId: vid.id, type: 'extra', isVideo: true, tags: getBadgeHtml(cat) + getBadgeHtml('Extra'), 
+                            ruweOpmerking: vid.opmerking || '', categorie: cat, tegenstander: 'Training / Extra'
                         });
                     });
                 }
 
-                alleMedia.sort((a, b) => b.datumRuw - a.datumRuw);
-                alleFotosGlobal = alleMedia;
+                ruweMedia.sort((a, b) => b.datumRuw - a.datumRuw);
 
-                if (alleMedia.length === 0) {
-                    container.innerHTML = '<p class="empty-state">Er is nog geen media geüpload voor deze speler.</p>';
-                    return;
-                }
-
-                const geclusterdeFotos = {};
-                const orderOfKeys = [];
-
-                alleMedia.forEach((media, index) => {
-                    const datumVoluit = media.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
-                    const groupKey = `${datumVoluit}___${media.titel}`;
-                    
-                    if (!geclusterdeFotos[groupKey]) {
-                        geclusterdeFotos[groupKey] = { datum: datumVoluit, titel: media.titel, fotos: [] };
-                        orderOfKeys.push(groupKey);
-                    }
-                    geclusterdeFotos[groupKey].fotos.push({ ...media, globalIndex: index });
-                });
-
-                let html = '';
-                orderOfKeys.forEach((key, groupIndex) => {
-                    const groep = geclusterdeFotos[key];
-                    groepenGlobal.push(groep); 
-                    
-                    html += `
-                        <div style="margin-top: 30px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #1e293b;">${groep.titel}</h3>
-                                <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${groep.datum}</span>
-                            </div>
-                            <button onclick="verwijderGroep(${groupIndex})" style="background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.2); width: 32px; height: 32px; border-radius: 50%; color: #dc2626; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" title="Verwijder deze volledige reeks">🗑️</button>
-                        </div>
-                    `;
-
-                    html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 4px; border-radius: 12px; overflow: hidden;">`;
-                    
-                    groep.fotos.forEach(media => {
-                        let innerMedia = '';
-                        if (media.isVideo) {
-                            innerMedia = `
-                                <video src="${media.url}#t=0.1" preload="metadata" muted playsinline style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"></video>
-                                <span style="position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
-                            `;
-                        } else {
-                            innerMedia = `<img src="${media.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">`;
-                        }
-
-                        html += `
-                            <div onclick="openLightbox(${media.globalIndex})" style="position: relative; aspect-ratio: 1; background: #e5e7eb; cursor: pointer; overflow: hidden;">
-                                ${innerMedia}
-                            </div>
-                        `;
-                    });
-
-                    html += `</div>`;
-                });
-
-                container.innerHTML = html;
+                buildFilterUI();
+                verwerkEnTekenGalerij();
 
             } catch (err) { container.innerHTML = '<p class="empty-state">Fout bij ophalen van media.</p>'; }
+        }
+
+        function verwerkEnTekenGalerij() {
+            const container = document.getElementById('photo-album-container');
+            groepenGlobal = [];
+
+            let gefilterd = ruweMedia;
+            if (filterCategorie) gefilterd = gefilterd.filter(m => m.categorie === filterCategorie);
+            if (filterPloeg) gefilterd = gefilterd.filter(m => m.tegenstander === filterPloeg);
+
+            alleFotosGlobal = gefilterd;
+
+            if (gefilterd.length === 0) {
+                container.innerHTML = '<p class="empty-state">Er is geen media gevonden voor deze filters.</p>';
+                return;
+            }
+
+            const geclusterdeFotos = {};
+            const orderOfKeys = [];
+
+            gefilterd.forEach((media, index) => {
+                const datumVoluit = media.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+                const groupKey = `${datumVoluit}___${media.titel}`;
+                
+                if (!geclusterdeFotos[groupKey]) {
+                    geclusterdeFotos[groupKey] = { datum: datumVoluit, titel: media.titel, fotos: [] };
+                    orderOfKeys.push(groupKey);
+                }
+                geclusterdeFotos[groupKey].fotos.push({ ...media, globalIndex: index });
+            });
+
+            let html = '';
+            orderOfKeys.forEach((key, groupIndex) => {
+                const groep = geclusterdeFotos[key];
+                groepenGlobal.push(groep); 
+                
+                html += `
+                    <div style="margin-top: 30px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #1e293b;">${groep.titel}</h3>
+                            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${groep.datum}</span>
+                        </div>
+                        <button onclick="verwijderGroep(${groupIndex})" style="background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.2); width: 32px; height: 32px; border-radius: 50%; color: #dc2626; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" title="Verwijder deze volledige reeks">🗑️</button>
+                    </div>
+                `;
+
+                html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 4px; border-radius: 12px; overflow: hidden;">`;
+                
+                groep.fotos.forEach(media => {
+                    let innerMedia = '';
+                    if (media.isVideo) {
+                        innerMedia = `
+                            <video src="${media.url}#t=0.1" preload="metadata" muted playsinline style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"></video>
+                            <span style="position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+                        `;
+                    } else {
+                        innerMedia = `<img src="${media.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">`;
+                    }
+
+                    html += `
+                        <div onclick="openLightbox(${media.globalIndex})" style="position: relative; aspect-ratio: 1; background: #e5e7eb; cursor: pointer; overflow: hidden;">
+                            ${innerMedia}
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
         }
 
         window.wisselSpeler = function(evt, speler) {
@@ -407,7 +426,6 @@
             const groep = groepenGlobal[groupIndex];
             if (!groep || groep.fotos.length === 0) return;
 
-            // VROEGER: prompt(). NU: requirePin()!
             requirePin(async () => {
                 if (!confirm(`Zeker dat je ALLE ${groep.fotos.length} foto's/video's van "${groep.titel}" (${groep.datum}) definitief wil wissen?`)) return;
 
@@ -427,7 +445,7 @@
                         try {
                             const pad = media.url.split('/public/media/')[1]; 
                             if(pad) await supabaseClient.storage.from('media').remove([pad]);
-                        } catch(e) { console.warn("Kon niet wissen", e); }
+                        } catch(e) {}
                     }
 
                     for (let matchId in matchUpdates) {
@@ -445,13 +463,9 @@
 
         // --- LIGHTBOX LOGICA ---
         window.openLightbox = function(index) {
-            currentLbIndex = index;
-            updateLightboxUI();
-            
+            currentLbIndex = index; updateLightboxUI();
             const lb = document.getElementById('lightbox');
-            lb.style.display = 'flex';
-            setTimeout(() => { lb.style.opacity = '1'; }, 10);
-            document.body.style.overflow = 'hidden'; 
+            lb.style.display = 'flex'; setTimeout(() => { lb.style.opacity = '1'; }, 10); document.body.style.overflow = 'hidden'; 
         };
 
         window.updateLightboxUI = function() {
@@ -461,25 +475,16 @@
             
             const imgEl = document.getElementById('lb-img');
             const vidEl = document.getElementById('lb-video');
-            
-            imgEl.style.opacity = '0'; 
-            vidEl.style.opacity = '0';
-            vidEl.pause();
+            imgEl.style.opacity = '0'; vidEl.style.opacity = '0'; vidEl.pause();
 
             setTimeout(() => {
                 if (media.isVideo) {
-                    imgEl.style.display = 'none';
-                    imgEl.src = '';
-                    vidEl.style.display = 'block';
-                    vidEl.src = media.url;
-                    vidEl.style.opacity = '1';
+                    imgEl.style.display = 'none'; imgEl.src = '';
+                    vidEl.style.display = 'block'; vidEl.src = media.url; vidEl.style.opacity = '1';
                     vidEl.play().catch(e => console.log("Autoplay kon niet starten."));
                 } else {
-                    vidEl.style.display = 'none';
-                    vidEl.src = '';
-                    imgEl.style.display = 'block';
-                    imgEl.src = media.url;
-                    imgEl.style.opacity = '1'; 
+                    vidEl.style.display = 'none'; vidEl.src = '';
+                    imgEl.style.display = 'block'; imgEl.src = media.url; imgEl.style.opacity = '1'; 
                 }
             }, 150);
 
@@ -489,12 +494,8 @@
             document.getElementById('lb-tags').innerHTML = media.tags || ''; 
             
             const linkBtn = document.getElementById('lb-link');
-            if (media.matchId && media.matchId !== 'null' && media.matchId !== 'undefined') { 
-                linkBtn.style.display = 'inline-block'; 
-                linkBtn.href = `match-detail.html?id=${media.matchId}`; 
-            } else { 
-                linkBtn.style.display = 'none'; 
-            }
+            if (media.matchId && media.matchId !== 'null' && media.matchId !== 'undefined') { linkBtn.style.display = 'inline-block'; linkBtn.href = `match-detail.html?id=${media.matchId}`; } 
+            else { linkBtn.style.display = 'none'; }
 
             document.getElementById('lb-edit-btn').style.display = media.type === 'extra' ? 'flex' : 'none';
             document.getElementById('lb-prev').style.display = currentLbIndex > 0 ? 'flex' : 'none';
@@ -505,32 +506,23 @@
         window.nextImage = function(e) { if (e) e.stopPropagation(); if (currentLbIndex < alleFotosGlobal.length - 1) { currentLbIndex++; updateLightboxUI(); } };
 
         window.closeLightbox = function() {
-            const lb = document.getElementById('lightbox');
-            lb.style.opacity = '0'; 
-            document.getElementById('lb-video').pause();
+            const lb = document.getElementById('lightbox'); lb.style.opacity = '0'; document.getElementById('lb-video').pause();
             setTimeout(() => { lb.style.display = 'none'; document.getElementById('lb-img').src = ''; document.getElementById('lb-video').src = ''; }, 300);
             document.body.style.overflow = 'auto';
         };
 
-        let touchstartX = 0; let touchendX = 0;
-        const lightboxElement = document.getElementById('lightbox');
-
+        let touchstartX = 0; let touchendX = 0; const lightboxElement = document.getElementById('lightbox');
         lightboxElement.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, {passive: true});
         lightboxElement.addEventListener('touchend', e => { touchendX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
-        function handleSwipe() {
-            if (touchendX < touchstartX - 50) nextImage(); 
-            if (touchendX > touchstartX + 50) prevImage(); 
-        }
+        function handleSwipe() { if (touchendX < touchstartX - 50) nextImage(); if (touchendX > touchstartX + 50) prevImage(); }
 
-        // --- VERWIJDEREN 1 PER 1 (IN LIGHTBOX) ---
+        // --- VERWIJDEREN / WIJZIGEN (1 PER 1 IN LIGHTBOX) ---
         window.verwijderHuidigeFoto = async function() {
             const media = alleFotosGlobal[currentLbIndex];
             if (!media) return;
 
-            // Custom PIN Modal
             requirePin(async () => {
                 if (!confirm("Zeker dat je deze ene media definitief wil wissen?")) return;
-
                 try {
                     if (media.type === 'extra') {
                         const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
@@ -542,13 +534,8 @@
                             await supabaseClient.from('wedstrijden').update({ fotos: nieuweFotos }).eq('id', media.matchId);
                         }
                     }
-                    try {
-                        const pad = media.url.split('/public/media/')[1]; 
-                        if(pad) await supabaseClient.storage.from('media').remove([pad]);
-                    } catch(e) {}
-
-                    closeLightbox();
-                    laadFotos(huidigeSpeler); 
+                    try { const pad = media.url.split('/public/media/')[1]; if(pad) await supabaseClient.storage.from('media').remove([pad]); } catch(e) {}
+                    closeLightbox(); laadFotos(huidigeSpeler); 
                 } catch (err) { alert("Fout bij verwijderen."); }
             });
         };
@@ -557,35 +544,29 @@
             const media = alleFotosGlobal[currentLbIndex];
             if (media.type !== 'extra') return; 
 
-            // Custom PIN Modal
             requirePin(async () => {
                 const formatDatum = media.datumRuw.toISOString().split('T')[0];
-                // Voor gewone tekstinput gebruiken we nog wel de standaard prompt (is overzichtelijker voor een datum/tekst dan een custom modal hiervoor)
                 const nieuweDatum = prompt("Pas de datum aan (JJJJ-MM-DD):", formatDatum);
                 if (!nieuweDatum) return;
-
                 const nieuweOpmerking = prompt("Pas de opmerking aan:", media.ruweOpmerking);
                 if (nieuweOpmerking === null) return; 
 
                 try {
                     const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
-                    await supabaseClient.from(table).update({ 
-                        datum: nieuweDatum, 
-                        opmerking: nieuweOpmerking 
-                    }).eq('id', media.recordId);
-                    
-                    closeLightbox();
-                    laadFotos(huidigeSpeler);
+                    await supabaseClient.from(table).update({ datum: nieuweDatum, opmerking: nieuweOpmerking }).eq('id', media.recordId);
+                    closeLightbox(); laadFotos(huidigeSpeler);
                 } catch(e) { alert("Fout bij wijzigen."); }
             });
         };
 
         // --- UPLOAD LOGICA ---
         window.openUploadModal = function() {
-            // Custom PIN Modal!
             requirePin(() => {
                 document.getElementById('extra-datum').valueAsDate = new Date();
                 document.getElementById('extra-opmerking').value = ""; 
+                // Categorie herstellen naar U6 (Standaard)
+                document.getElementById('extra-categorie').value = "U6";
+                
                 document.getElementById('upload-modal').style.display = 'flex';
                 setTimeout(() => document.getElementById('upload-modal-content').style.transform = 'translateY(0)', 10);
             });
@@ -599,6 +580,7 @@
         window.saveExtraFotos = async function() {
             const files = document.getElementById('extra-fotos').files;
             const datum = document.getElementById('extra-datum').value;
+            const categorie = document.getElementById('extra-categorie').value;
             const opmerking = document.getElementById('extra-opmerking').value;
             
             if(files.length === 0) return alert("Kies eerst een bestand!");
@@ -639,7 +621,7 @@
                     const { data: publicUrlData } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
                     
                     const { error: dbError } = await supabaseClient.from(dbTable).insert([{
-                        speler: huidigeSpeler, datum: datum, url: publicUrlData.publicUrl, opmerking: opmerking
+                        speler: huidigeSpeler, datum: datum, categorie: categorie, url: publicUrlData.publicUrl, opmerking: opmerking
                     }]);
                     if (dbError) throw dbError;
                 }
