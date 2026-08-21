@@ -54,9 +54,8 @@
 
             <div class="form-group">
                 <label>Selecteer Foto's en/of Video's</label>
-                <!-- Accept aangepast zodat video's ook geselecteerd kunnen worden -->
                 <input type="file" id="extra-fotos" accept="image/*, video/*" multiple required>
-                <span style="font-size: 10px; color: #94a3b8; display: block; margin-top: 6px;">Tip: Houd video's kort voor een snelle app.</span>
+                <span style="font-size: 10px; color: #94a3b8; display: block; margin-top: 6px;">Hogere kwaliteit is actief (tot 2MB / 2560px per foto). Video's worden ongewijzigd geüpload.</span>
             </div>
             
             <button id="upload-btn" onclick="saveExtraFotos()" class="submit-btn">Uploaden</button>
@@ -79,7 +78,6 @@
         <button id="lb-prev" onclick="prevImage(event)" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); color: #fff; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; z-index: 10000; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">&#10094;</button>
         <button id="lb-next" onclick="nextImage(event)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); color: #fff; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; z-index: 10000; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">&#10095;</button>
 
-        <!-- Zowel image als video tags klaarzetten -->
         <img id="lb-img" src="" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.2s ease; display: none;">
         <video id="lb-video" src="" controls playsinline style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.2s ease; display: none;"></video>
         
@@ -139,7 +137,6 @@
             container.innerHTML = '<p class="empty-state">Media laden... ⏳</p>';
 
             try {
-                // Haal foto's én video's op!
                 const [matchRes, extraRes, videoRes] = await Promise.all([
                     supabaseClient.from('wedstrijden').select('*').eq('speler', speler),
                     supabaseClient.from('extra_fotos').select('*').eq('speler', speler),
@@ -225,7 +222,6 @@
                     groep.fotos.forEach(media => {
                         const safeTitel = groep.titel.replace(/'/g, "\\'").replace(/"/g, "&quot;");
                         
-                        // Toon een speciaal Video-thumbnail block of een gewone foto
                         let innerMedia = '';
                         if (media.isVideo) {
                             innerMedia = `
@@ -443,6 +439,7 @@
             btn.innerText = "Bezig met uploaden... ⏳"; btn.disabled = true;
 
             try {
+                // HIER IS DE KWALITEIT VERHOOGD (2 MB, 2560px)
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     const isVideo = file.type.startsWith('video/');
@@ -458,7 +455,7 @@
                         dbTable = 'extra_videos';
                         folder = 'videos';
                     } else {
-                        const compressieOpties = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true };
+                        const compressieOpties = { maxSizeMB: 2, maxWidthOrHeight: 2560, useWebWorker: true, initialQuality: 0.9 };
                         uploadFile = await imageCompression(file, compressieOpties);
                     }
 
