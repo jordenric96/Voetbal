@@ -210,7 +210,6 @@ async function laadWedstrijdVoorBewerken(id) {
                 data.mini_scores.forEach(s => {
                     const eigen = isThuisGlobal ? s.thuis : s.uit;
                     const tegen = isThuisGlobal ? s.uit : s.thuis;
-                    // Geef ook minuten en kaarten mee!
                     addScoreRow(eigen, tegen, s.is_doelman, s.goals, s.assists, s.tegenstander, s.logo_tegenstander, s.minuten || '', s.geel || 0, s.rood || 0);
                 });
             } else {
@@ -340,7 +339,8 @@ window.saveMatch = async function() {
 
         let fotoUrls = bestaandeFotos; 
         if (fotoBestanden.length > 0) {
-            const compressieOpties = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true };
+            // HIER IS DE KWALITEIT VERHOOGD (2 MB, 2560px)
+            const compressieOpties = { maxSizeMB: 2, maxWidthOrHeight: 2560, useWebWorker: true, initialQuality: 0.9 };
             for (let i = 0; i < fotoBestanden.length; i++) {
                 submitBtn.innerText = `Foto ${i + 1}/${fotoBestanden.length}...`;
                 const gecomprimeerdeFoto = await imageCompression(fotoBestanden[i], compressieOpties);
@@ -362,7 +362,6 @@ window.saveMatch = async function() {
             const g = parseInt(row.querySelector('.mini-score-goals').value) || 0;
             const a = parseInt(row.querySelector('.mini-score-assists').value) || 0;
             
-            // Nieuwe velden ophalen
             const minStr = row.querySelector('.mini-score-minuten').value;
             const min = minStr !== '' ? parseInt(minStr) : null;
             const geel = parseInt(row.querySelector('.mini-score-geel').value) || 0;
@@ -386,7 +385,7 @@ window.saveMatch = async function() {
                 thuis: t, uit: u, 
                 is_doelman: isD, goals: g, assists: a, 
                 tegenstander: subNaam, logo_tegenstander: subLogo,
-                minuten: min, geel: geel, rood: rood // Nieuw opgeslagen in array!
+                minuten: min, geel: geel, rood: rood
             });
             if(isD) wasDoelmanOoit = true;
         });
