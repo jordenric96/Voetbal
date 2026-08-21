@@ -98,6 +98,7 @@
     <script>
         let huidigeSpeler = 'Lou';
         let alleFotosGlobal = []; 
+        let groepenGlobal = []; // Om groepen in bulk te kunnen wissen
         let currentLbIndex = 0;   
 
         const badgeColors = {
@@ -135,6 +136,7 @@
             huidigeSpeler = speler;
             const container = document.getElementById('photo-album-container');
             container.innerHTML = '<p class="empty-state">Media laden... ⏳</p>';
+            groepenGlobal = [];
 
             try {
                 const [matchRes, extraRes, videoRes] = await Promise.all([
@@ -207,21 +209,23 @@
                 });
 
                 let html = '';
-                orderOfKeys.forEach(key => {
+                orderOfKeys.forEach((key, groupIndex) => {
                     const groep = geclusterdeFotos[key];
+                    groepenGlobal.push(groep); // Sla op in de globale lijst zodat we ze kunnen wissen
                     
                     html += `
-                        <div style="margin-top: 30px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
-                            <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #1e293b;">${groep.titel}</h3>
-                            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${groep.datum}</span>
+                        <div style="margin-top: 30px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #1e293b;">${groep.titel}</h3>
+                                <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">${groep.datum}</span>
+                            </div>
+                            <button onclick="verwijderGroep(${groupIndex})" style="background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.2); width: 32px; height: 32px; border-radius: 50%; color: #dc2626; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" title="Verwijder deze volledige reeks">🗑️</button>
                         </div>
                     `;
 
                     html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 4px; border-radius: 12px; overflow: hidden;">`;
                     
                     groep.fotos.forEach(media => {
-                        const safeTitel = groep.titel.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                        
                         let innerMedia = '';
                         if (media.isVideo) {
                             innerMedia = `
@@ -253,6 +257,53 @@
             if (speler === 'Lou') { document.documentElement.style.setProperty('--brand-color', '#F34213'); } 
             else { document.documentElement.style.setProperty('--brand-color', '#ef476f'); }
             laadFotos(speler);
+        };
+
+        // --- VERWIJDER VOLLEDIGE GROEP ---
+        window.verwijderGroep = async function(groupIndex) {
+            const groep = groepenGlobal[groupIndex];
+            if (!groep || groep.fotos.length === 0) return;
+
+            const pin = prompt("Voer pincode in om deze volledige reeks (" + groep.fotos.length + " items) in één keer te wissen:");
+            if (pin !== "0204") {
+                if (pin !== null) alert("Onjuiste code.");
+                return;
+            }
+
+            if (!confirm(`Zeker dat je ALLE ${groep.fotos.length} foto's/video's van "${groep.titel}" (${groep.datum}) definitief wil wissen?`)) return;
+
+            document.body.style.cursor = 'wait'; // Toon dat we aan het laden zijn
+
+            try {
+                let matchUpdates = {}; 
+                
+                for (let media of groep.fotos) {
+                    // 1. Verwijder uit database tabellen
+                    if (media.type === 'extra') {
+                        const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
+                        await supabaseClient.from(table).delete().eq('id', media.recordId);
+                    } else if (media.type === 'match') {
+                        matchUpdates[media.matchId] = true;
+                    }
+                    
+                    // 2. Verwijder bestand uit de storage map
+                    try {
+                        const pad = media.url.split('/public/media/')[1]; 
+                        if(pad) await supabaseClient.storage.from('media').remove([pad]);
+                    } catch(e) { console.warn("Kon bestand niet wissen uit storage", e); }
+                }
+
+                // 3. Voor matches: de volledige array leegmaken in de 'wedstrijden' tabel
+                for (let matchId in matchUpdates) {
+                    await supabaseClient.from('wedstrijden').update({ fotos: [] }).eq('id', matchId);
+                }
+
+                document.body.style.cursor = 'default';
+                laadFotos(huidigeSpeler); 
+            } catch (err) { 
+                document.body.style.cursor = 'default';
+                alert("Fout bij verwijderen van de reeks."); 
+            }
         };
 
         // --- LIGHTBOX LOGICA ---
@@ -346,7 +397,7 @@
             if (touchendX > touchstartX + 50) prevImage(); 
         }
 
-        // --- VERWIJDEREN & WIJZIGEN ---
+        // --- VERWIJDEREN 1 PER 1 (IN LIGHTBOX) ---
 
         window.verwijderHuidigeFoto = async function() {
             const media = alleFotosGlobal[currentLbIndex];
@@ -358,7 +409,7 @@
                 return;
             }
 
-            if (!confirm("Zeker dat je deze media definitief wil wissen?")) return;
+            if (!confirm("Zeker dat je deze ene media definitief wil wissen?")) return;
 
             try {
                 if (media.type === 'extra') {
@@ -439,7 +490,6 @@
             btn.innerText = "Bezig met uploaden... ⏳"; btn.disabled = true;
 
             try {
-                // HIER IS DE KWALITEIT VERHOOGD (2 MB, 2560px)
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     const isVideo = file.type.startsWith('video/');
@@ -450,7 +500,6 @@
                     let dbTable = 'extra_fotos';
                     let folder = 'extra';
 
-                    // Sla compressie over voor video's!
                     if (isVideo) {
                         dbTable = 'extra_videos';
                         folder = 'videos';
