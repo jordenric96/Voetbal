@@ -29,15 +29,16 @@
     </div>
 
     <main id="photo-album-container" style="padding: 0 20px 100px 20px;">
-        <p class="empty-state">Foto's inladen... ⏳</p>
+        <p class="empty-state">Media inladen... ⏳</p>
     </main>
 
-    <button onclick="openUploadModal()" class="fab-btn">📷 + Foto</button>
+    <button onclick="openUploadModal()" class="fab-btn">📷/🎥 Media</button>
 
+    <!-- UPLOAD MODAL -->
     <div id="upload-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.5); backdrop-filter: blur(5px); z-index: 9000; align-items: flex-end; justify-content: center;">
         <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease;" id="upload-modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin: 0; font-size: 20px; font-weight: 800;">Foto's Toevoegen</h2>
+                <h2 style="margin: 0; font-size: 20px; font-weight: 800;">Media Toevoegen</h2>
                 <button onclick="closeUploadModal()" style="background: #f1f5f9; border: none; width: 30px; height: 30px; border-radius: 50%; font-weight: bold; color: #64748b; cursor: pointer;">✕</button>
             </div>
             
@@ -48,33 +49,29 @@
             
             <div class="form-group">
                 <label>Opmerking / Beschrijving (Optioneel)</label>
-                <textarea id="extra-opmerking" rows="2" placeholder="Bijv. Training in de regen..."></textarea>
+                <textarea id="extra-opmerking" rows="2" placeholder="Bijv. Eerste doelpunt..."></textarea>
             </div>
 
             <div class="form-group">
-                <label>Selecteer Foto's</label>
-                <input type="file" id="extra-fotos" accept="image/png, image/jpeg" multiple required>
+                <label>Selecteer Foto's en/of Video's</label>
+                <!-- Accept aangepast zodat video's ook geselecteerd kunnen worden -->
+                <input type="file" id="extra-fotos" accept="image/*, video/*" multiple required>
+                <span style="font-size: 10px; color: #94a3b8; display: block; margin-top: 6px;">Tip: Houd video's kort voor een snelle app.</span>
             </div>
             
             <button id="upload-btn" onclick="saveExtraFotos()" class="submit-btn">Uploaden</button>
         </div>
     </div>
 
-    <!-- VERNIEUWDE LIGHTBOX MET WIJZIG/WIS KNOPPEN -->
+    <!-- LIGHTBOX -->
     <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
         
-        <!-- Top Bar -->
         <div style="position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); box-sizing: border-box; z-index: 10000; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);">
             <span id="lb-counter" style="color: #fff; font-size: 15px; font-weight: 800; letter-spacing: 0.5px; text-shadow: 0 1px 4px rgba(0,0,0,0.8);"></span>
             
             <div style="display: flex; gap: 10px;">
-                <!-- Bewerk knop (alleen voor extra foto's) -->
                 <button id="lb-edit-btn" onclick="bewerkHuidigeFoto()" style="background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">✏️</button>
-                
-                <!-- Verwijder knop -->
                 <button onclick="verwijderHuidigeFoto()" style="background: rgba(220, 38, 38, 0.8); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">🗑️</button>
-                
-                <!-- Sluit knop -->
                 <button onclick="closeLightbox()" style="background: rgba(255,255,255,0.2); color: #fff; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">✕</button>
             </div>
         </div>
@@ -82,9 +79,10 @@
         <button id="lb-prev" onclick="prevImage(event)" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); color: #fff; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; z-index: 10000; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">&#10094;</button>
         <button id="lb-next" onclick="nextImage(event)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); color: #fff; border: none; width: 44px; height: 44px; border-radius: 50%; font-size: 18px; z-index: 10000; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">&#10095;</button>
 
-        <img id="lb-img" src="" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.2s ease;">
+        <!-- Zowel image als video tags klaarzetten -->
+        <img id="lb-img" src="" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.2s ease; display: none;">
+        <video id="lb-video" src="" controls playsinline style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.2s ease; display: none;"></video>
         
-        <!-- Bottom Info Bar -->
         <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 20px 20px 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); box-sizing: border-box; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 60%, transparent 100%); display: flex; flex-direction: column; align-items: flex-start; z-index: 10000;">
             <div id="lb-tags" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;"></div>
             <p id="lb-title" style="color: #fff; font-weight: 800; font-size: 18px; margin: 0 0 6px 0; text-shadow: 0 1px 4px rgba(0,0,0,0.8); text-align: left;"></p>
@@ -138,18 +136,20 @@
         async function laadFotos(speler) {
             huidigeSpeler = speler;
             const container = document.getElementById('photo-album-container');
-            container.innerHTML = '<p class="empty-state">Foto\'s laden... ⏳</p>';
+            container.innerHTML = '<p class="empty-state">Media laden... ⏳</p>';
 
             try {
-                const [matchRes, extraRes] = await Promise.all([
+                // Haal foto's én video's op!
+                const [matchRes, extraRes, videoRes] = await Promise.all([
                     supabaseClient.from('wedstrijden').select('*').eq('speler', speler),
-                    supabaseClient.from('extra_fotos').select('*').eq('speler', speler)
+                    supabaseClient.from('extra_fotos').select('*').eq('speler', speler),
+                    supabaseClient.from('extra_videos').select('*').eq('speler', speler)
                 ]);
 
                 if (matchRes.error) throw matchRes.error;
                 if (extraRes.error) throw extraRes.error;
 
-                let alleFotos = [];
+                let alleMedia = [];
 
                 matchRes.data.forEach(match => {
                     if (match.fotos && match.fotos.length > 0) {
@@ -159,14 +159,11 @@
                         let tagsHtml = getBadgeHtml(match.categorie) + getBadgeHtml(match.type_wedstrijd);
                         if (!isToernooi && match.locatie) tagsHtml += getBadgeHtml(match.locatie);
 
-                        match.fotos.forEach(fotoUrl => {
-                            alleFotos.push({ 
-                                url: fotoUrl, 
-                                datumRuw: new Date(match.datum), 
-                                titel: subtitel, 
-                                matchId: match.id, 
-                                type: 'match',
-                                tags: tagsHtml 
+                        match.fotos.forEach(url => {
+                            const isVid = url.toLowerCase().match(/\.(mp4|mov|mkv|webm)$/) != null;
+                            alleMedia.push({ 
+                                url: url, datumRuw: new Date(match.datum), titel: subtitel, matchId: match.id, 
+                                type: 'match', isVideo: isVid, tags: tagsHtml 
                             });
                         });
                     }
@@ -174,40 +171,42 @@
 
                 extraRes.data.forEach(foto => {
                     const subtitel = foto.opmerking ? `📷 ${foto.opmerking}` : `📷 Training / Extra`;
-                    let tagsHtml = getBadgeHtml('Extra');
-                    
-                    alleFotos.push({ 
-                        url: foto.url, 
-                        datumRuw: new Date(foto.datum), 
-                        titel: subtitel, 
-                        matchId: null, 
-                        recordId: foto.id, // ID toegevoegd voor wijzigen/wissen
-                        type: 'extra',
-                        tags: tagsHtml,
-                        ruweOpmerking: foto.opmerking || ''
+                    alleMedia.push({ 
+                        url: foto.url, datumRuw: new Date(foto.datum), titel: subtitel, matchId: null, 
+                        recordId: foto.id, type: 'extra', isVideo: false, tags: getBadgeHtml('Extra'), ruweOpmerking: foto.opmerking || ''
                     });
                 });
 
-                alleFotos.sort((a, b) => b.datumRuw - a.datumRuw);
-                alleFotosGlobal = alleFotos;
+                if (videoRes && videoRes.data) {
+                    videoRes.data.forEach(vid => {
+                        const subtitel = vid.opmerking ? `🎥 ${vid.opmerking}` : `🎥 Video / Extra`;
+                        alleMedia.push({ 
+                            url: vid.url, datumRuw: new Date(vid.datum), titel: subtitel, matchId: null, 
+                            recordId: vid.id, type: 'extra', isVideo: true, tags: getBadgeHtml('Extra'), ruweOpmerking: vid.opmerking || ''
+                        });
+                    });
+                }
 
-                if (alleFotos.length === 0) {
-                    container.innerHTML = '<p class="empty-state">Er zijn nog geen foto\'s geüpload voor deze speler.</p>';
+                alleMedia.sort((a, b) => b.datumRuw - a.datumRuw);
+                alleFotosGlobal = alleMedia;
+
+                if (alleMedia.length === 0) {
+                    container.innerHTML = '<p class="empty-state">Er is nog geen media geüpload voor deze speler.</p>';
                     return;
                 }
 
                 const geclusterdeFotos = {};
                 const orderOfKeys = [];
 
-                alleFotos.forEach((foto, index) => {
-                    const datumVoluit = foto.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
-                    const groupKey = `${datumVoluit}___${foto.titel}`;
+                alleMedia.forEach((media, index) => {
+                    const datumVoluit = media.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
+                    const groupKey = `${datumVoluit}___${media.titel}`;
                     
                     if (!geclusterdeFotos[groupKey]) {
-                        geclusterdeFotos[groupKey] = { datum: datumVoluit, titel: foto.titel, fotos: [] };
+                        geclusterdeFotos[groupKey] = { datum: datumVoluit, titel: media.titel, fotos: [] };
                         orderOfKeys.push(groupKey);
                     }
-                    geclusterdeFotos[groupKey].fotos.push({ ...foto, globalIndex: index });
+                    geclusterdeFotos[groupKey].fotos.push({ ...media, globalIndex: index });
                 });
 
                 let html = '';
@@ -223,10 +222,23 @@
 
                     html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 4px; border-radius: 12px; overflow: hidden;">`;
                     
-                    groep.fotos.forEach(foto => {
+                    groep.fotos.forEach(media => {
+                        const safeTitel = groep.titel.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        
+                        // Toon een speciaal Video-thumbnail block of een gewone foto
+                        let innerMedia = '';
+                        if (media.isVideo) {
+                            innerMedia = `
+                                <video src="${media.url}#t=0.1" preload="metadata" muted playsinline style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"></video>
+                                <span style="position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+                            `;
+                        } else {
+                            innerMedia = `<img src="${media.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">`;
+                        }
+
                         html += `
-                            <div onclick="openLightbox(${foto.globalIndex})" style="position: relative; aspect-ratio: 1; background: #e5e7eb; cursor: pointer; overflow: hidden;">
-                                <img src="${foto.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            <div onclick="openLightbox(${media.globalIndex})" style="position: relative; aspect-ratio: 1; background: #e5e7eb; cursor: pointer; overflow: hidden;">
+                                ${innerMedia}
                             </div>
                         `;
                     });
@@ -236,7 +248,7 @@
 
                 container.innerHTML = html;
 
-            } catch (err) { container.innerHTML = '<p class="empty-state">Fout bij ophalen van foto\'s.</p>'; }
+            } catch (err) { container.innerHTML = '<p class="empty-state">Fout bij ophalen van media.</p>'; }
         }
 
         window.wisselSpeler = function(evt, speler) {
@@ -247,7 +259,7 @@
             laadFotos(speler);
         };
 
-        // --- SWIPE & LIGHTBOX LOGICA ---
+        // --- LIGHTBOX LOGICA ---
 
         window.openLightbox = function(index) {
             currentLbIndex = index;
@@ -261,32 +273,47 @@
 
         window.updateLightboxUI = function() {
             if (alleFotosGlobal.length === 0) return;
-            const foto = alleFotosGlobal[currentLbIndex];
-            const datumMooi = foto.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+            const media = alleFotosGlobal[currentLbIndex];
+            const datumMooi = media.datumRuw.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
             
             const imgEl = document.getElementById('lb-img');
+            const vidEl = document.getElementById('lb-video');
+            
             imgEl.style.opacity = '0'; 
+            vidEl.style.opacity = '0';
+            vidEl.pause();
+
             setTimeout(() => {
-                imgEl.src = foto.url;
-                imgEl.style.opacity = '1'; 
+                if (media.isVideo) {
+                    imgEl.style.display = 'none';
+                    imgEl.src = '';
+                    vidEl.style.display = 'block';
+                    vidEl.src = media.url;
+                    vidEl.style.opacity = '1';
+                    vidEl.play().catch(e => console.log("Autoplay kon niet starten."));
+                } else {
+                    vidEl.style.display = 'none';
+                    vidEl.src = '';
+                    imgEl.style.display = 'block';
+                    imgEl.src = media.url;
+                    imgEl.style.opacity = '1'; 
+                }
             }, 150);
 
-            document.getElementById('lb-title').innerText = foto.titel;
+            document.getElementById('lb-title').innerText = media.titel;
             document.getElementById('lb-date').innerText = datumMooi;
             document.getElementById('lb-counter').innerText = `${currentLbIndex + 1} / ${alleFotosGlobal.length}`;
-            document.getElementById('lb-tags').innerHTML = foto.tags || ''; 
+            document.getElementById('lb-tags').innerHTML = media.tags || ''; 
             
             const linkBtn = document.getElementById('lb-link');
-            if (foto.matchId && foto.matchId !== 'null' && foto.matchId !== 'undefined') { 
+            if (media.matchId && media.matchId !== 'null' && media.matchId !== 'undefined') { 
                 linkBtn.style.display = 'inline-block'; 
-                linkBtn.href = `match-detail.html?id=${foto.matchId}`; 
+                linkBtn.href = `match-detail.html?id=${media.matchId}`; 
             } else { 
                 linkBtn.style.display = 'none'; 
             }
 
-            // Toon edit knop enkel bij extra foto's
-            document.getElementById('lb-edit-btn').style.display = foto.type === 'extra' ? 'flex' : 'none';
-
+            document.getElementById('lb-edit-btn').style.display = media.type === 'extra' ? 'flex' : 'none';
             document.getElementById('lb-prev').style.display = currentLbIndex > 0 ? 'flex' : 'none';
             document.getElementById('lb-next').style.display = currentLbIndex < alleFotosGlobal.length - 1 ? 'flex' : 'none';
         };
@@ -304,18 +331,20 @@
         window.closeLightbox = function() {
             const lb = document.getElementById('lightbox');
             lb.style.opacity = '0'; 
-            setTimeout(() => { lb.style.display = 'none'; document.getElementById('lb-img').src = ''; }, 300);
+            document.getElementById('lb-video').pause();
+            setTimeout(() => { 
+                lb.style.display = 'none'; 
+                document.getElementById('lb-img').src = ''; 
+                document.getElementById('lb-video').src = ''; 
+            }, 300);
             document.body.style.overflow = 'auto';
         };
 
-        // Swipe detectie
-        let touchstartX = 0;
-        let touchendX = 0;
+        let touchstartX = 0; let touchendX = 0;
         const lightboxElement = document.getElementById('lightbox');
 
         lightboxElement.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, {passive: true});
         lightboxElement.addEventListener('touchend', e => { touchendX = e.changedTouches[0].screenX; handleSwipe(); }, {passive: true});
-
         function handleSwipe() {
             if (touchendX < touchstartX - 50) nextImage(); 
             if (touchendX > touchstartX + 50) prevImage(); 
@@ -324,8 +353,8 @@
         // --- VERWIJDEREN & WIJZIGEN ---
 
         window.verwijderHuidigeFoto = async function() {
-            const foto = alleFotosGlobal[currentLbIndex];
-            if (!foto) return;
+            const media = alleFotosGlobal[currentLbIndex];
+            if (!media) return;
 
             const pin = prompt("Voer pincode in om te wissen:");
             if (pin !== "0204") {
@@ -333,24 +362,22 @@
                 return;
             }
 
-            if (!confirm("Zeker dat je deze foto definitief wil wissen?")) return;
+            if (!confirm("Zeker dat je deze media definitief wil wissen?")) return;
 
             try {
-                if (foto.type === 'extra') {
-                    // Wis uit extra_fotos tabel
-                    await supabaseClient.from('extra_fotos').delete().eq('id', foto.recordId);
-                } else if (foto.type === 'match') {
-                    // Verwijder specifieke foto uit de array van de wedstrijd
-                    const { data: matchData } = await supabaseClient.from('wedstrijden').select('fotos').eq('id', foto.matchId).single();
+                if (media.type === 'extra') {
+                    const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
+                    await supabaseClient.from(table).delete().eq('id', media.recordId);
+                } else if (media.type === 'match') {
+                    const { data: matchData } = await supabaseClient.from('wedstrijden').select('fotos').eq('id', media.matchId).single();
                     if (matchData && matchData.fotos) {
-                        const nieuweFotos = matchData.fotos.filter(url => url !== foto.url);
-                        await supabaseClient.from('wedstrijden').update({ fotos: nieuweFotos }).eq('id', foto.matchId);
+                        const nieuweFotos = matchData.fotos.filter(url => url !== media.url);
+                        await supabaseClient.from('wedstrijden').update({ fotos: nieuweFotos }).eq('id', media.matchId);
                     }
                 }
                 
-                // Probeer bestand uit opslag te halen (optioneel, faalt stil als het niet lukt)
                 try {
-                    const pad = foto.url.split('/public/media/')[1]; 
+                    const pad = media.url.split('/public/media/')[1]; 
                     if(pad) await supabaseClient.storage.from('media').remove([pad]);
                 } catch(e) {}
 
@@ -360,8 +387,8 @@
         };
 
         window.bewerkHuidigeFoto = async function() {
-            const foto = alleFotosGlobal[currentLbIndex];
-            if (foto.type !== 'extra') return; // Enkel extra foto's kunnen rechtstreeks bewerkt worden
+            const media = alleFotosGlobal[currentLbIndex];
+            if (media.type !== 'extra') return; 
 
             const pin = prompt("Voer pincode in om te wijzigen:");
             if (pin !== "0204") {
@@ -369,18 +396,19 @@
                 return;
             }
 
-            const formatDatum = foto.datumRuw.toISOString().split('T')[0];
+            const formatDatum = media.datumRuw.toISOString().split('T')[0];
             const nieuweDatum = prompt("Pas de datum aan (JJJJ-MM-DD):", formatDatum);
             if (!nieuweDatum) return;
 
-            const nieuweOpmerking = prompt("Pas de opmerking aan:", foto.ruweOpmerking);
-            if (nieuweOpmerking === null) return; // Geannuleerd
+            const nieuweOpmerking = prompt("Pas de opmerking aan:", media.ruweOpmerking);
+            if (nieuweOpmerking === null) return; 
 
             try {
-                await supabaseClient.from('extra_fotos').update({ 
+                const table = media.isVideo ? 'extra_videos' : 'extra_fotos';
+                await supabaseClient.from(table).update({ 
                     datum: nieuweDatum, 
                     opmerking: nieuweOpmerking 
-                }).eq('id', foto.recordId);
+                }).eq('id', media.recordId);
                 
                 closeLightbox();
                 laadFotos(huidigeSpeler);
@@ -408,20 +436,43 @@
             const files = document.getElementById('extra-fotos').files;
             const datum = document.getElementById('extra-datum').value;
             const opmerking = document.getElementById('extra-opmerking').value;
-            if(files.length === 0) return alert("Kies eerst een foto!");
+            
+            if(files.length === 0) return alert("Kies eerst een bestand!");
+
             const btn = document.getElementById('upload-btn');
             btn.innerText = "Bezig met uploaden... ⏳"; btn.disabled = true;
 
             try {
-                const compressieOpties = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true };
                 for (let i = 0; i < files.length; i++) {
-                    btn.innerText = `Foto ${i + 1}/${files.length} uploaden...`;
-                    const compressed = await imageCompression(files[i], compressieOpties);
-                    const bestandsNaam = `extra/${Date.now()}-${compressed.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-                    const { error: uploadError } = await supabaseClient.storage.from('media').upload(bestandsNaam, compressed);
+                    const file = files[i];
+                    const isVideo = file.type.startsWith('video/');
+
+                    btn.innerText = `Bestand ${i + 1}/${files.length} uploaden...`;
+
+                    let uploadFile = file;
+                    let dbTable = 'extra_fotos';
+                    let folder = 'extra';
+
+                    // Sla compressie over voor video's!
+                    if (isVideo) {
+                        dbTable = 'extra_videos';
+                        folder = 'videos';
+                    } else {
+                        const compressieOpties = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true };
+                        uploadFile = await imageCompression(file, compressieOpties);
+                    }
+
+                    const nameParts = file.name.split('.');
+                    const ext = nameParts.length > 1 ? nameParts.pop() : (isVideo ? 'mp4' : 'jpg');
+                    const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 15);
+                    const bestandsNaam = `${folder}/${Date.now()}-${cleanName}.${ext}`;
+                    
+                    const { error: uploadError } = await supabaseClient.storage.from('media').upload(bestandsNaam, uploadFile);
                     if (uploadError) throw uploadError;
+                    
                     const { data: publicUrlData } = supabaseClient.storage.from('media').getPublicUrl(bestandsNaam);
-                    await supabaseClient.from('extra_fotos').insert([{
+                    
+                    await supabaseClient.from(dbTable).insert([{
                         speler: huidigeSpeler, datum: datum, url: publicUrlData.publicUrl, opmerking: opmerking
                     }]);
                 }
@@ -429,7 +480,10 @@
                 btn.innerText = "Uploaden"; btn.disabled = false;
                 document.getElementById('extra-fotos').value = "";
                 laadFotos(huidigeSpeler); 
-            } catch (e) { alert("Fout bij uploaden."); btn.innerText = "Uploaden"; btn.disabled = false; }
+            } catch (e) {
+                alert("Fout bij uploaden.");
+                btn.innerText = "Uploaden"; btn.disabled = false;
+            }
         };
 
         document.addEventListener('DOMContentLoaded', () => laadFotos('Lou'));
