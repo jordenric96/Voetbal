@@ -10,6 +10,22 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#f8fafc">
     <link rel="stylesheet" href="css/style.css?v=2">
+    <style>
+        /* Specifieke CSS voor het custom PIN toetsenbord */
+        .pin-dots-container { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; }
+        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #cbd5e1; transition: all 0.2s ease; }
+        .pin-dot.filled { background: #1e293b; border-color: #1e293b; }
+        .pin-dot.error { border-color: #dc2626; background: #fef2f2; }
+        
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .numpad-btn { background: #f8fafc; border: 1px solid #f1f5f9; font-size: 26px; font-weight: 600; color: #1e293b; border-radius: 50%; width: 70px; height: 70px; margin: 0 auto; cursor: pointer; transition: all 0.1s; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .numpad-btn:active { background: #e2e8f0; transform: scale(0.95); }
+        .numpad-btn.empty { background: transparent; border: none; cursor: default; }
+        .numpad-btn.empty:active { transform: none; }
+        
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-8px); } }
+        .shake { animation: shake 0.4s ease-in-out; }
+    </style>
 </head>
 <body>
     <header>
@@ -34,6 +50,39 @@
 
     <button onclick="openBlessureModal()" class="fab-btn">🏥 + Dossier</button>
 
+    <!-- CUSTOM ON-SCREEN PIN MODAL -->
+    <div id="custom-pin-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.75); backdrop-filter: blur(8px); z-index: 10001; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease;">
+        <div style="background: #fff; width: 90%; max-width: 360px; border-radius: 28px; padding: 30px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.2s ease;" id="custom-pin-content">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #1e293b;">Beveiligde Actie</h3>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #64748b; font-weight: 600;">Voer je pincode in om verder te gaan.</p>
+            
+            <div id="pin-dots" class="pin-dots-container">
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+            </div>
+
+            <div class="numpad-grid">
+                <div class="numpad-btn" onclick="addPinDigit('1')">1</div>
+                <div class="numpad-btn" onclick="addPinDigit('2')">2</div>
+                <div class="numpad-btn" onclick="addPinDigit('3')">3</div>
+                <div class="numpad-btn" onclick="addPinDigit('4')">4</div>
+                <div class="numpad-btn" onclick="addPinDigit('5')">5</div>
+                <div class="numpad-btn" onclick="addPinDigit('6')">6</div>
+                <div class="numpad-btn" onclick="addPinDigit('7')">7</div>
+                <div class="numpad-btn" onclick="addPinDigit('8')">8</div>
+                <div class="numpad-btn" onclick="addPinDigit('9')">9</div>
+                <div class="numpad-btn empty"></div>
+                <div class="numpad-btn" onclick="addPinDigit('0')">0</div>
+                <div class="numpad-btn" style="font-size: 20px; background: #f1f5f9;" onclick="removePinDigit()">⌫</div>
+            </div>
+
+            <button onclick="closePinModal()" style="background: transparent; color: #94a3b8; border: none; font-size: 14px; font-weight: 700; padding: 10px; margin-top: 10px; cursor: pointer;">Annuleren</button>
+        </div>
+    </div>
+
+    <!-- UPLOAD MODAL -->
     <div id="blessure-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.5); backdrop-filter: blur(5px); z-index: 9000; align-items: flex-end; justify-content: center;">
         <div style="background: #fff; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s ease; max-height: 90vh; overflow-y: auto;" id="blessure-modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -87,6 +136,73 @@
     <script src="js/database.js"></script>
 
     <script>
+        // --- CUSTOM PIN TOETSENBORD LOGICA ---
+        let currentPin = '';
+        let pinSuccessCallback = null;
+
+        function requirePin(callback) {
+            currentPin = '';
+            pinSuccessCallback = callback;
+            updatePinDots();
+            
+            const modal = document.getElementById('custom-pin-modal');
+            const content = document.getElementById('custom-pin-content');
+            
+            modal.style.display = 'flex';
+            setTimeout(() => { modal.style.opacity = '1'; content.style.transform = 'scale(1)'; }, 10);
+        }
+
+        function closePinModal() {
+            const modal = document.getElementById('custom-pin-modal');
+            const content = document.getElementById('custom-pin-content');
+            
+            modal.style.opacity = '0';
+            content.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => { modal.style.display = 'none'; currentPin = ''; pinSuccessCallback = null; }, 200);
+        }
+
+        function addPinDigit(digit) {
+            if (currentPin.length < 4) {
+                currentPin += digit;
+                updatePinDots();
+                if (currentPin.length === 4) setTimeout(verifyPin, 150); 
+            }
+        }
+
+        function removePinDigit() {
+            if (currentPin.length > 0) { currentPin = currentPin.slice(0, -1); updatePinDots(); }
+        }
+
+        function updatePinDots() {
+            const dots = document.querySelectorAll('.pin-dot');
+            dots.forEach((dot, index) => {
+                dot.classList.remove('error'); 
+                if (index < currentPin.length) dot.classList.add('filled');
+                else dot.classList.remove('filled');
+            });
+        }
+
+        function verifyPin() {
+            if (currentPin === "0204") {
+                closePinModal();
+                if (pinSuccessCallback) pinSuccessCallback();
+            } else {
+                const dotsContainer = document.getElementById('pin-dots');
+                const dots = document.querySelectorAll('.pin-dot');
+                
+                dotsContainer.classList.add('shake');
+                dots.forEach(dot => { dot.classList.add('error'); dot.classList.remove('filled'); });
+                
+                setTimeout(() => {
+                    dotsContainer.classList.remove('shake');
+                    currentPin = '';
+                    updatePinDots(); 
+                }, 400);
+            }
+        }
+
+        // --- MEDISCH DOSSIER LOGICA ---
         let huidigeSpeler = 'Lou';
 
         async function laadDossier(speler) {
@@ -143,7 +259,7 @@
                             
                             <div style="display: flex; gap: 10px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
                                 ${!isHersteld ? `<button onclick="markeerHersteld('${item.id}')" style="flex: 1; background: #059669; color: #fff; border: none; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer;">Zet als Hersteld</button>` : ''}
-                                <button onclick="verwijderBlessure('${item.id}')" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; width: 40px; border-radius: 8px; font-weight: 700; cursor: pointer;">✕</button>
+                                <button onclick="verwijderBlessure('${item.id}')" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; width: 40px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;">🗑️</button>
                             </div>
                         </div>
                     `;
@@ -162,13 +278,12 @@
         };
 
         window.openBlessureModal = function() {
-            const pin = prompt("Voer pincode in:");
-            if (pin === "0204") {
+            requirePin(() => {
                 document.getElementById('b-datum').valueAsDate = new Date();
                 document.getElementById('b-opmerking').value = "";
                 document.getElementById('blessure-modal').style.display = 'flex';
                 setTimeout(() => document.getElementById('blessure-modal-content').style.transform = 'translateY(0)', 10);
-            } else if (pin !== null) alert("Onjuiste code.");
+            });
         };
 
         window.closeBlessureModal = function() {
@@ -197,21 +312,21 @@
             } catch (e) { alert("Fout bij opslaan."); btn.innerText = "Toevoegen"; btn.disabled = false; }
         };
 
-        window.markeerHersteld = async function(id) {
-            const pin = prompt("Voer pincode in om dossier af te sluiten:");
-            if (pin === "0204") {
+        window.markeerHersteld = function(id) {
+            requirePin(async () => {
                 const vandaag = new Date().toISOString().split('T')[0];
                 await supabaseClient.from('blessures').update({ datum_eind: vandaag }).eq('id', id);
                 laadDossier(huidigeSpeler);
-            }
+            });
         };
 
-        window.verwijderBlessure = async function(id) {
-            const pin = prompt("Voer pincode in om te wissen:");
-            if (pin === "0204" && confirm("Dossierlijn definitief wissen?")) {
-                await supabaseClient.from('blessures').delete().eq('id', id);
-                laadDossier(huidigeSpeler);
-            }
+        window.verwijderBlessure = function(id) {
+            requirePin(async () => {
+                if (confirm("Dossierlijn definitief wissen?")) {
+                    await supabaseClient.from('blessures').delete().eq('id', id);
+                    laadDossier(huidigeSpeler);
+                }
+            });
         };
 
         document.addEventListener('DOMContentLoaded', () => laadDossier('Lou'));
