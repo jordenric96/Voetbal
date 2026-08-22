@@ -1,139 +1,47 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Match Toevoegen</title>
-    <link rel="stylesheet" href="css/style.css">
-    <meta name="theme-color" content="#f1f5f9">
-</head>
-<body>
-    <header>
-        <h1>Match Toevoegen</h1>
-        <nav><a href="index.html">Annuleer</a></nav>
-    </header>
+    <style>
+        /* Specifieke CSS voor het custom PIN toetsenbord */
+        .pin-dots-container { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; }
+        .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #cbd5e1; transition: all 0.2s ease; }
+        .pin-dot.filled { background: #1e293b; border-color: #1e293b; }
+        .pin-dot.error { border-color: #dc2626; background: #fef2f2; }
+        
+        .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .numpad-btn { background: #f8fafc; border: 1px solid #f1f5f9; font-size: 26px; font-weight: 600; color: #1e293b; border-radius: 50%; width: 70px; height: 70px; margin: 0 auto; cursor: pointer; transition: all 0.1s; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .numpad-btn:active { background: #e2e8f0; transform: scale(0.95); }
+        .numpad-btn.empty { background: transparent; border: none; cursor: default; }
+        .numpad-btn.empty:active { transform: none; }
+        
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-8px); } }
+        .shake { animation: shake 0.4s ease-in-out; }
+    </style>
 
-    <main style="padding: 0 20px 40px 20px;">
-        <div id="pin-screen" class="pin-container">
-            <h2>Toegang Beveiligd</h2>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Voer de pincode in om verder te gaan.</p>
-            <input type="password" id="pincode-input" class="pin-input" pattern="[0-9]*" inputmode="numeric" maxlength="4" placeholder="****">
-            <button type="button" class="submit-btn" onclick="checkPin()">Ontgrendel</button>
-            <p id="pin-error" style="color: #dc2626; display: none; font-weight: 700; margin-top: 15px;">Foutieve code.</p>
+    <div id="pin-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; padding: 20px;">
+        <div style="background: #fff; width: 100%; max-width: 360px; border-radius: 28px; padding: 30px 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.05);">
+            <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #1e293b;">Toegang Beveiligd</h3>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #64748b; font-weight: 600;">Voer je pincode in om verder te gaan.</p>
+            
+            <div id="pin-dots" class="pin-dots-container">
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+            </div>
+
+            <div class="numpad-grid">
+                <div class="numpad-btn" onclick="addPinDigit('1')">1</div>
+                <div class="numpad-btn" onclick="addPinDigit('2')">2</div>
+                <div class="numpad-btn" onclick="addPinDigit('3')">3</div>
+                <div class="numpad-btn" onclick="addPinDigit('4')">4</div>
+                <div class="numpad-btn" onclick="addPinDigit('5')">5</div>
+                <div class="numpad-btn" onclick="addPinDigit('6')">6</div>
+                <div class="numpad-btn" onclick="addPinDigit('7')">7</div>
+                <div class="numpad-btn" onclick="addPinDigit('8')">8</div>
+                <div class="numpad-btn" onclick="addPinDigit('9')">9</div>
+                <div class="numpad-btn empty"></div>
+                <div class="numpad-btn" onclick="addPinDigit('0')">0</div>
+                <div class="numpad-btn" style="font-size: 20px; background: #f1f5f9;" onclick="removePinDigit()">⌫</div>
+            </div>
+
+            <a href="index.html" style="color: #94a3b8; text-decoration: none; font-size: 14px; font-weight: 700; display: inline-block; margin-top: 10px;">Annuleren</a>
         </div>
-
-        <div id="form-screen" style="display: none;">
-            <form id="matchForm">
-                
-                <div style="background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); margin-bottom: 20px;">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Speler</label>
-                            <select id="speler" required>
-                                <option value="Lou">Lou</option>
-                                <option value="Noé">Noé</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Datum</label>
-                            <input type="date" id="datum" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Categorie</label>
-                            <select id="categorie" required>
-                                <option value="U6" selected>U6</option>
-                                <option value="U7">U7</option>
-                                <option value="U8">U8</option>
-                                <option value="U9">U9</option>
-                                <option value="U10">U10</option>
-                                <option value="U11">U11</option>
-                                <option value="U12">U12</option>
-                                <option value="U13">U13</option>
-                                <option value="U14">U14</option>
-                                <option value="U15">U15</option>
-                                <option value="U16">U16</option>
-                                <option value="U17">U17</option>
-                                <option value="Beloften">Beloften</option>
-                                <option value="Eerste Ploeg">Eerste Ploeg</option>
-                                <option value="Veteranen">Veteranen</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Type</label>
-                            <select id="type_wedstrijd" onchange="toggleWedstrijdType()" required>
-                                <option value="Competitie" selected>Competitie</option>
-                                <option value="Toernooi">Toernooi</option>
-                                <option value="Vriendschappelijk">Vriendschappelijk</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Eigen Ploeg</label>
-                            <input type="text" id="eigen_ploeg" required>
-                        </div>
-                        <div class="form-group autocomplete-container">
-                            <label id="label-tegenstander">Tegenstander</label>
-                            <input type="text" id="tegenstander" placeholder="Typ om te zoeken..." required autocomplete="off" oninput="checkTegenstanderLogo()">
-                            <div id="autocomplete-lijst" class="autocomplete-items"></div>
-                        </div>
-                    </div>
-
-                    <div class="form-row" id="global-logo-tegenstander-container" style="display: none;">
-                        <div class="form-group" style="flex: 1; background: #fef2f2; padding: 12px; border-radius: 12px; border: 1px dashed #fca5a5;">
-                            <label style="color: #dc2626;">Nieuwe ploeg! Logo toevoegen:</label>
-                            <input type="file" id="logo_tegenstander" accept="image/png, image/jpeg">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Locatie</label>
-                        <select id="locatie" required>
-                            <option value="Thuis">Thuiswedstrijd</option>
-                            <option value="Uit">Uitwedstrijd</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Opmerking / Verslag (Optioneel)</label>
-                        <textarea id="opmerking" rows="2" placeholder="Wat wil je herinneren aan deze match?"></textarea>
-                    </div>
-                </div>
-
-                <div style="margin-top: 30px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h2 style="font-size: 16px; font-weight: 800; margin: 0; color: #111827;">De Uitslagen</h2>
-                        <select id="match_format" style="width: auto; padding: 6px 12px; font-size: 12px; border-radius: 8px; background: #fff;" required>
-                            <option value="2v2" selected>2v2</option>
-                            <option value="3v3">3v3</option>
-                            <option value="5v5">5v5</option>
-                        </select>
-                    </div>
-
-                    <div id="mini-scores-wrapper"></div>
-                    
-                    <button type="button" class="add-score-btn" onclick="addScoreRow()">+ Extra uitslag toevoegen</button>
-                </div>
-
-                <div style="background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); margin-top: 20px; margin-bottom: 20px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label>Wedstrijdfoto's</label>
-                        <input type="file" id="fotos" accept="image/png, image/jpeg" multiple>
-                    </div>
-                </div>
-
-                <button type="button" class="submit-btn" onclick="saveMatch()">Gegevens Opslaan</button>
-            </form>
-        </div>
-    </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
-    <script src="js/database.js"></script>
-    <script src="js/upload.js"></script>
-</body>
-</html>
+    </div>
