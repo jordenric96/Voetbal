@@ -4,72 +4,118 @@ let geselecteerdBestaandLogo = null;
 let bestaandEigenLogo = null;
 let bestaandeFotos = []; 
 
-window.checkPin = async function() {
-    const pin = document.getElementById('pincode-input').value;
-    if (pin === "0204") {
-        document.getElementById('pin-screen').style.display = "none";
-        document.getElementById('form-screen').style.display = "block";
-        document.getElementById('datum').valueAsDate = new Date();
-        
-        try { await haalPloegenOp(); } catch(e) { console.warn(e); }
+// --- CUSTOM PIN TOETSENBORD LOGICA ---
+let currentPin = '';
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const editId = urlParams.get('edit');
-        if (editId) {
-            await laadWedstrijdVoorBewerken(editId);
-        } else {
-            const opgeslagenPloeg = localStorage.getItem('laatsteEigenPloeg');
-            bestaandEigenLogo = localStorage.getItem('laatsteEigenLogo');
-            
-            if (opgeslagenPloeg) { document.getElementById('eigen_ploeg').value = opgeslagenPloeg; } 
-            else { document.getElementById('eigen_ploeg').value = STANDAARD_EIGEN_PLOEG; }
-            
-            addScoreRow();
-            toggleWedstrijdType();
-        }
-    } else {
-        const pinError = document.getElementById('pin-error');
-        if (pinError) pinError.style.display = "block";
-        document.getElementById('pincode-input').value = ""; 
+window.addPinDigit = function(digit) {
+    if (currentPin.length < 4) {
+        currentPin += digit;
+        updatePinDots();
+        if (currentPin.length === 4) setTimeout(verifyPin, 150); 
     }
 };
 
+window.removePinDigit = function() {
+    if (currentPin.length > 0) {
+        currentPin = currentPin.slice(0, -1);
+        updatePinDots();
+    }
+};
+
+function updatePinDots() {
+    const dots = document.querySelectorAll('.pin-dot');
+    if (!dots.length) return; 
+    dots.forEach((dot, index) => {
+        dot.classList.remove('error'); 
+        if (index < currentPin.length) dot.classList.add('filled');
+        else dot.classList.remove('filled');
+    });
+}
+
+function verifyPin() {
+    if (currentPin === "0204") {
+        ontgrendelNieuweMatch();
+    } else {
+        const dotsContainer = document.getElementById('pin-dots');
+        const dots = document.querySelectorAll('.pin-dot');
+        if (dotsContainer) {
+            dotsContainer.classList.add('shake');
+            dots.forEach(dot => { dot.classList.add('error'); dot.classList.remove('filled'); });
+            setTimeout(() => {
+                dotsContainer.classList.remove('shake');
+                currentPin = '';
+                updatePinDots(); 
+            }, 400);
+        }
+    }
+}
+
+// Oude fallback voor als HTML nog niet geüpdatet is
+window.checkPin = function() {
+    const pin = document.getElementById('pincode-input').value;
+    if(pin === "0204") ontgrendelNieuweMatch();
+    else { const err = document.getElementById('pin-error'); if(err) err.style.display = 'block'; }
+};
+
+async function ontgrendelNieuweMatch() {
+    document.getElementById('pin-screen').style.display = "none";
+    document.getElementById('form-screen').style.display = "block";
+    document.getElementById('datum').valueAsDate = new Date();
+    
+    try { await haalPloegenOp(); } catch(e) { console.warn(e); }
+
+    const opgeslagenPloeg = localStorage.getItem('laatsteEigenPloeg');
+    bestaandEigenLogo = localStorage.getItem('laatsteEigenLogo');
+    
+    if (opgeslagenPloeg) { document.getElementById('eigen_ploeg').value = opgeslagenPloeg; } 
+    else { document.getElementById('eigen_ploeg').value = STANDAARD_EIGEN_PLOEG; }
+    
+    addScoreRow();
+    toggleWedstrijdType();
+}
+
+// --- AUTO-UNLOCK BIJ BEWERKEN ---
+document.addEventListener('DOMContentLoaded', async () => {
+    setupAutocomplete();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('edit');
+    
+    if (editId) {
+        // HIER IS DE FIX: Als we komen bewerken, slaan we het PIN scherm direct over!
+        document.getElementById('pin-screen').style.display = "none";
+        document.getElementById('form-screen').style.display = "block";
+        
+        try { await haalPloegenOp(); } catch(e) { console.warn(e); }
+        await laadWedstrijdVoorBewerken(editId);
+    }
+    
+    const pinInput = document.getElementById('pincode-input');
+    if (pinInput) pinInput.addEventListener("keypress", function(e) { if (e.key === "Enter") { e.preventDefault(); window.checkPin(); } });
+});
+
+
+// --- STANDAARD MATCH LOGICA ---
 window.checkTegenstanderLogo = function() {
     const container = document.getElementById('global-logo-tegenstander-container');
     if(!container) return;
-
     const type = document.getElementById('type_wedstrijd').value;
-    if (type === 'Toernooi') {
-        container.style.display = 'none';
-        return;
-    }
+    if (type === 'Toernooi') { container.style.display = 'none'; return; }
 
     const inputVal = document.getElementById('tegenstander').value.toLowerCase().trim();
     const match = bekendeTegenstanders.find(p => p.naam.toLowerCase() === inputVal);
     
-    if (match && match.logo) {
-        container.style.display = 'none'; 
-        geselecteerdBestaandLogo = match.logo;
-    } else if (inputVal !== "") {
-        container.style.display = 'block'; 
-        geselecteerdBestaandLogo = null;
-    } else {
-        container.style.display = 'none'; 
-        geselecteerdBestaandLogo = null;
-    }
+    if (match && match.logo) { container.style.display = 'none'; geselecteerdBestaandLogo = match.logo; } 
+    else if (inputVal !== "") { container.style.display = 'block'; geselecteerdBestaandLogo = null; } 
+    else { container.style.display = 'none'; geselecteerdBestaandLogo = null; }
 };
 
 window.toggleWedstrijdType = function() {
     const type = document.getElementById('type_wedstrijd').value;
     const isToernooi = (type === 'Toernooi');
-    
     document.getElementById('label-tegenstander').innerText = isToernooi ? 'Naam Toernooi (bv. Tornooi Galmaarden)' : 'Tegenstander';
     document.getElementById('tegenstander').placeholder = isToernooi ? 'Typ toernooinaam...' : 'Typ om te zoeken in ploegen...';
-    
-    document.querySelectorAll('.row-tegenstander-container').forEach(el => {
-        el.style.display = isToernooi ? 'block' : 'none';
-    });
-
+    document.querySelectorAll('.row-tegenstander-container').forEach(el => { el.style.display = isToernooi ? 'block' : 'none'; });
     checkTegenstanderLogo();
 };
 
@@ -143,7 +189,6 @@ window.addScoreRow = function(eigen = '', tegen = '', doelman = false, goals = 0
                     </div>
                 </div>
             </div>
-            
         </div>
     `;
     wrapper.appendChild(row);
@@ -153,28 +198,17 @@ window.addScoreRow = function(eigen = '', tegen = '', doelman = false, goals = 0
 };
 
 function setupRowAutocomplete(input) {
-    let lijst = document.createElement('div'); 
-    lijst.className = 'autocomplete-items';
-    input.parentNode.appendChild(lijst);
-    
+    let lijst = document.createElement('div'); lijst.className = 'autocomplete-items'; input.parentNode.appendChild(lijst);
     input.addEventListener('input', function() {
-        const val = this.value.toLowerCase().trim();
-        lijst.innerHTML = ''; 
-        this.dataset.logo = ''; 
+        const val = this.value.toLowerCase().trim(); lijst.innerHTML = ''; this.dataset.logo = ''; 
         if (!val) { lijst.style.display = 'none'; return; }
-        
         const matches = bekendeTegenstanders.filter(p => p.naam.toLowerCase().includes(val));
         if (matches.length > 0) {
             lijst.style.display = 'block';
             matches.forEach(p => {
                 const div = document.createElement('div'); div.className = 'autocomplete-item';
                 div.innerHTML = `${p.logo ? `<img src="${p.logo}" class="autocomplete-logo">` : `🛡️`} ${p.naam}`;
-                div.addEventListener('mousedown', function(e) {
-                    e.preventDefault(); 
-                    input.value = p.naam; 
-                    input.dataset.logo = p.logo || '';
-                    lijst.style.display = 'none'; 
-                });
+                div.addEventListener('mousedown', function(e) { e.preventDefault(); input.value = p.naam; input.dataset.logo = p.logo || ''; lijst.style.display = 'none'; });
                 lijst.appendChild(div);
             });
         } else { lijst.style.display = 'none'; }
@@ -218,11 +252,8 @@ async function laadWedstrijdVoorBewerken(id) {
                 addScoreRow(eigen, tegen, data.is_doelman, data.doelpunten_speler, data.assists);
             }
 
-            geselecteerdBestaandLogo = data.logo_tegenstander; 
-            bestaandEigenLogo = data.logo_eigen_ploeg || null;
-            
-            checkTegenstanderLogo(); 
-            bestaandeFotos = data.fotos || [];
+            geselecteerdBestaandLogo = data.logo_tegenstander; bestaandEigenLogo = data.logo_eigen_ploeg || null;
+            checkTegenstanderLogo(); bestaandeFotos = data.fotos || [];
             document.getElementById('matchForm').dataset.editId = data.id;
             document.querySelector('.submit-btn').innerText = "Wijzigingen Opslaan";
         }
@@ -258,15 +289,11 @@ function setupAutocomplete() {
     const input = document.getElementById('tegenstander');
     if (!input) return;
     let lijst = document.getElementById('autocomplete-lijst');
-    if (!lijst) {
-        lijst = document.createElement('div'); lijst.id = 'autocomplete-lijst'; lijst.className = 'autocomplete-items';
-        input.parentNode.style.position = 'relative'; input.parentNode.insertBefore(lijst, input.nextSibling);
-    }
+    if (!lijst) { lijst = document.createElement('div'); lijst.id = 'autocomplete-lijst'; lijst.className = 'autocomplete-items'; input.parentNode.style.position = 'relative'; input.parentNode.insertBefore(lijst, input.nextSibling); }
     const fileInput = document.getElementById('logo_tegenstander');
     
     input.addEventListener('input', function() {
-        const val = this.value.toLowerCase().trim();
-        lijst.innerHTML = ''; geselecteerdBestaandLogo = null;
+        const val = this.value.toLowerCase().trim(); lijst.innerHTML = ''; geselecteerdBestaandLogo = null;
         if (!val) { lijst.style.display = 'none'; return; }
         const matches = bekendeTegenstanders.filter(p => p.naam.toLowerCase().includes(val));
         if (matches.length > 0) {
@@ -274,13 +301,7 @@ function setupAutocomplete() {
             matches.forEach(p => {
                 const div = document.createElement('div'); div.className = 'autocomplete-item';
                 div.innerHTML = `${p.logo ? `<img src="${p.logo}" class="autocomplete-logo">` : `🛡️`} ${p.naam}`;
-                div.addEventListener('mousedown', function(e) {
-                    e.preventDefault(); 
-                    input.value = p.naam; 
-                    if (p.logo) { geselecteerdBestaandLogo = p.logo; }
-                    lijst.style.display = 'none'; 
-                    checkTegenstanderLogo();
-                });
+                div.addEventListener('mousedown', function(e) { e.preventDefault(); input.value = p.naam; if (p.logo) { geselecteerdBestaandLogo = p.logo; } lijst.style.display = 'none'; checkTegenstanderLogo(); });
                 lijst.appendChild(div);
             });
         } else { lijst.style.display = 'none'; }
@@ -288,12 +309,6 @@ function setupAutocomplete() {
     input.addEventListener('blur', () => { setTimeout(() => lijst.style.display = 'none', 200); });
     if (fileInput) fileInput.addEventListener('change', function() { geselecteerdBestaandLogo = null; });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const pinInput = document.getElementById('pincode-input');
-    if (pinInput) pinInput.addEventListener("keypress", function(e) { if (e.key === "Enter") { e.preventDefault(); window.checkPin(); } });
-    setupAutocomplete();
-});
 
 function berekenSeizoen(datumString) {
     const datum = new Date(datumString);
@@ -312,8 +327,7 @@ async function uploadBestandNaarSupabase(bestand, mapNaam) {
 
 window.saveMatch = async function() {
     const submitBtn = document.querySelector('.submit-btn');
-    submitBtn.innerText = "Bezig met valideren... ⏳"; 
-    submitBtn.disabled = true;
+    submitBtn.innerText = "Bezig met valideren... ⏳"; submitBtn.disabled = true;
 
     const scoreRows = document.querySelectorAll('.score-row-item');
     const speelLocatie = document.getElementById('locatie').value;
@@ -339,7 +353,6 @@ window.saveMatch = async function() {
 
         let fotoUrls = bestaandeFotos; 
         if (fotoBestanden.length > 0) {
-            // HIER IS DE KWALITEIT VERHOOGD (2 MB, 2560px)
             const compressieOpties = { maxSizeMB: 2, maxWidthOrHeight: 2560, useWebWorker: true, initialQuality: 0.9 };
             for (let i = 0; i < fotoBestanden.length; i++) {
                 submitBtn.innerText = `Foto ${i + 1}/${fotoBestanden.length}...`;
@@ -350,9 +363,7 @@ window.saveMatch = async function() {
         }
 
         submitBtn.innerText = "Gegevens opslaan...";
-        let miniScoresArray = [];
-        let wasDoelmanOoit = false;
-        
+        let miniScoresArray = []; let wasDoelmanOoit = false;
         const globalTegenstander = document.getElementById('tegenstander').value;
 
         scoreRows.forEach(row => {
@@ -370,23 +381,10 @@ window.saveMatch = async function() {
             const t = (speelLocatie === 'Thuis') ? eigenScore : tegenScore;
             const u = (speelLocatie === 'Thuis') ? tegenScore : eigenScore;
 
-            let subNaam = globalTegenstander;
-            let subLogo = logoTegenUrl;
-            
-            if (isToernooi) {
-                const subInput = row.querySelector('.row-tegenstander-input');
-                if(subInput) {
-                    subNaam = subInput.value || "Onbekend";
-                    subLogo = subInput.dataset.logo || null;
-                }
-            }
+            let subNaam = globalTegenstander; let subLogo = logoTegenUrl;
+            if (isToernooi) { const subInput = row.querySelector('.row-tegenstander-input'); if(subInput) { subNaam = subInput.value || "Onbekend"; subLogo = subInput.dataset.logo || null; } }
 
-            miniScoresArray.push({ 
-                thuis: t, uit: u, 
-                is_doelman: isD, goals: g, assists: a, 
-                tegenstander: subNaam, logo_tegenstander: subLogo,
-                minuten: min, geel: geel, rood: rood
-            });
+            miniScoresArray.push({ thuis: t, uit: u, is_doelman: isD, goals: g, assists: a, tegenstander: subNaam, logo_tegenstander: subLogo, minuten: min, geel: geel, rood: rood });
             if(isD) wasDoelmanOoit = true;
         });
 
@@ -398,28 +396,12 @@ window.saveMatch = async function() {
         
         const matchData = {
             id: editId ? editId : datumVal.replace(/-/g, '') + '-' + spelerVal.toLowerCase() + '-' + Date.now(),
-            speler: spelerVal,
-            datum: datumVal,
-            seizoen: berekenSeizoen(datumVal),
-            tegenstander: globalTegenstander, 
-            locatie: speelLocatie,
-            status: "Meegedaan",
-            opmerking: opmerkingVeld ? opmerkingVeld.value : null,
-            
-            type_wedstrijd: document.getElementById('type_wedstrijd').value,
-            eigen_ploeg: ingevuldeEigenPloeg,
-            logo_eigen_ploeg: logoEigenUrl,
-            categorie: document.getElementById('categorie').value,
-            match_format: document.getElementById('match_format').value,
-            
-            mini_scores: miniScoresArray,
-            is_doelman: wasDoelmanOoit,
-            score_thuis: 0, 
-            score_uit: 0,
-            doelpunten_speler: 0,
-            assists: 0,
-            logo_tegenstander: logoTegenUrl,
-            fotos: fotoUrls
+            speler: spelerVal, datum: datumVal, seizoen: berekenSeizoen(datumVal), tegenstander: globalTegenstander, 
+            locatie: speelLocatie, status: "Meegedaan", opmerking: opmerkingVeld ? opmerkingVeld.value : null,
+            type_wedstrijd: document.getElementById('type_wedstrijd').value, eigen_ploeg: ingevuldeEigenPloeg,
+            logo_eigen_ploeg: logoEigenUrl, categorie: document.getElementById('categorie').value,
+            match_format: document.getElementById('match_format').value, mini_scores: miniScoresArray, is_doelman: wasDoelmanOoit,
+            score_thuis: 0, score_uit: 0, doelpunten_speler: 0, assists: 0, logo_tegenstander: logoTegenUrl, fotos: fotoUrls
         };
 
         const { error } = await supabaseClient.from('wedstrijden').upsert([matchData]);
