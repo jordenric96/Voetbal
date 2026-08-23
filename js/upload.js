@@ -50,7 +50,6 @@ function verifyPin() {
     }
 }
 
-// Oude fallback voor als HTML nog niet geüpdatet is
 window.checkPin = function() {
     const pin = document.getElementById('pincode-input').value;
     if(pin === "0204") ontgrendelNieuweMatch();
@@ -82,7 +81,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const editId = urlParams.get('edit');
     
     if (editId) {
-        // HIER IS DE FIX: Als we komen bewerken, slaan we het PIN scherm direct over!
         document.getElementById('pin-screen').style.display = "none";
         document.getElementById('form-screen').style.display = "block";
         
@@ -93,7 +91,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const pinInput = document.getElementById('pincode-input');
     if (pinInput) pinInput.addEventListener("keypress", function(e) { if (e.key === "Enter") { e.preventDefault(); window.checkPin(); } });
 });
-
 
 // --- STANDAARD MATCH LOGICA ---
 window.checkTegenstanderLogo = function() {
@@ -350,14 +347,33 @@ window.saveMatch = async function() {
         if (!isToernooi && logoBestandTegenstander) { submitBtn.innerText = "Logo tegen uploaden..."; logoTegenUrl = await uploadBestandNaarSupabase(logoBestandTegenstander, 'logos'); }
         
         let logoEigenUrl = bestaandEigenLogo; 
-
         let fotoUrls = bestaandeFotos; 
+
         if (fotoBestanden.length > 0) {
             const compressieOpties = { maxSizeMB: 2, maxWidthOrHeight: 2560, useWebWorker: true, initialQuality: 0.9 };
+            
             for (let i = 0; i < fotoBestanden.length; i++) {
-                submitBtn.innerText = `Foto ${i + 1}/${fotoBestanden.length}...`;
-                const gecomprimeerdeFoto = await imageCompression(fotoBestanden[i], compressieOpties);
-                const url = await uploadBestandNaarSupabase(gecomprimeerdeFoto, 'actiefotos');
+                const file = fotoBestanden[i];
+                const isVideo = file.type.startsWith('video/');
+                
+                const fileSizeMB = file.size / (1024 * 1024);
+                if (fileSizeMB > 50) {
+                    throw new Error(`Bestand is te groot (${fileSizeMB.toFixed(1)}MB). Maximaal 50MB toegestaan.`);
+                }
+
+                submitBtn.innerText = `Media ${i + 1}/${fotoBestanden.length}...`;
+
+                let uploadFile = file;
+                let folder = 'actiefotos';
+
+                // Video's NIET door de fotocompressor sturen
+                if (isVideo) {
+                    folder = 'videos';
+                } else {
+                    uploadFile = await imageCompression(file, compressieOpties);
+                }
+
+                const url = await uploadBestandNaarSupabase(uploadFile, folder);
                 if (url) fotoUrls.push(url);
             }
         }
