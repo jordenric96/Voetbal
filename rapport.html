@@ -11,7 +11,6 @@
     <meta name="theme-color" content="#f8fafc">
     <link rel="stylesheet" href="css/style.css?v=2">
     <style>
-        /* Print-specifieke stijlen voor een strak PDF-jaarboek */
         @media print {
             header, .no-print, .tabs { display: none !important; }
             body { background: #fff !important; color: #000 !important; font-size: 11px; }
@@ -27,13 +26,11 @@
         .stat-value { font-size: 20px; font-weight: 800; color: #1e293b; display: block; }
         .stat-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 4px; display: block; }
 
-        /* Tabel voor matchverslagen */
         .match-table { width: 100%; border-collapse: collapse; font-size: 11px; }
         .match-table th { background: #f1f5f9; padding: 8px; text-align: left; font-weight: 800; color: #1e293b; border-bottom: 2px solid #cbd5e1; text-transform: uppercase; font-size: 9px; letter-spacing: 0.5px; }
         .match-table td { padding: 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; color: #334155; }
         .match-table tr:last-child td { border-bottom: none; }
 
-        /* Dicht fotogrid voor 40-50 foto's per pagina */
         .photo-album-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
         @media print { .photo-album-grid { grid-template-columns: repeat(6, 1fr); gap: 4px; } }
         .photo-thumb { position: relative; aspect-ratio: 1; background: #f1f5f9; border-radius: 6px; overflow: hidden; border: 1px solid #e5e7eb; break-inside: avoid; }
@@ -45,7 +42,6 @@
     <header class="no-print">
         <h1>Jaarboek</h1>
         <nav>
-                <nav>
             <a href="index.html">Overzicht</a>
             <a href="stats.html">Stats</a>
             <a href="galerij.html">Galerij</a>
@@ -53,7 +49,6 @@
             <a href="rapport.html" class="active">Jaarboek</a>
             <a href="ploegen.html">Ploegen</a>
         </nav>
-
     </header>
 
     <div class="tabs no-print">
@@ -61,7 +56,6 @@
         <button class="tab-btn" onclick="wisselSpeler(event, 'Noé')">Noé</button>
     </div>
 
-    <!-- SELECTIE BALK -->
     <div class="no-print" style="padding: 0 20px 20px 20px;">
         <div style="background: #fff; padding: 16px; border-radius: 16px; border: 1px solid #e5e7eb; display: flex; gap: 12px; align-items: center;">
             <div style="flex: 1;">
@@ -82,28 +76,26 @@
                     <option value="Beloften">Beloften</option>
                 </select>
             </div>
-            <button onclick="window.print()" style="background: #1e293b; color: #fff; border: none; padding: 14px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-top: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">📥 Opslaan als PDF</button>
+            <button onclick="window.print()" style="background: #1e293b; color: #fff; border: none; padding: 14px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-top: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">📥 PDF Opslaan</button>
         </div>
     </div>
 
-    <!-- RAPPORT CONTAINER -->
     <main id="rapport-container" style="padding: 0 20px 100px 20px; max-width: 800px; margin: 0 auto;">
         <p class="empty-state">Jaarboek genereren... ⏳</p>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
-
     <script>
         let huidigeSpeler = 'Lou';
 
         async function genereerRapport() {
             const categorie = document.getElementById('select-categorie').value;
+            const isU6 = categorie === 'U6'; // HIER IS DE CHECK
             const container = document.getElementById('rapport-container');
             container.innerHTML = '<p class="empty-state">Gegevens verzamelen... ⏳</p>';
 
             try {
-                // Haal wedstrijden en extra foto's op
                 const [matchRes, extraFotoRes] = await Promise.all([
                     supabaseClient.from('wedstrijden').select('*').eq('speler', huidigeSpeler).eq('categorie', categorie),
                     supabaseClient.from('extra_fotos').select('*').eq('speler', huidigeSpeler).eq('categorie', categorie)
@@ -113,23 +105,13 @@
 
                 const matchen = matchRes.data || [];
                 const extraFotos = extraFotoRes.data || [];
-
-                // Sorteer wedstrijden chronologisch voor het logboek
                 matchen.sort((a, b) => new Date(a.datum) - new Date(b.datum));
 
-                let totaalWins = 0;
-                let totaalGoals = 0;
-                let totaalAssists = 0;
-                let totaalMinuten = 0;
-                let doelmanCount = 0;
-                
+                let totaalWins = 0, totaalGoals = 0, totaalAssists = 0, totaalMinuten = 0, doelmanCount = 0;
                 let alleFotoUrls = [];
                 let matchRowsHtml = '';
 
                 matchen.forEach(m => {
-                    // Cijfers optellen
-                    let matchGoals = 0, matchAssists = 0;
-                    
                     if (m.fotos && m.fotos.length > 0) {
                         m.fotos.forEach(url => {
                             const isVid = url.toLowerCase().match(/\.(mp4|mov|mkv|webm)$/) != null;
@@ -138,16 +120,12 @@
                     }
 
                     const datumMooi = new Date(m.datum).toLocaleDateString('nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    let uitslagenLijst = '';
-                    let statsLijst = '';
+                    let uitslagenLijst = ''; let statsLijst = '';
 
                     if (m.mini_scores && m.mini_scores.length > 0) {
                         m.mini_scores.forEach((s, idx) => {
-                            totaalGoals += (s.goals || 0); matchGoals += (s.goals || 0);
-                            totaalAssists += (s.assists || 0); matchAssists += (s.assists || 0);
-                            totaalMinuten += (s.minuten || 0);
+                            totaalGoals += (s.goals || 0); totaalAssists += (s.assists || 0); totaalMinuten += (s.minuten || 0);
                             if (s.is_doelman) doelmanCount++;
-
                             let isWin = false;
                             if (s.thuis > s.uit) isWin = m.locatie === 'Thuis';
                             if (s.thuis < s.uit) isWin = m.locatie === 'Uit';
@@ -155,32 +133,23 @@
 
                             let subTegen = s.tegenstander || m.tegenstander || "Onbekend";
                             
-                            // Lijn per mini-score toevoegen
-                            uitslagenLijst += `<div style="margin-bottom: ${idx === m.mini_scores.length-1 ? '0' : '4px'};"><b>${m.eigen_ploeg}</b> ${s.thuis}-${s.uit} <b>${subTegen}</b></div>`;
+                            // Voor U6 loggen we de match, maar zónder de score
+                            if (isU6) {
+                                uitslagenLijst += `<div style="margin-bottom: ${idx === m.mini_scores.length-1 ? '0' : '4px'};"><b>${m.eigen_ploeg}</b> vs <b>${subTegen}</b> <span style="background:#fef08a; padding: 2px 4px; border-radius:4px; font-size:8px;">PLEZIER</span></div>`;
+                            } else {
+                                uitslagenLijst += `<div style="margin-bottom: ${idx === m.mini_scores.length-1 ? '0' : '4px'};"><b>${m.eigen_ploeg}</b> ${s.thuis}-${s.uit} <b>${subTegen}</b></div>`;
+                            }
                             
                             let pStats = [];
-                            if(s.goals > 0) pStats.push(`⚽ ${s.goals}`);
-                            if(s.assists > 0) pStats.push(`👟 ${s.assists}`);
+                            if(!isU6 && s.goals > 0) pStats.push(`⚽ ${s.goals}`);
+                            if(!isU6 && s.assists > 0) pStats.push(`👟 ${s.assists}`);
                             if(s.minuten) pStats.push(`⏱️ ${s.minuten}'`);
                             if(s.is_doelman) pStats.push(`🧤`);
                             
                             statsLijst += `<div style="margin-bottom: ${idx === m.mini_scores.length-1 ? '0' : '4px'};">${pStats.join(' | ') || '-'}</div>`;
                         });
-                    } else {
-                        // Oude wedstrijden zonder mini-scores
-                        totaalGoals += (m.doelpunten_speler || 0);
-                        totaalAssists += (m.assists || 0);
-                        if (m.is_doelman) doelmanCount++;
-
-                        uitslagenLijst = `<div><b>${m.eigen_ploeg}</b> ${m.score_thuis || 0}-${m.score_uit || 0} <b>${m.tegenstander}</b></div>`;
-                        let pStats = [];
-                        if(m.doelpunten_speler > 0) pStats.push(`⚽ ${m.doelpunten_speler}`);
-                        if(m.assists > 0) pStats.push(`👟 ${m.assists}`);
-                        if(m.is_doelman) pStats.push(`🧤`);
-                        statsLijst = `<div>${pStats.join(' | ') || '-'}</div>`;
                     }
 
-                    // Voeg de rij toe aan de html tabel
                     matchRowsHtml += `
                         <tr class="avoid-break">
                             <td>
@@ -198,28 +167,37 @@
 
                 const brandColor = huidigeSpeler === 'Lou' ? '#F34213' : '#ef476f';
 
-                // --- HTML BOUWEN ---
                 let html = `
                     <div class="report-card" style="text-align: center; border-top: 6px solid ${brandColor};">
                         <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Seizoensoverzicht & Jaarboek</span>
                         <h1 style="font-size: 28px; font-weight: 900; color: #1e293b; margin: 5px 0 5px 0;">${huidigeSpeler}</h1>
                         <span style="display: inline-block; background: ${brandColor}15; color: ${brandColor}; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800;">Categorie: ${categorie}</span>
                     </div>
+                `;
 
+                // Als het U6 is, verbergen we de "Winst" en "Doelpunten" boxen op de voorpagina
+                let statBoxes = `<div class="stat-box"><span class="stat-value">${matchen.length}</span><span class="stat-label">Wedstrijden</span></div>`;
+                if (!isU6) {
+                    statBoxes += `
+                        <div class="stat-box"><span class="stat-value" style="color: #059669;">${totaalWins}</span><span class="stat-label">Winst</span></div>
+                        <div class="stat-box"><span class="stat-value" style="color: #d97706;">${totaalGoals}</span><span class="stat-label">Doelpunten</span></div>
+                        <div class="stat-box"><span class="stat-value" style="color: #0284c7;">${totaalAssists}</span><span class="stat-label">Assists</span></div>
+                    `;
+                }
+                statBoxes += `
+                    <div class="stat-box"><span class="stat-value">${totaalMinuten}m</span><span class="stat-label">Minuten</span></div>
+                    <div class="stat-box"><span class="stat-value">${doelmanCount}</span><span class="stat-label">Als Keeper</span></div>
+                `;
+
+                html += `
                     <div class="report-card">
-                        <h3 style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 0.5px;">📊 Seizoensstatistieken</h3>
+                        <h3 style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 0.5px;">📊 ${isU6 ? 'Inzet & Plezier' : 'Seizoensstatistieken'}</h3>
                         <div class="stat-grid">
-                            <div class="stat-box"><span class="stat-value">${matchen.length}</span><span class="stat-label">Wedstrijden</span></div>
-                            <div class="stat-box"><span class="stat-value" style="color: #059669;">${totaalWins}</span><span class="stat-label">Winst</span></div>
-                            <div class="stat-box"><span class="stat-value" style="color: #d97706;">${totaalGoals}</span><span class="stat-label">Doelpunten</span></div>
-                            <div class="stat-box"><span class="stat-value" style="color: #0284c7;">${totaalAssists}</span><span class="stat-label">Assists</span></div>
-                            <div class="stat-box"><span class="stat-value">${totaalMinuten}m</span><span class="stat-label">Minuten</span></div>
-                            <div class="stat-box"><span class="stat-value">${doelmanCount}</span><span class="stat-label">Als Keeper</span></div>
+                            ${statBoxes}
                         </div>
                     </div>
                 `;
 
-                // Logboek Wedstrijden Tabel
                 if (matchen.length > 0) {
                     html += `
                         <div class="report-card">
@@ -228,7 +206,7 @@
                                 <thead>
                                     <tr>
                                         <th style="width: 18%;">Datum</th>
-                                        <th style="width: 35%;">Uitslagen</th>
+                                        <th style="width: 35%;">Wedstrijd</th>
                                         <th style="width: 20%;">Mijn Inbreng</th>
                                         <th style="width: 27%;">Notities</th>
                                     </tr>
@@ -241,7 +219,6 @@
                     `;
                 }
 
-                // Foto-album sectie
                 html += `
                     <div class="report-card page-break-before">
                         <h3 style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 0.5px;">📸 Fotogalerij (${alleFotoUrls.length} foto's)</h3>
@@ -265,17 +242,15 @@
                 html += `</div>`;
                 container.innerHTML = html;
 
-            } catch (err) {
-                container.innerHTML = '<p class="empty-state">Fout bij genereren van rapport.</p>';
-            }
+            } catch (err) { container.innerHTML = '<p class="empty-state">Fout bij genereren van rapport.</p>'; }
         }
 
         window.wisselSpeler = function(evt, speler) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             evt.currentTarget.classList.add('active');
             huidigeSpeler = speler;
-            if (speler === 'Lou') { document.documentElement.style.setProperty('--brand-color', '#F34213'); } 
-            else { document.documentElement.style.setProperty('--brand-color', '#ef476f'); }
+            if (speler === 'Lou') document.documentElement.style.setProperty('--brand-color', '#F34213'); 
+            else document.documentElement.style.setProperty('--brand-color', '#ef476f');
             genereerRapport();
         };
 
