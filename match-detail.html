@@ -4,16 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Match Details</title>
-    
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo.svg">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#f8fafc">
-    
     <link rel="stylesheet" href="css/style.css?v=2">
     <style>
-        /* Specifieke CSS voor het custom PIN toetsenbord */
         .pin-dots-container { display: flex; justify-content: center; gap: 15px; margin: 20px 0 30px 0; }
         .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #cbd5e1; transition: all 0.2s ease; }
         .pin-dot.filled { background: #1e293b; border-color: #1e293b; }
@@ -24,21 +21,20 @@
         .numpad-btn:active { background: #e2e8f0; transform: scale(0.95); }
         .numpad-btn.empty { background: transparent; border: none; cursor: default; }
         .numpad-btn.empty:active { transform: none; }
-        
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-8px); } }
         .shake { animation: shake 0.4s ease-in-out; }
     </style>
 </head>
 <body>
-    <!-- VERNIEUWDE PREMIUM HEADER -->
     <header>
         <h1>Details</h1>
         <nav>
             <a href="index.html">Overzicht</a>
             <a href="stats.html">Stats</a>
-            <a href="ploegen.html">Ploegen</a>
             <a href="galerij.html">Galerij</a>
             <a href="medisch.html">Medisch</a>
+            <a href="rapport.html">Jaarboek</a>
+            <a href="ploegen.html">Ploegen</a>
         </nav>
     </header>
 
@@ -46,92 +42,34 @@
         <p class="empty-state">Match gegevens laden... ⏳</p>
     </main>
 
-    <!-- CUSTOM ON-SCREEN PIN MODAL -->
     <div id="custom-pin-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17,24,39,0.75); backdrop-filter: blur(8px); z-index: 10001; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s ease;">
         <div style="background: #fff; width: 90%; max-width: 360px; border-radius: 28px; padding: 30px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.2s ease;" id="custom-pin-content">
             <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #1e293b;">Beveiligde Actie</h3>
             <p style="margin: 6px 0 0 0; font-size: 13px; color: #64748b; font-weight: 600;">Voer je pincode in om verder te gaan.</p>
-            
-            <div id="pin-dots" class="pin-dots-container">
-                <div class="pin-dot"></div>
-                <div class="pin-dot"></div>
-                <div class="pin-dot"></div>
-                <div class="pin-dot"></div>
-            </div>
-
+            <div id="pin-dots" class="pin-dots-container"><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div></div>
             <div class="numpad-grid">
-                <div class="numpad-btn" onclick="addPinDigit('1')">1</div>
-                <div class="numpad-btn" onclick="addPinDigit('2')">2</div>
-                <div class="numpad-btn" onclick="addPinDigit('3')">3</div>
-                <div class="numpad-btn" onclick="addPinDigit('4')">4</div>
-                <div class="numpad-btn" onclick="addPinDigit('5')">5</div>
-                <div class="numpad-btn" onclick="addPinDigit('6')">6</div>
-                <div class="numpad-btn" onclick="addPinDigit('7')">7</div>
-                <div class="numpad-btn" onclick="addPinDigit('8')">8</div>
-                <div class="numpad-btn" onclick="addPinDigit('9')">9</div>
-                <div class="numpad-btn empty"></div>
-                <div class="numpad-btn" onclick="addPinDigit('0')">0</div>
-                <div class="numpad-btn" style="font-size: 20px; background: #f1f5f9;" onclick="removePinDigit()">⌫</div>
+                <div class="numpad-btn" onclick="addPinDigit('1')">1</div><div class="numpad-btn" onclick="addPinDigit('2')">2</div><div class="numpad-btn" onclick="addPinDigit('3')">3</div>
+                <div class="numpad-btn" onclick="addPinDigit('4')">4</div><div class="numpad-btn" onclick="addPinDigit('5')">5</div><div class="numpad-btn" onclick="addPinDigit('6')">6</div>
+                <div class="numpad-btn" onclick="addPinDigit('7')">7</div><div class="numpad-btn" onclick="addPinDigit('8')">8</div><div class="numpad-btn" onclick="addPinDigit('9')">9</div>
+                <div class="numpad-btn empty"></div><div class="numpad-btn" onclick="addPinDigit('0')">0</div><div class="numpad-btn" style="font-size: 20px; background: #f1f5f9;" onclick="removePinDigit()">⌫</div>
             </div>
-
             <button onclick="closePinModal()" style="background: transparent; color: #94a3b8; border: none; font-size: 14px; font-weight: 700; padding: 10px; margin-top: 10px; cursor: pointer;">Annuleren</button>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
-
     <script>
-        // --- CUSTOM PIN TOETSENBORD LOGICA ---
-        let currentPin = '';
-        let pinSuccessCallback = null;
-
-        function requirePin(callback) {
-            currentPin = ''; pinSuccessCallback = callback; updatePinDots();
-            const modal = document.getElementById('custom-pin-modal');
-            const content = document.getElementById('custom-pin-content');
-            modal.style.display = 'flex'; setTimeout(() => { modal.style.opacity = '1'; content.style.transform = 'scale(1)'; }, 10);
-        }
-
-        function closePinModal() {
-            const modal = document.getElementById('custom-pin-modal');
-            const content = document.getElementById('custom-pin-content');
-            modal.style.opacity = '0'; content.style.transform = 'scale(0.95)';
-            setTimeout(() => { modal.style.display = 'none'; currentPin = ''; pinSuccessCallback = null; }, 200);
-        }
-
+        let currentPin = ''; let pinSuccessCallback = null;
+        function requirePin(callback) { currentPin = ''; pinSuccessCallback = callback; updatePinDots(); const modal = document.getElementById('custom-pin-modal'); const content = document.getElementById('custom-pin-content'); modal.style.display = 'flex'; setTimeout(() => { modal.style.opacity = '1'; content.style.transform = 'scale(1)'; }, 10); }
+        function closePinModal() { const modal = document.getElementById('custom-pin-modal'); const content = document.getElementById('custom-pin-content'); modal.style.opacity = '0'; content.style.transform = 'scale(0.95)'; setTimeout(() => { modal.style.display = 'none'; currentPin = ''; pinSuccessCallback = null; }, 200); }
         function addPinDigit(digit) { if (currentPin.length < 4) { currentPin += digit; updatePinDots(); if (currentPin.length === 4) setTimeout(verifyPin, 150); } }
         function removePinDigit() { if (currentPin.length > 0) { currentPin = currentPin.slice(0, -1); updatePinDots(); } }
-        
-        function updatePinDots() {
-            const dots = document.querySelectorAll('.pin-dot');
-            dots.forEach((dot, index) => { dot.classList.remove('error'); if (index < currentPin.length) dot.classList.add('filled'); else dot.classList.remove('filled'); });
-        }
+        function updatePinDots() { const dots = document.querySelectorAll('.pin-dot'); dots.forEach((dot, index) => { dot.classList.remove('error'); if (index < currentPin.length) dot.classList.add('filled'); else dot.classList.remove('filled'); }); }
+        function verifyPin() { if (currentPin === "0204") { closePinModal(); if (pinSuccessCallback) pinSuccessCallback(); } else { const dotsContainer = document.getElementById('pin-dots'); const dots = document.querySelectorAll('.pin-dot'); dotsContainer.classList.add('shake'); dots.forEach(dot => { dot.classList.add('error'); dot.classList.remove('filled'); }); setTimeout(() => { dotsContainer.classList.remove('shake'); currentPin = ''; updatePinDots(); }, 400); } }
 
-        function verifyPin() {
-            if (currentPin === "0204") { closePinModal(); if (pinSuccessCallback) pinSuccessCallback(); } 
-            else {
-                const dotsContainer = document.getElementById('pin-dots'); const dots = document.querySelectorAll('.pin-dot');
-                dotsContainer.classList.add('shake'); dots.forEach(dot => { dot.classList.add('error'); dot.classList.remove('filled'); });
-                setTimeout(() => { dotsContainer.classList.remove('shake'); currentPin = ''; updatePinDots(); }, 400);
-            }
-        }
-
-        // --- MATCH RENDERING LOGICA ---
-        const badgeColors = {
-            'U6': { bg: '#fef08a', text: '#713f12' }, 'U7': { bg: '#fed7aa', text: '#7c2d12' }, 'U8': { bg: '#fecaca', text: '#7f1d1d' }, 
-            'U9': { bg: '#fbcfe8', text: '#831843' }, 'U10': { bg: '#e9d5ff', text: '#581c87' }, 'U11': { bg: '#c7d2fe', text: '#312e81' }, 
-            'U12': { bg: '#bae6fd', text: '#0c4a6e' }, 'U13': { bg: '#99f6e4', text: '#0f766e' }, 'U14': { bg: '#bbf7d0', text: '#14532d' }, 
-            'U15': { bg: '#d9f99d', text: '#3f6212' }, 'U16': { bg: '#fde68a', text: '#92400e' }, 'U17': { bg: '#fcd34d', text: '#92400e' }, 
-            'Beloften': { bg: '#e2e8f0', text: '#1e293b' }, 'Eerste Ploeg': { bg: '#1e293b', text: '#f9fafb' }, 'Veteranen': { bg: '#9ca3af', text: '#1e293b' },
-            'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 
-            'Thuis': { bg: '#e0e7ff', text: '#3730a3' }, 'Uit': { bg: '#ffedd5', text: '#9a3412' }, 'Standaard': { bg: '#f3f4f6', text: '#4b5563' }
-        };
-
-        function getBadgeHtml(waarde) {
-            if (!waarde) return ''; const style = badgeColors[waarde] || badgeColors['Standaard'];
-            return `<span style="display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; background-color: ${style.bg}; color: ${style.text}; border: 1px solid ${style.bg}; margin-right: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${waarde}</span>`;
-        }
+        const badgeColors = { 'U6': { bg: '#fef08a', text: '#713f12' }, 'U7': { bg: '#fed7aa', text: '#7c2d12' }, 'U8': { bg: '#fecaca', text: '#7f1d1d' }, 'U9': { bg: '#fbcfe8', text: '#831843' }, 'U10': { bg: '#e9d5ff', text: '#581c87' }, 'U11': { bg: '#c7d2fe', text: '#312e81' }, 'U12': { bg: '#bae6fd', text: '#0c4a6e' }, 'U13': { bg: '#99f6e4', text: '#0f766e' }, 'U14': { bg: '#bbf7d0', text: '#14532d' }, 'U15': { bg: '#d9f99d', text: '#3f6212' }, 'U16': { bg: '#fde68a', text: '#92400e' }, 'U17': { bg: '#fcd34d', text: '#92400e' }, 'Beloften': { bg: '#e2e8f0', text: '#1e293b' }, 'Eerste Ploeg': { bg: '#1e293b', text: '#f9fafb' }, 'Veteranen': { bg: '#9ca3af', text: '#1e293b' }, 'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 'Thuis': { bg: '#e0e7ff', text: '#3730a3' }, 'Uit': { bg: '#ffedd5', text: '#9a3412' }, 'Standaard': { bg: '#f3f4f6', text: '#4b5563' } };
+        function getBadgeHtml(waarde) { if (!waarde) return ''; const style = badgeColors[waarde] || badgeColors['Standaard']; return `<span style="display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; background-color: ${style.bg}; color: ${style.text}; border: 1px solid ${style.bg}; margin-right: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${waarde}</span>`; }
 
         const urlParams = new URLSearchParams(window.location.search);
         const matchId = urlParams.get('id');
@@ -147,13 +85,12 @@
                 if (!data) return container.innerHTML = '<p class="empty-state">Match niet gevonden.</p>';
 
                 huidigeMatchData = data;
-                
-                // Stel de hoofdkleur in afhankelijk van de speler
                 const brandColor = data.speler === 'Lou' ? '#F34213' : '#ef476f';
                 document.documentElement.style.setProperty('--brand-color', brandColor);
 
                 const datumMooi = new Date(data.datum).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
                 const isToernooi = data.type_wedstrijd === 'Toernooi';
+                const isU6 = data.categorie === 'U6';
                 
                 let badges = getBadgeHtml(data.categorie) + getBadgeHtml(data.type_wedstrijd) + (!isToernooi ? getBadgeHtml(data.locatie) : '');
 
@@ -167,7 +104,7 @@
                 `;
 
                 if (data.mini_scores && data.mini_scores.length > 0) {
-                    html += `<h3 style="font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 25px 0 15px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Uitslagen & Details</h3>`;
+                    html += `<h3 style="font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 25px 0 15px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Details</h3>`;
                     
                     data.mini_scores.forEach(s => {
                         let statusClass = 'draw';
@@ -182,6 +119,10 @@
                             ? `<img src="${s.logo_tegenstander}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border: 1px solid #e5e7eb;">` 
                             : (data.logo_tegenstander ? `<img src="${data.logo_tegenstander}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border: 1px solid #e5e7eb;">` : `<div style="width:28px; height:28px; border-radius:50%; background:#e5e7eb; display:flex; align-items:center; justify-content:center; font-size: 12px;">🛡️</div>`);
 
+                        let scoreBlok = isU6 
+                            ? `<div style="font-weight: 800; font-size: 12px; padding: 6px 12px; border-radius: 8px; background: #fef08a; color: #713f12; text-transform: uppercase;">Speelplezier</div>` 
+                            : `<div style="font-weight: 800; font-size: 16px; padding: 6px 12px; border-radius: 8px; background: ${bgStatus}; color: ${colorStatus};">${s.thuis} - ${s.uit}</div>`;
+
                         html += `
                             <div style="background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); border: 1px solid #e5e7eb;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -189,15 +130,13 @@
                                         ${subLogoHtml}
                                         <span style="font-size: 15px; font-weight: 800; color: #1e293b;">${subTeamNaam}</span>
                                     </div>
-                                    <div style="font-weight: 800; font-size: 16px; padding: 6px 12px; border-radius: 8px; background: ${bgStatus}; color: ${colorStatus};">
-                                        ${s.thuis} - ${s.uit}
-                                    </div>
+                                    ${scoreBlok}
                                 </div>
                                 
                                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                     ${s.is_doelman ? `<span style="background: #f8fafc; color: #4b5563; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1px solid #e2e8f0;">🧤 Doelman</span>` : ''}
-                                    ${s.goals > 0 ? `<span style="background: #fffbeb; color: #d97706; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #fef3c7;">⚽ ${s.goals} Goals</span>` : ''}
-                                    ${s.assists > 0 ? `<span style="background: #eff6ff; color: #0284c7; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #bae6fd;">👟 ${s.assists} Assists</span>` : ''}
+                                    ${(!isU6 && s.goals > 0) ? `<span style="background: #fffbeb; color: #d97706; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #fef3c7;">⚽ ${s.goals} Goals</span>` : ''}
+                                    ${(!isU6 && s.assists > 0) ? `<span style="background: #eff6ff; color: #0284c7; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; border: 1px solid #bae6fd;">👟 ${s.assists} Assists</span>` : ''}
                                     ${s.minuten ? `<span style="background: #f1f5f9; color: #4b5563; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1px solid #e2e8f0;">⏱️ ${s.minuten}'</span>` : ''}
                                 </div>
                             </div>
@@ -214,56 +153,38 @@
                     `;
                 }
 
-                // Actieknoppen
                 html += `
                     <div style="margin-top: 30px;">
                         <button onclick="shareWhatsApp()" style="background: #15803d; color: white; width: 100%; padding: 16px; border-radius: 12px; font-weight: 800; border: none; margin-bottom: 12px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(21, 128, 61, 0.2);">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-                Deel Uitslag via WhatsApp
-            </button>
-            <div style="display: flex; gap: 12px;">
-                <button onclick="bewerkMatchActie()" style="flex: 1; background: #f1f5f9; color: #1e293b; border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer;">Bewerk Match</button>
-                <button onclick="verwijderMatchActie()" style="flex: 1; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer;">Match Wissen</button>
-            </div>
-        </div>
-    `;
-
+                            Deel Update via WhatsApp
+                        </button>
+                        <div style="display: flex; gap: 12px;">
+                            <button onclick="bewerkMatchActie()" style="flex: 1; background: #f1f5f9; color: #1e293b; border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer;">Bewerk</button>
+                            <button onclick="verwijderMatchActie()" style="flex: 1; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer;">Wissen</button>
+                        </div>
+                    </div>
+                `;
                 container.innerHTML = html;
-
-            } catch (err) {
-                container.innerHTML = '<p class="empty-state">Fout bij laden.</p>';
-            }
+            } catch (err) { container.innerHTML = '<p class="empty-state">Fout bij laden.</p>'; }
         }
 
-        window.bewerkMatchActie = function() {
-            requirePin(() => {
-                window.location.href = `add-match.html?edit=${matchId}`;
-            });
-        };
+        window.bewerkMatchActie = function() { requirePin(() => { window.location.href = `add-match.html?edit=${matchId}`; }); };
 
         window.verwijderMatchActie = function() {
             requirePin(async () => {
-                if (confirm("Weet je zeker dat je deze match definitief wil wissen? (Inclusief foto's/video's van de wedstrijd)")) {
+                if (confirm("Weet je zeker dat je deze match definitief wil wissen? (Inclusief foto's/video's)")) {
                     document.body.style.cursor = 'wait';
-                    
                     try {
-                        // Verwijder foto's/video's uit storage als ze er zijn
                         if (huidigeMatchData && huidigeMatchData.fotos) {
                             for(let url of huidigeMatchData.fotos) {
-                                try {
-                                    const pad = url.split('/public/media/')[1];
-                                    if(pad) await supabaseClient.storage.from('media').remove([pad]);
-                                } catch(e) { console.warn("Kon mediabestand niet wissen."); }
+                                try { const pad = url.split('/public/media/')[1]; if(pad) await supabaseClient.storage.from('media').remove([pad]); } 
+                                catch(e) { console.warn("Kon mediabestand niet wissen."); }
                             }
                         }
-                        
                         await supabaseClient.from('wedstrijden').delete().eq('id', matchId);
-                        document.body.style.cursor = 'default';
-                        window.location.href = 'index.html';
-                    } catch(err) {
-                        document.body.style.cursor = 'default';
-                        alert("Er is iets misgegaan bij het verwijderen.");
-                    }
+                        document.body.style.cursor = 'default'; window.location.href = 'index.html';
+                    } catch(err) { document.body.style.cursor = 'default'; alert("Er is iets misgegaan bij het verwijderen."); }
                 }
             });
         };
@@ -271,25 +192,26 @@
         window.shareWhatsApp = function() {
             if(!huidigeMatchData) return;
             let d = huidigeMatchData;
+            let isU6 = d.categorie === 'U6';
             
             let text = `⚽ *Match Update ${d.speler}*\n`;
             text += `🗓️ ${new Date(d.datum).toLocaleDateString('nl-BE')}\n`;
             
-            if (d.type_wedstrijd === 'Toernooi') {
-                text += `🏆 Toernooi: ${d.tegenstander}\n`;
-            } else {
-                text += `🆚 ${d.eigen_ploeg} vs ${d.tegenstander}\n`;
-            }
+            if (d.type_wedstrijd === 'Toernooi') text += `🏆 Toernooi: ${d.tegenstander}\n`;
+            else text += `🆚 ${d.eigen_ploeg} vs ${d.tegenstander}\n`;
             
             if (d.mini_scores && d.mini_scores.length > 0) {
-                text += `\n*Uitslagen:*\n`;
+                text += `\n*Details:*\n`;
                 d.mini_scores.forEach(s => {
                     let sTegen = s.tegenstander || d.tegenstander || "Tegenstander";
-                    text += `▪️ ${sTegen}: ${s.thuis} - ${s.uit}\n`;
-                    if (s.goals > 0) text += `   ⚽ ${s.goals} Goals van ${d.speler}!\n`;
+                    if (isU6) {
+                        text += `▪️ vs ${sTegen} (Speelplezier!)\n`;
+                    } else {
+                        text += `▪️ ${sTegen}: ${s.thuis} - ${s.uit}\n`;
+                        if (s.goals > 0) text += `   ⚽ ${s.goals} Goals van ${d.speler}!\n`;
+                    }
                 });
             }
-            
             let url = `https://wa.me/?text=${encodeURIComponent(text)}`;
             window.open(url, '_blank');
         };
