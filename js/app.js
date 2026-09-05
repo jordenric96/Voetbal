@@ -48,6 +48,7 @@ function renderMatchen() {
     let gefilterd = alleWedstrijden.filter(m => m.speler === actieveSpeler);
     uniekeSeizoenen = [...new Set(gefilterd.map(m => m.seizoen).filter(Boolean))].sort().reverse();
     
+    // Seizoensfilter opbouwen
     const filterContainer = document.getElementById('seizoen-filter-container');
     if(filterContainer) {
         let filterHtml = `<button onclick="kiesSeizoen('Alle')" style="padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; border: none; white-space: nowrap; cursor: pointer; transition: all 0.2s; background: ${geselecteerdSeizoen === 'Alle' ? 'var(--brand-color)' : '#f1f5f9'}; color: ${geselecteerdSeizoen === 'Alle' ? '#fff' : '#64748b'};">Alle</button>`;
@@ -58,8 +59,46 @@ function renderMatchen() {
     }
 
     if (geselecteerdSeizoen !== 'Alle') gefilterd = gefilterd.filter(m => m.seizoen === geselecteerdSeizoen);
+    
     if (gefilterd.length === 0) { container.innerHTML = '<p class="empty-state">Nog geen matchen voor dit seizoen.</p>'; return; }
 
+    // --- BEREKEN TOP DASHBOARD STATS ---
+    let statsKeeper = 0, statsGoals = 0, statsAssists = 0;
+    gefilterd.forEach(m => {
+        const isU6 = m.categorie === 'U6';
+        if (m.mini_scores && m.mini_scores.length > 0) {
+            m.mini_scores.forEach(s => {
+                if (s.is_doelman) statsKeeper++;
+                if (!isU6) { statsGoals += (s.goals || 0); statsAssists += (s.assists || 0); }
+            });
+        } else {
+            if (m.is_doelman) statsKeeper++;
+            if (!isU6) { statsGoals += (m.doelpunten_speler || 0); statsAssists += (m.assists || 0); }
+        }
+    });
+
+    container.innerHTML += `
+        <div style="background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #e5e7eb;">
+            <div style="flex: 1; border-right: 1px solid #f1f5f9;">
+                <div style="font-size: 20px; font-weight: 800; color: #1e293b;">${gefilterd.length}</div>
+                <div style="font-size: 9px; font-weight: 800; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px;">Matchen</div>
+            </div>
+            <div style="flex: 1; border-right: 1px solid #f1f5f9;">
+                <div style="font-size: 20px; font-weight: 800; color: #1e293b;">${statsKeeper}</div>
+                <div style="font-size: 9px; font-weight: 800; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px;">Keeper</div>
+            </div>
+            <div style="flex: 1; border-right: 1px solid #f1f5f9;">
+                <div style="font-size: 20px; font-weight: 800; color: #1e293b;">${statsGoals}</div>
+                <div style="font-size: 9px; font-weight: 800; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px;">Goals</div>
+            </div>
+            <div style="flex: 1;">
+                <div style="font-size: 20px; font-weight: 800; color: #1e293b;">${statsAssists}</div>
+                <div style="font-size: 9px; font-weight: 800; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px;">Assists</div>
+            </div>
+        </div>
+    `;
+
+    // --- RENDER WEDSTRIJDEN ---
     gefilterd.forEach(m => {
         const datumMooi = new Date(m.datum).toLocaleDateString('nl-BE', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
         const isToernooi = m.type_wedstrijd === 'Toernooi';
@@ -85,43 +124,53 @@ function renderMatchen() {
             <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 800; color: #1e293b;">${isToernooi ? m.tegenstander : (m.eigen_ploeg + ' vs ' + m.tegenstander)}</h3>
         `;
 
-        let scoresHtml = '';
+        // We bouwen een tijdelijke array, of het nu een nieuwe 'mini_scores' of een oude enkele match is.
+        let subMatches = [];
         if (m.mini_scores && m.mini_scores.length > 0) {
-            scoresHtml += `<div style="display: flex; flex-direction: column; gap: 8px;">`;
-            m.mini_scores.forEach(s => {
-                let sTegen = s.tegenstander || m.tegenstander || "Onbekend";
-                
-                let bgStatus = '#f1f5f9', colorStatus = '#4b5563';
-                if (s.thuis > s.uit) { bgStatus = m.locatie === 'Thuis' ? '#ecfdf5' : '#fef2f2'; colorStatus = m.locatie === 'Thuis' ? '#059669' : '#dc2626'; }
-                if (s.thuis < s.uit) { bgStatus = m.locatie === 'Thuis' ? '#fef2f2' : '#ecfdf5'; colorStatus = m.locatie === 'Thuis' ? '#dc2626' : '#059669'; }
-
-                let uitslagBlok = '';
-                if (isU6) {
-                    uitslagBlok = `<div style="font-weight: 800; font-size: 10px; padding: 4px 8px; border-radius: 6px; background: #fef08a; color: #713f12; text-transform: uppercase;">Speelplezier</div>`;
-                } else {
-                    uitslagBlok = `<div style="font-weight: 800; font-size: 13px; padding: 4px 8px; border-radius: 6px; background: ${bgStatus}; color: ${colorStatus};">${s.thuis} - ${s.uit}</div>`;
-                }
-
-                let sStats = '';
-                if (!isU6 && s.goals > 0) sStats += `⚽ ${s.goals} `;
-                if (!isU6 && s.assists > 0) sStats += `👟 ${s.assists} `;
-                if (s.is_doelman) sStats += `🧤 `;
-
-                scoresHtml += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #f1f5f9;">
-                        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                            ${s.logo_tegenstander ? `<img src="${s.logo_tegenstander}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">` : `<div style="width:20px;height:20px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;">🛡️</div>`}
-                            <span style="font-size: 13px; font-weight: 700; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${sTegen}</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 11px; font-weight: 800; color: #64748b;">${sStats}</span>
-                            ${uitslagBlok}
-                        </div>
-                    </div>
-                `;
-            });
-            scoresHtml += `</div>`;
+            subMatches = m.mini_scores;
+        } else {
+            // Oude standaardmatch fallback
+            subMatches = [{
+                tegenstander: m.tegenstander, logo_tegenstander: m.logo_tegenstander,
+                thuis: m.score_thuis || 0, uit: m.score_uit || 0,
+                goals: m.doelpunten_speler || 0, assists: m.assists || 0, is_doelman: m.is_doelman || false
+            }];
         }
+
+        let scoresHtml = `<div style="display: flex; flex-direction: column; gap: 8px;">`;
+        subMatches.forEach(s => {
+            let sTegen = s.tegenstander || m.tegenstander || "Onbekend";
+            
+            let bgStatus = '#f1f5f9', colorStatus = '#4b5563';
+            if (s.thuis > s.uit) { bgStatus = m.locatie === 'Thuis' ? '#ecfdf5' : '#fef2f2'; colorStatus = m.locatie === 'Thuis' ? '#059669' : '#dc2626'; }
+            if (s.thuis < s.uit) { bgStatus = m.locatie === 'Thuis' ? '#fef2f2' : '#ecfdf5'; colorStatus = m.locatie === 'Thuis' ? '#dc2626' : '#059669'; }
+
+            let uitslagBlok = '';
+            if (isU6) {
+                uitslagBlok = `<div style="font-weight: 800; font-size: 10px; padding: 4px 8px; border-radius: 6px; background: #fef08a; color: #713f12; text-transform: uppercase;">Speelplezier</div>`;
+            } else {
+                uitslagBlok = `<div style="font-weight: 800; font-size: 13px; padding: 4px 8px; border-radius: 6px; background: ${bgStatus}; color: ${colorStatus};">${s.thuis} - ${s.uit}</div>`;
+            }
+
+            let sStats = '';
+            if (!isU6 && s.goals > 0) sStats += `⚽ ${s.goals} `;
+            if (!isU6 && s.assists > 0) sStats += `👟 ${s.assists} `;
+            if (s.is_doelman) sStats += `🧤 `;
+
+            scoresHtml += `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #f1f5f9;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                        ${s.logo_tegenstander ? `<img src="${s.logo_tegenstander}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">` : `<div style="width:20px;height:20px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;">🛡️</div>`}
+                        <span style="font-size: 13px; font-weight: 700; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${sTegen}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 11px; font-weight: 800; color: #64748b;">${sStats}</span>
+                        ${uitslagBlok}
+                    </div>
+                </div>
+            `;
+        });
+        scoresHtml += `</div>`;
 
         const card = document.createElement('a');
         card.href = `match-detail.html?id=${m.id}`;
