@@ -48,7 +48,6 @@ function renderMatchen() {
     let gefilterd = alleWedstrijden.filter(m => m.speler === actieveSpeler);
     uniekeSeizoenen = [...new Set(gefilterd.map(m => m.seizoen).filter(Boolean))].sort().reverse();
     
-    // Seizoensfilter opbouwen
     const filterContainer = document.getElementById('seizoen-filter-container');
     if(filterContainer) {
         let filterHtml = `<button onclick="kiesSeizoen('Alle')" style="padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; border: none; white-space: nowrap; cursor: pointer; transition: all 0.2s; background: ${geselecteerdSeizoen === 'Alle' ? 'var(--brand-color)' : '#f1f5f9'}; color: ${geselecteerdSeizoen === 'Alle' ? '#fff' : '#64748b'};">Alle</button>`;
@@ -59,10 +58,8 @@ function renderMatchen() {
     }
 
     if (geselecteerdSeizoen !== 'Alle') gefilterd = gefilterd.filter(m => m.seizoen === geselecteerdSeizoen);
-    
     if (gefilterd.length === 0) { container.innerHTML = '<p class="empty-state">Nog geen matchen voor dit seizoen.</p>'; return; }
 
-    // --- BEREKEN TOP DASHBOARD STATS ---
     let statsKeeper = 0, statsGoals = 0, statsAssists = 0;
     gefilterd.forEach(m => {
         const isU6 = m.categorie === 'U6';
@@ -98,7 +95,6 @@ function renderMatchen() {
         </div>
     `;
 
-    // --- RENDER WEDSTRIJDEN ---
     gefilterd.forEach(m => {
         const datumMooi = new Date(m.datum).toLocaleDateString('nl-BE', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
         const isToernooi = m.type_wedstrijd === 'Toernooi';
@@ -121,15 +117,16 @@ function renderMatchen() {
                     <div style="display: flex; flex-wrap: wrap; gap: 4px;">${tagsHtml}</div>
                 </div>
             </div>
-            <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 800; color: #1e293b;">${isToernooi ? m.tegenstander : (m.eigen_ploeg + ' vs ' + m.tegenstander)}</h3>
         `;
 
-        // We bouwen een tijdelijke array, of het nu een nieuwe 'mini_scores' of een oude enkele match is.
+        if (isToernooi) {
+            headerHtml += `<h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 800; color: #1e293b;">${m.tegenstander}</h3>`;
+        }
+
         let subMatches = [];
         if (m.mini_scores && m.mini_scores.length > 0) {
             subMatches = m.mini_scores;
         } else {
-            // Oude standaardmatch fallback
             subMatches = [{
                 tegenstander: m.tegenstander, logo_tegenstander: m.logo_tegenstander,
                 thuis: m.score_thuis || 0, uit: m.score_uit || 0,
@@ -146,29 +143,48 @@ function renderMatchen() {
             if (s.thuis < s.uit) { bgStatus = m.locatie === 'Thuis' ? '#fef2f2' : '#ecfdf5'; colorStatus = m.locatie === 'Thuis' ? '#dc2626' : '#059669'; }
 
             let uitslagBlok = '';
-            if (isU6) {
-                uitslagBlok = `<div style="font-weight: 800; font-size: 10px; padding: 4px 8px; border-radius: 6px; background: #fef08a; color: #713f12; text-transform: uppercase;">Speelplezier</div>`;
-            } else {
-                uitslagBlok = `<div style="font-weight: 800; font-size: 13px; padding: 4px 8px; border-radius: 6px; background: ${bgStatus}; color: ${colorStatus};">${s.thuis} - ${s.uit}</div>`;
-            }
+            if (!isU6) uitslagBlok = `<div style="font-weight: 800; font-size: 13px; padding: 4px 8px; border-radius: 6px; background: ${bgStatus}; color: ${colorStatus};">${s.thuis} - ${s.uit}</div>`;
 
             let sStats = '';
             if (!isU6 && s.goals > 0) sStats += `⚽ ${s.goals} `;
             if (!isU6 && s.assists > 0) sStats += `👟 ${s.assists} `;
             if (s.is_doelman) sStats += `🧤 `;
 
-            scoresHtml += `
-                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #f1f5f9;">
-                    <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                        ${s.logo_tegenstander ? `<img src="${s.logo_tegenstander}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">` : `<div style="width:20px;height:20px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;">🛡️</div>`}
-                        <span style="font-size: 13px; font-weight: 700; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${sTegen}</span>
+            let logoHtml = s.logo_tegenstander ? `<img src="${s.logo_tegenstander}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">` : `<div style="width:20px;height:20px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:10px;">🛡️</div>`;
+
+            if (isToernooi) {
+                // Toernooi weergave (met rijen)
+                scoresHtml += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #f1f5f9;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                            ${logoHtml}
+                            <span style="font-size: 13px; font-weight: 700; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${sTegen}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 11px; font-weight: 800; color: #64748b;">${sStats}</span>
+                            ${uitslagBlok}
+                        </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 11px; font-weight: 800; color: #64748b;">${sStats}</span>
-                        ${uitslagBlok}
+                `;
+            } else {
+                // Nieuwe weergave voor gewone matchen: "Kort onder elkaar"
+                scoresHtml += `
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div style="font-size: 15px; font-weight: 800; color: #1e293b;">${m.eigen_ploeg}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                                <span style="font-size: 13px; font-weight: 700; color: #64748b;">vs</span>
+                                ${logoHtml}
+                                <span style="font-size: 15px; font-weight: 800; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${sTegen}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 11px; font-weight: 800; color: #64748b;">${sStats}</span>
+                                ${uitslagBlok}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
         });
         scoresHtml += `</div>`;
 
