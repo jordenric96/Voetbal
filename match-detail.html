@@ -56,6 +56,13 @@
         </div>
     </div>
 
+    <!-- LIGHTBOX VOOR MEDIA -->
+    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000000; z-index: 10002; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
+        <button onclick="closeLightbox()" style="position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px; background: rgba(255,255,255,0.2); color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); z-index: 10003;">✕</button>
+        <img id="lb-img" src="" style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.2s ease; display: none;">
+        <video id="lb-video" src="" controls playsinline style="width: 100%; height: 100%; object-fit: contain; transition: opacity 0.2s ease; display: none;"></video>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/database.js"></script>
     <script>
@@ -68,7 +75,7 @@
         function verifyPin() { if (currentPin === "0204") { closePinModal(); if (pinSuccessCallback) pinSuccessCallback(); } else { const dotsContainer = document.getElementById('pin-dots'); const dots = document.querySelectorAll('.pin-dot'); dotsContainer.classList.add('shake'); dots.forEach(dot => { dot.classList.add('error'); dot.classList.remove('filled'); }); setTimeout(() => { dotsContainer.classList.remove('shake'); currentPin = ''; updatePinDots(); }, 400); } }
 
         const badgeColors = { 'U6': { bg: '#fef08a', text: '#713f12' }, 'U7': { bg: '#fed7aa', text: '#7c2d12' }, 'U8': { bg: '#fecaca', text: '#7f1d1d' }, 'U9': { bg: '#fbcfe8', text: '#831843' }, 'U10': { bg: '#e9d5ff', text: '#581c87' }, 'U11': { bg: '#c7d2fe', text: '#312e81' }, 'U12': { bg: '#bae6fd', text: '#0c4a6e' }, 'U13': { bg: '#99f6e4', text: '#0f766e' }, 'U14': { bg: '#bbf7d0', text: '#14532d' }, 'U15': { bg: '#d9f99d', text: '#3f6212' }, 'U16': { bg: '#fde68a', text: '#92400e' }, 'U17': { bg: '#fcd34d', text: '#92400e' }, 'Beloften': { bg: '#e2e8f0', text: '#1e293b' }, 'Eerste Ploeg': { bg: '#1e293b', text: '#f9fafb' }, 'Veteranen': { bg: '#9ca3af', text: '#1e293b' }, 'Competitie': { bg: '#e0f2fe', text: '#0369a1' }, 'Toernooi': { bg: '#f3e8ff', text: '#7e22ce' }, 'Vriendschappelijk': { bg: '#dcfce7', text: '#15803d' }, 'Thuis': { bg: '#e0e7ff', text: '#3730a3' }, 'Uit': { bg: '#ffedd5', text: '#9a3412' }, 'Standaard': { bg: '#f3f4f6', text: '#4b5563' } };
-        function getBadgeHtml(waarde) { if (!waarde) return ''; const style = badgeColors[waarde] || badgeColors['Standaard']; return `<span style="display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; background-color: ${style.bg}; color: ${style.text}; border: 1px solid ${style.bg}; margin-right: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${waarde}</span>`; }
+        function getBadgeHtml(waarde) { if (!waarde) return ''; const style = badgeColors[waarde] || badgeColors['Standaard']; return `<span style="display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; background-color: ${style.bg}; color: ${style.text}; border: 1px solid${style.bg}; margin-right: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">${waarde}</span>`; }
 
         const urlParams = new URLSearchParams(window.location.search);
         const matchId = urlParams.get('id');
@@ -131,7 +138,9 @@
                         ? `<img src="${s.logo_tegenstander}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border: 1px solid #e5e7eb;">` 
                         : (data.logo_tegenstander ? `<img src="${data.logo_tegenstander}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border: 1px solid #e5e7eb;">` : `<div style="width:28px; height:28px; border-radius:50%; background:#e5e7eb; display:flex; align-items:center; justify-content:center; font-size: 12px;">🛡️</div>`);
 
-                    let scoreBlok = isU6 ? `` : `<div style="font-weight: 800; font-size: 16px; padding: 6px 12px; border-radius: 8px; background: ${bgStatus}; color: ${colorStatus};">${s.thuis} - ${s.uit}</div>`;
+                    let scoreBlok = isU6 
+                        ? `` 
+                        : `<div style="font-weight: 800; font-size: 16px; padding: 6px 12px; border-radius: 8px; background: ${bgStatus}; color: ${colorStatus};">${s.thuis} - ${s.uit}</div>`;
 
                     let cardContent = '';
                     if (isToernooi) {
@@ -182,6 +191,31 @@
                     `;
                 }
 
+                // --- MEDIA SECTIE ---
+                if (data.fotos && data.fotos.length > 0) {
+                    html += `<h3 style="font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 25px 0 15px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">Foto's & Video's</h3>`;
+                    html += `<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px;">`;
+                    
+                    data.fotos.forEach(url => {
+                        const isVid = url.toLowerCase().match(/\.(mp4|mov|mkv|webm)$/) != null;
+                        if (isVid) {
+                            html += `
+                                <div onclick="openMedia('${url}', true)" style="position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: #e5e7eb; border: 1px solid #e2e8f0; cursor: pointer;">
+                                    <video src="${url}#t=0.1" preload="metadata" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                                    <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.6); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+                                </div>
+                            `;
+                        } else {
+                            html += `
+                                <div onclick="openMedia('${url}', false)" style="position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: #e5e7eb; border: 1px solid #e2e8f0; cursor: pointer;">
+                                    <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                            `;
+                        }
+                    });
+                    html += `</div>`;
+                }
+
                 html += `
                     <div style="margin-top: 30px;">
                         <button onclick="shareWhatsApp()" style="background: #15803d; color: white; width: 100%; padding: 16px; border-radius: 12px; font-weight: 800; border: none; margin-bottom: 12px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(21, 128, 61, 0.2);">
@@ -197,6 +231,29 @@
                 container.innerHTML = html;
             } catch (err) { container.innerHTML = '<p class="empty-state">Fout bij laden.</p>'; }
         }
+
+        window.openMedia = function(url, isVideo) {
+            const lb = document.getElementById('lightbox');
+            const img = document.getElementById('lb-img');
+            const vid = document.getElementById('lb-video');
+            
+            if (isVideo) {
+                img.style.display = 'none'; vid.style.display = 'block'; vid.src = url;
+                setTimeout(() => vid.play().catch(e=>{}), 100);
+            } else {
+                vid.style.display = 'none'; vid.pause(); img.style.display = 'block'; img.src = url;
+            }
+            
+            lb.style.display = 'flex';
+            setTimeout(() => lb.style.opacity = '1', 10);
+        };
+
+        window.closeLightbox = function() {
+            const lb = document.getElementById('lightbox');
+            const vid = document.getElementById('lb-video');
+            lb.style.opacity = '0'; vid.pause();
+            setTimeout(() => { lb.style.display = 'none'; vid.src = ''; document.getElementById('lb-img').src = ''; }, 300);
+        };
 
         window.bewerkMatchActie = function() { requirePin(() => { window.location.href = `add-match.html?edit=${matchId}`; }); };
 
