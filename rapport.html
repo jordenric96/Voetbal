@@ -35,7 +35,6 @@
         @media print { .photo-album-grid { grid-template-columns: repeat(6, 1fr); gap: 4px; } }
         .photo-thumb { position: relative; aspect-ratio: 1; background: #f1f5f9; border-radius: 6px; overflow: hidden; border: 1px solid #e5e7eb; break-inside: avoid; }
         .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .photo-caption { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: #fff; font-size: 7px; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     </style>
 </head>
 <body>
@@ -78,6 +77,7 @@
             </div>
             <button onclick="window.print()" style="background: #1e293b; color: #fff; border: none; padding: 14px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-top: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">📥 PDF Opslaan</button>
         </div>
+        <p style="font-size: 11px; color: #64748b; margin-top: 10px; text-align: center;">Wacht tot alle foto's geladen zijn voor je op de PDF knop klikt!</p>
     </div>
 
     <main id="rapport-container" style="padding: 0 20px 100px 20px; max-width: 800px; margin: 0 auto;">
@@ -91,9 +91,9 @@
 
         async function genereerRapport() {
             const categorie = document.getElementById('select-categorie').value;
-            const isU6 = categorie === 'U6'; // HIER IS DE CHECK
+            const isU6 = categorie === 'U6';
             const container = document.getElementById('rapport-container');
-            container.innerHTML = '<p class="empty-state">Gegevens verzamelen... ⏳</p>';
+            container.innerHTML = '<p class="empty-state">Gegevens en foto\'s verzamelen... ⏳</p>';
 
             try {
                 const [matchRes, extraFotoRes] = await Promise.all([
@@ -108,20 +108,15 @@
                 matchen.sort((a, b) => new Date(a.datum) - new Date(b.datum));
 
                 let totaalWins = 0, totaalGoals = 0, totaalAssists = 0, totaalMinuten = 0, doelmanCount = 0;
-                let alleFotoUrls = [];
                 let matchRowsHtml = '';
+                let fotosPerMatchHtml = '';
+                let matchFotoTelling = 0;
 
                 matchen.forEach(m => {
-                    if (m.fotos && m.fotos.length > 0) {
-                        m.fotos.forEach(url => {
-                            const isVid = url.toLowerCase().match(/\.(mp4|mov|mkv|webm)$/) != null;
-                            if (!isVid) alleFotoUrls.push({ url, titel: `vs ${m.tegenstander}` });
-                        });
-                    }
-
                     const datumMooi = new Date(m.datum).toLocaleDateString('nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    let uitslagenLijst = ''; let statsLijst = '';
+                    let uitslagenLijst = '';
 
+                    // Cijfers tellen & Wedstrijdlogboek opbouwen
                     if (m.mini_scores && m.mini_scores.length > 0) {
                         m.mini_scores.forEach((s, idx) => {
                             totaalGoals += (s.goals || 0); totaalAssists += (s.assists || 0); totaalMinuten += (s.minuten || 0);
@@ -133,20 +128,11 @@
 
                             let subTegen = s.tegenstander || m.tegenstander || "Onbekend";
                             
-                            // Voor U6 loggen we de match, maar zónder de score
                             if (isU6) {
                                 uitslagenLijst += `<div style="margin-bottom: ${idx === m.mini_scores.length-1 ? '0' : '4px'};"><b>${m.eigen_ploeg}</b> vs <b>${subTegen}</b> <span style="background:#fef08a; padding: 2px 4px; border-radius:4px; font-size:8px;">PLEZIER</span></div>`;
                             } else {
                                 uitslagenLijst += `<div style="margin-bottom: ${idx === m.mini_scores.length-1 ? '0' : '4px'};"><b>${m.eigen_ploeg}</b> ${s.thuis}-${s.uit} <b>${subTegen}</b></div>`;
                             }
-                            
-                            let pStats = [];
-                            if(!isU6 && s.goals > 0) pStats.push(`⚽ ${s.goals}`);
-                            if(!isU6 && s.assists > 0) pStats.push(`👟 ${s.assists}`);
-                            if(s.minuten) pStats.push(`⏱️ ${s.minuten}'`);
-                            if(s.is_doelman) pStats.push(`🧤`);
-                            
-                            statsLijst += `<div style="margin-bottom: ${idx === m.mini_scores.length-1 ? '0' : '4px'};">${pStats.join(' | ') || '-'}</div>`;
                         });
                     }
 
@@ -157,16 +143,50 @@
                                 <span style="color: #94a3b8; font-size: 8px;">${m.locatie === 'Thuis' ? 'THUIS' : 'UIT'} • ${m.type_wedstrijd.toUpperCase()}</span>
                             </td>
                             <td>${uitslagenLijst}</td>
-                            <td>${statsLijst}</td>
                             <td style="font-style: italic;">${m.opmerking ? `"${m.opmerking}"` : '-'}</td>
                         </tr>
                     `;
+
+                    // Foto's groeperen PER WEDSTRIJD
+                    if (m.fotos && m.fotos.length > 0) {
+                        const matchFotosOnly = m.fotos.filter(url => !url.toLowerCase().match(/\.(mp4|mov|mkv|webm)$/));
+                        if (matchFotosOnly.length > 0) {
+                            matchFotoTelling += matchFotosOnly.length;
+                            fotosPerMatchHtml += `
+                                <div class="avoid-break" style="margin-bottom: 24px;">
+                                    <h4 style="font-size: 11px; font-weight: 800; color: #1e293b; margin: 0 0 8px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
+                                        ⚽ ${datumMooi} - vs ${m.tegenstander}
+                                    </h4>
+                                    <div class="photo-album-grid">
+                            `;
+                            // HIER STAAT GEEN LOADING="LAZY" MEER, ZODAT DE PDF ZE ALTIJD PRINT!
+                            matchFotosOnly.forEach(url => {
+                                fotosPerMatchHtml += `<div class="photo-thumb"><img src="${url}"></div>`;
+                            });
+                            fotosPerMatchHtml += `</div></div>`;
+                        }
+                    }
                 });
 
-                extraFotos.forEach(f => { alleFotoUrls.push({ url: f.url, titel: f.opmerking || 'Training' }); });
+                // Losse extra foto's toevoegen op het einde
+                if (extraFotos.length > 0) {
+                    matchFotoTelling += extraFotos.length;
+                    fotosPerMatchHtml += `
+                        <div class="avoid-break" style="margin-bottom: 24px;">
+                            <h4 style="font-size: 11px; font-weight: 800; color: #1e293b; margin: 0 0 8px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
+                                📸 Trainingen & Extra's
+                            </h4>
+                            <div class="photo-album-grid">
+                    `;
+                    extraFotos.forEach(f => {
+                        fotosPerMatchHtml += `<div class="photo-thumb"><img src="${f.url}"></div>`;
+                    });
+                    fotosPerMatchHtml += `</div></div>`;
+                }
 
                 const brandColor = huidigeSpeler === 'Lou' ? '#F34213' : '#ef476f';
 
+                // 1. Cover & Statistieken
                 let html = `
                     <div class="report-card" style="text-align: center; border-top: 6px solid ${brandColor};">
                         <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Seizoensoverzicht & Jaarboek</span>
@@ -175,7 +195,6 @@
                     </div>
                 `;
 
-                // Als het U6 is, verbergen we de "Winst" en "Doelpunten" boxen op de voorpagina
                 let statBoxes = `<div class="stat-box"><span class="stat-value">${matchen.length}</span><span class="stat-label">Wedstrijden</span></div>`;
                 if (!isU6) {
                     statBoxes += `
@@ -198,6 +217,7 @@
                     </div>
                 `;
 
+                // 2. Wedstrijdlogboek ZONDER "Mijn inbreng"
                 if (matchen.length > 0) {
                     html += `
                         <div class="report-card">
@@ -205,10 +225,9 @@
                             <table class="match-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 18%;">Datum</th>
-                                        <th style="width: 35%;">Wedstrijd</th>
-                                        <th style="width: 20%;">Mijn Inbreng</th>
-                                        <th style="width: 27%;">Notities</th>
+                                        <th style="width: 25%;">Datum</th>
+                                        <th style="width: 40%;">Wedstrijd</th>
+                                        <th style="width: 35%;">Notities</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -219,24 +238,16 @@
                     `;
                 }
 
+                // 3. Foto's gegroepeerd per match
                 html += `
                     <div class="report-card page-break-before">
-                        <h3 style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 0.5px;">📸 Fotogalerij (${alleFotoUrls.length} foto's)</h3>
+                        <h3 style="font-size: 14px; font-weight: 800; color: #1e293b; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 0.5px;">📸 Fotogalerij (${matchFotoTelling} foto's)</h3>
                 `;
 
-                if (alleFotoUrls.length === 0) {
+                if (matchFotoTelling === 0) {
                     html += `<p style="color: #64748b; font-size: 14px;">Geen foto's gevonden voor ${categorie}.</p>`;
                 } else {
-                    html += `<div class="photo-album-grid">`;
-                    alleFotoUrls.forEach(item => {
-                        html += `
-                            <div class="photo-thumb">
-                                <img src="${item.url}" loading="lazy">
-                                <div class="photo-caption">${item.titel}</div>
-                            </div>
-                        `;
-                    });
-                    html += `</div>`;
+                    html += fotosPerMatchHtml;
                 }
 
                 html += `</div>`;
@@ -249,8 +260,8 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             evt.currentTarget.classList.add('active');
             huidigeSpeler = speler;
-            if (speler === 'Lou') document.documentElement.style.setProperty('--brand-color', '#F34213'); 
-            else document.documentElement.style.setProperty('--brand-color', '#ef476f');
+            if (speler === 'Lou') { document.documentElement.style.setProperty('--brand-color', '#F34213'); } 
+            else { document.documentElement.style.setProperty('--brand-color', '#ef476f'); }
             genereerRapport();
         };
 
